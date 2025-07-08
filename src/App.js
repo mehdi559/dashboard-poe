@@ -169,15 +169,17 @@ const App = () => {
       {/* Notifications */}
       <NotificationContainer notifications={state.notifications} />
 
+      {/* Navigation Sidebar */}
+      <Navigation financeManager={financeManager} t={t} />
+
       {/* Header */}
       <DashboardHeader financeManager={financeManager} theme={theme} t={t} />
 
-      {/* Navigation */}
-      <Navigation financeManager={financeManager} t={t} />
-
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
-        {renderScreen()}
+      <main className="ml-20 lg:ml-72 pt-20 px-6 py-8 transition-all duration-500">
+        <div className="max-w-7xl mx-auto">
+          {renderScreen()}
+        </div>
       </main>
 
       {/* Modals */}
@@ -200,15 +202,6 @@ const App = () => {
 
       {/* Chatbot IA */}
       <Chatbot financeManager={financeManager} theme={theme} t={t} />
-
-      {/* Import/Export Button */}
-      <button
-        onClick={() => actions.toggleModal('import', true)}
-        className="fixed bottom-6 left-6 w-12 h-12 rounded-full bg-gray-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-40 hover:scale-110"
-        aria-label="Importer/Exporter des données"
-      >
-        <Icons.Download className="h-5 w-5" />
-      </button>
     </div>
   );
 };
