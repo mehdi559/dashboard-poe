@@ -48,11 +48,12 @@ const useFinanceManager = () => {
 
   // Notification management
   const showNotification = useCallback((message, type = 'success', duration = 3000) => {
-    const notification = { message, type };
+    const id = Date.now() + Math.random(); // ID unique
+    const notification = { id, message, type };
     dispatch({ type: ACTIONS.ADD_NOTIFICATION, payload: notification });
-    
+
     setTimeout(() => {
-      dispatch({ type: ACTIONS.REMOVE_NOTIFICATION, payload: notification.id });
+      dispatch({ type: ACTIONS.REMOVE_NOTIFICATION, payload: id });
     }, duration);
   }, []);
 

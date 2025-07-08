@@ -384,7 +384,7 @@ export const financeReducer = (state, action) => {
     case ACTIONS.ADD_NOTIFICATION:
       return {
         ...state,
-        notifications: [...state.notifications, { ...action.payload, id: Date.now() }]
+        notifications: [...state.notifications, { ...action.payload, id: action.payload.id || Date.now() }]
       };
     case ACTIONS.REMOVE_NOTIFICATION:
       return {
