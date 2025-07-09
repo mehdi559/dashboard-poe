@@ -570,6 +570,17 @@ const translations = {
     // Messages de confirmation et d'erreur
     confirmDeleteDebt: 'Êtes-vous sûr de vouloir supprimer cette dette ?',
     paymentCannotExceedBalance: 'Le paiement ne peut pas dépasser le solde',
+    // Modal de paiement
+    recordPayment: 'Enregistrer un paiement',
+    recordPaymentFor: 'Enregistrer un paiement - {{name}}',
+    debtInformation: 'Informations de la dette:',
+    currentBalance: 'Solde actuel:',
+    minimumPayment: 'Paiement minimum:',
+    interestRate: 'Taux d\'intérêt:',
+    paymentAmount: 'Montant du paiement',
+    paymentAmountHelp: 'Le montant ne peut pas dépasser le solde de {{amount}}',
+    record: 'Enregistrer',
+    cancel: 'Annuler',
   },
   en: {
     // Navigation
@@ -1091,6 +1102,17 @@ const translations = {
     // Confirmation and error messages
     confirmDeleteDebt: 'Are you sure you want to delete this debt?',
     paymentCannotExceedBalance: 'Payment cannot exceed balance',
+    // Payment modal
+    recordPayment: 'Record payment',
+    recordPaymentFor: 'Record payment - {{name}}',
+    debtInformation: 'Debt information:',
+    currentBalance: 'Current balance:',
+    minimumPayment: 'Minimum payment:',
+    interestRate: 'Interest rate:',
+    paymentAmount: 'Payment amount',
+    paymentAmountHelp: 'Amount cannot exceed balance of {{amount}}',
+    record: 'Record',
+    cancel: 'Cancel',
   },
   es: {
     title: 'Gestor Financiero Personal',
@@ -1602,6 +1624,17 @@ const translations = {
     // Mensajes de confirmación y error
     confirmDeleteDebt: '¿Estás seguro de que quieres eliminar esta deuda?',
     paymentCannotExceedBalance: 'El pago no puede exceder el saldo',
+    // Modal de pago
+    recordPayment: 'Registrar pago',
+    recordPaymentFor: 'Registrar pago - {{name}}',
+    debtInformation: 'Información de la deuda:',
+    currentBalance: 'Saldo actual:',
+    minimumPayment: 'Pago mínimo:',
+    interestRate: 'Tasa de interés:',
+    paymentAmount: 'Monto del pago',
+    paymentAmountHelp: 'El monto no puede exceder el saldo de {{amount}}',
+    record: 'Registrar',
+    cancel: 'Cancelar',
   }
 };
 
