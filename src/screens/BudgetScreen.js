@@ -97,7 +97,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
       )}
 
       {/* Section principale */}
-      <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
+      <div className={`${theme.card} rounded-xl border ${theme.border} p-6 mt-[80px]`}>
         <div className="flex justify-between items-center mb-6">
           <h2 className={`text-2xl font-bold ${theme.text}`}>{t('budgetManagement')}</h2>
           <div className="flex space-x-2">

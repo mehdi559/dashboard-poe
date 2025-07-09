@@ -1,5 +1,5 @@
 // ExpensesScreen.js - Version enrichie
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo, useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -119,8 +119,368 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
   const analytics = getExpenseAnalytics;
   const patterns = getSpendingPatterns;
 
+  // Déclaration des hooks pour la navigation semaine/jour/filtres
+  const [selectedWeek, setSelectedWeek] = useState(0);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [searchTermList, setSearchTermList] = useState('');
+  const [categoryFilterList, setCategoryFilterList] = useState('all');
+  const [weekendOnly, setWeekendOnly] = useState(false);
+
+  // Organisation par semaine et jour pour la liste paginée
+  const weeks = useMemo(() => {
+    const byWeek = [[], [], [], [], []];
+    paginatedExpenses.forEach(expense => {
+      const date = new Date(expense.date);
+      const weekNum = Math.floor((date.getDate() - 1) / 7);
+      byWeek[weekNum].push(expense);
+    });
+    return byWeek;
+  }, [paginatedExpenses]);
+
+  const daysOfWeek = useMemo(() => {
+    const weekExpenses = weeks[selectedWeek] || [];
+    const days = {};
+    weekExpenses.forEach(exp => {
+      const d = new Date(exp.date);
+      const dayKey = d.toISOString().split('T')[0];
+      if (!days[dayKey]) days[dayKey] = [];
+      days[dayKey].push(exp);
+    });
+    return Object.entries(days).sort(([a], [b]) => new Date(a) - new Date(b));
+  }, [weeks, selectedWeek]);
+
+  useEffect(() => {
+    if (daysOfWeek.length > 0 && (selectedDay === null || !daysOfWeek.find(([d]) => d === selectedDay))) {
+      setSelectedDay(daysOfWeek[0][0]);
+    }
+  }, [daysOfWeek, selectedDay]);
+
+  const filteredDayExpenses = useMemo(() => {
+    if (!selectedDay) return [];
+    let expenses = daysOfWeek.find(([d]) => d === selectedDay)?.[1] || [];
+    if (categoryFilterList !== 'all') {
+      expenses = expenses.filter(e => e.category === categoryFilterList);
+    }
+    if (searchTermList) {
+      expenses = expenses.filter(e =>
+        e.description.toLowerCase().includes(searchTermList.toLowerCase()) ||
+        String(e.amount).includes(searchTermList)
+      );
+    }
+    if (weekendOnly) {
+      expenses = expenses.filter(e => {
+        const day = new Date(e.date).getDay();
+        return day === 0 || day === 6;
+      });
+    }
+    return expenses;
+  }, [daysOfWeek, selectedDay, categoryFilterList, searchTermList, weekendOnly]);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-[80px]">
+      {/* Section principale - Gestion des Dépenses */}
+      <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
+          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('expensesManagement')}</h2>
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => actions.exportExpensesToCSV()}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <Icons.Download className="h-4 w-4" />
+              <span>{t('exportCSV')}</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* SUPPRIMER SearchAndFilter ici */}
+        {/* <SearchAndFilter
+          searchTerm={state.searchTerm}
+          onSearchChange={actions.setSearchTerm}
+          categoryFilter={state.categoryFilter}
+          onCategoryFilterChange={actions.setCategoryFilter}
+          dateFilter={state.dateFilter}
+          onDateFilterChange={actions.setDateFilter}
+          categories={state.categories}
+          t={t}
+        /> */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <div className="lg:col-span-1">
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('addExpense')}</h3>
+            {/* Suggestions rapides */}
+            <div className="mb-4">
+              <p className={`text-sm ${theme.textSecondary} mb-2`}>{t('quickSuggestions')}</p>
+              <div className="flex flex-wrap gap-2">
+                {['Courses', 'Essence', 'Resto', 'Café'].map(suggestion => (
+                  <Button
+                    key={suggestion}
+                    size="xs"
+                    variant="outline"
+                    onClick={() => actions.quickAddExpense(suggestion)}
+                  >
+                    {suggestion}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (actions.addExpense(state.newExpense)) {
+                  actions.resetForm('newExpense');
+                }
+              }}
+              className="space-y-4"
+            >
+              <Input
+                label="Date"
+                type="date"
+                value={state.newExpense.date}
+                onChange={(value) => actions.updateForm('newExpense', { date: value })}
+                error={state.errors.date}
+                required
+                max={new Date().toISOString().split('T')[0]}
+              />
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('category')} <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={state.newExpense.category}
+                  onChange={(e) => actions.updateForm('newExpense', { category: e.target.value })}
+                  className={`w-full px-3 py-2 text-base border rounded-lg ${theme.input} ${state.errors.category ? 'border-red-500' : ''}`}
+                  required
+                >
+                  <option value="">{t('selectCategory')}</option>
+                  {state.categories.map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
+                {state.errors.category && (
+                  <p className="text-sm text-red-600" role="alert">
+                    {state.errors.category}
+                  </p>
+                )}
+              </div>
+              <Input
+                label={t('amount')}
+                type="number"
+                step="0.01"
+                min="0"
+                value={state.newExpense.amount}
+                onChange={(value) => actions.updateForm('newExpense', { amount: value })}
+                error={state.errors.amount}
+                required
+              />
+              <Input
+                label={t('description')}
+                type="text"
+                value={state.newExpense.description}
+                onChange={(value) => actions.updateForm('newExpense', { description: value })}
+                error={state.errors.description}
+                required
+                minLength={3}
+                maxLength={100}
+              />
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={state.loading}
+                loading={state.loading}
+              >
+                {t('addExpenseBtn')}
+              </Button>
+            </form>
+          </div>
+          <div className="lg:col-span-2">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className={`text-lg font-semibold ${theme.text}`}>{t('expenses')} ({filteredAndSortedExpenses.length})</h3>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">{t('sortBy')}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSortClick('date')}
+                  className={`flex items-center space-x-1 ${state.sortBy === 'date' ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                >
+                  <span>{t('date')}</span>
+                  {state.sortBy === 'date' && (
+                    state.sortOrder === 'asc' 
+                      ? <Icons.ChevronUp className="h-3 w-3" />
+                      : <Icons.ChevronDown className="h-3 w-3" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSortClick('amount')}
+                  className={`flex items-center space-x-1 ${state.sortBy === 'amount' ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                >
+                  <span>{t('amount')}</span>
+                  {state.sortBy === 'amount' && (
+                    state.sortOrder === 'asc' 
+                      ? <Icons.ChevronUp className="h-3 w-3" />
+                      : <Icons.ChevronDown className="h-3 w-3" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2 mb-4">
+              {/* Nouvelle organisation : filtres + navigation semaine/jour + opérations du jour */}
+              {paginatedExpenses.length === 0 ? (
+                <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
+                  {filteredAndSortedExpenses.length === 0 
+                    ? (state.searchTerm || state.categoryFilter !== 'all' || state.dateFilter !== 'all')
+                      ? t('noExpensesMatch')
+                      : t('noExpensesThisMonth')
+                    : t('noExpensesThisPage')
+                  }
+                </div>
+              ) : (
+                <>
+                  {/* Barre de filtres moderne */}
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <input
+                      type="text"
+                      placeholder={t('search')}
+                      value={searchTermList}
+                      onChange={e => setSearchTermList(e.target.value)}
+                      className={`px-3 py-2 rounded border ${theme.input}`}
+                    />
+                    <select
+                      value={categoryFilterList}
+                      onChange={e => setCategoryFilterList(e.target.value)}
+                      className={`px-3 py-2 rounded border ${theme.input}`}
+                    >
+                      <option value="all">{t('all')}</option>
+                      {state.categories.map(cat => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {/* Onglets semaines */}
+                  <div className="flex space-x-2 mb-2">
+                    {weeks.map((w, i) => (
+                      <button
+                        key={i}
+                        className={`px-4 py-2 rounded-t-lg border-b-2 font-semibold transition-colors ${
+                          selectedWeek === i ? 'border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-transparent text-gray-500 bg-transparent'
+                        }`}
+                        onClick={() => {
+                          setSelectedWeek(i);
+                          setSelectedDay(null);
+                        }}
+                      >
+                        {t('week')} {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Onglets jours de la semaine sélectionnée */}
+                  <div className="flex space-x-2 mb-2">
+                    {daysOfWeek.map(([dayKey]) => {
+                      const d = new Date(dayKey);
+                      return (
+                        <button
+                          key={dayKey}
+                          className={`px-3 py-2 rounded-lg border font-medium transition-colors ${
+                            selectedDay === dayKey ? 'bg-blue-500 text-white' : theme.input
+                          }`}
+                          onClick={() => setSelectedDay(dayKey)}
+                        >
+                          {d.toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Liste des opérations du jour sélectionné */}
+                  <div className="space-y-3">
+                    {filteredDayExpenses.length === 0 ? (
+                      <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
+                        {t('noExpensesMatch')}
+                      </div>
+                    ) : (
+                      filteredDayExpenses.map(expense => {
+                        const category = state.categories.find(cat => cat.name === expense.category);
+                        const isRecent = (new Date() - new Date(expense.date)) < 24 * 60 * 60 * 1000;
+                        const isToday = new Date(expense.date).toDateString() === new Date().toDateString();
+                        return (
+                          <div key={expense.id} className={`${theme.card} border ${theme.border} rounded-lg p-4 flex justify-between items-center transition-all hover:shadow-md ${
+                            isRecent ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''
+                          } ${isToday ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}>
+                            <div className="flex items-center space-x-4 flex-1">
+                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: category?.color || '#gray' }} />
+                              <div className="flex-1">
+                                <p className={`font-medium ${theme.text}`}>{expense.description}</p>
+                                <div className="flex items-center space-x-2 text-sm">
+                                  <span className={theme.textSecondary}>{expense.category}</span>
+                                  <span className="text-gray-400">•</span>
+                                  <span className={theme.textSecondary}>
+                                    {new Date(expense.date).toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', { 
+                                      weekday: 'short', 
+                                      day: '2-digit', 
+                                      month: '2-digit' 
+                                    })}
+                                  </span>
+                                  {isRecent && (
+                                    <>
+                                      <span className="text-gray-400">•</span>
+                                      <span className="text-blue-600 text-xs font-medium">{t('recent')}</span>
+                                    </>
+                                  )}
+                                  {isToday && (
+                                    <>
+                                      <span className="text-gray-400">•</span>
+                                      <span className="text-green-600 text-xs font-medium">Aujourd'hui</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <span className={`font-bold text-lg ${theme.text}`}>
+                                {state.showBalances ? formatCurrency(expense.amount) : '•••'}
+                              </span>
+                              <div className="flex items-center space-x-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    actions.setEditingItem(expense);
+                                    actions.toggleModal('editExpense', true);
+                                  }}
+                                  className="p-2"
+                                >
+                                  <Icons.Edit2 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => actions.deleteExpense(expense.id)}
+                                  className="p-2 text-red-500 hover:text-red-700"
+                                >
+                                  <Icons.Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            <Pagination
+              currentPage={state.currentPage}
+              totalPages={totalPages}
+              onPageChange={actions.setPage}
+              t={t}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Analyses et insights */}
       {analytics && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -132,9 +492,11 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
             </h3>
             <div className="space-y-3">
               <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                <p className={`text-sm font-medium ${theme.text}`}>{t('biggestExpense')}</p>
-                <p className={`text-xs ${theme.textSecondary}`}>
-                  {analytics.biggestExpense.description} - {formatCurrency(analytics.biggestExpense.amount)}
+                <p className={`text-sm font-medium ${theme.text}`}>
+                  {t('biggestExpense', {
+                    category: analytics.biggestExpense.category || analytics.biggestExpense.description,
+                    amount: formatCurrency(analytics.biggestExpense.amount)
+                  })}
                 </p>
               </div>
               <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
@@ -221,240 +583,6 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
           </div>
         </div>
       )}
-
-      {/* Section principale */}
-      <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('expensesManagement')}</h2>
-          <div className="flex space-x-2">
-            <Button
-              onClick={() => actions.exportExpensesToCSV()}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <Icons.Download className="h-4 w-4" />
-              <span>{t('exportCSV')}</span>
-            </Button>
-          </div>
-        </div>
-
-        <SearchAndFilter
-          searchTerm={state.searchTerm}
-          onSearchChange={actions.setSearchTerm}
-          categoryFilter={state.categoryFilter}
-          onCategoryFilterChange={actions.setCategoryFilter}
-          dateFilter={state.dateFilter}
-          onDateFilterChange={actions.setDateFilter}
-          categories={state.categories}
-          t={t}
-        />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          <div className="lg:col-span-1">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('addExpense')}</h3>
-            
-            {/* Suggestions rapides */}
-            <div className="mb-4">
-              <p className={`text-sm ${theme.textSecondary} mb-2`}>{t('quickSuggestions')}</p>
-              <div className="flex flex-wrap gap-2">
-                {['Courses', 'Essence', 'Resto', 'Café'].map(suggestion => (
-                  <button
-                    key={suggestion}
-                    onClick={() => actions.updateForm('newExpense', { description: suggestion })}
-                    className={`px-3 py-1 text-xs rounded-full border ${theme.border} ${theme.text} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (actions.addExpense(state.newExpense)) {
-                  actions.resetForm('newExpense');
-                }
-              }}
-              className="space-y-4"
-            >
-              <Input
-                label="Date"
-                type="date"
-                value={state.newExpense.date}
-                onChange={(value) => actions.updateForm('newExpense', { date: value })}
-                error={state.errors.date}
-                required
-                max={new Date().toISOString().split('T')[0]}
-              />
-              
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('category')} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={state.newExpense.category}
-                  onChange={(e) => actions.updateForm('newExpense', { category: e.target.value })}
-                  className={`w-full px-3 py-2 text-base border rounded-lg ${theme.input} ${
-                    state.errors.category ? 'border-red-500' : ''
-                  }`}
-                  required
-                >
-                  <option value="">{t('selectCategory')}</option>
-                  {state.categories.map(cat => (
-                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                  ))}
-                </select>
-                {state.errors.category && (
-                  <p className="text-sm text-red-600" role="alert">
-                    {state.errors.category}
-                  </p>
-                )}
-              </div>
-              
-              <Input
-                label={t('amount')}
-                type="number"
-                step="0.01"
-                min="0"
-                value={state.newExpense.amount}
-                onChange={(value) => actions.updateForm('newExpense', { amount: value })}
-                error={state.errors.amount}
-                required
-              />
-              
-              <Input
-                label={t('description')}
-                type="text"
-                value={state.newExpense.description}
-                onChange={(value) => actions.updateForm('newExpense', { description: value })}
-                error={state.errors.description}
-                required
-                minLength={3}
-                maxLength={100}
-              />
-              
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={state.loading}
-                loading={state.loading}
-              >
-                {t('addExpenseBtn')}
-              </Button>
-            </form>
-          </div>
-
-          <div className="lg:col-span-2">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className={`text-lg font-semibold ${theme.text}`}>
-                {t('expenses')} ({filteredAndSortedExpenses.length})
-              </h3>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500">{t('sortBy')}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSortClick('date')}
-                  className={`flex items-center space-x-1 ${
-                    state.sortBy === 'date' ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                  }`}
-                >
-                  <span>{t('date')}</span>
-                  {state.sortBy === 'date' && (
-                    state.sortOrder === 'asc' 
-                      ? <Icons.ChevronUp className="h-3 w-3" />
-                      : <Icons.ChevronDown className="h-3 w-3" />
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSortClick('amount')}
-                  className={`flex items-center space-x-1 ${
-                    state.sortBy === 'amount' ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                  }`}
-                >
-                  <span>{t('amount')}</span>
-                  {state.sortBy === 'amount' && (
-                    state.sortOrder === 'asc' 
-                      ? <Icons.ChevronUp className="h-3 w-3" />
-                      : <Icons.ChevronDown className="h-3 w-3" />
-                  )}
-                </Button>
-              </div>
-            </div>
-            
-            <div className="space-y-2 mb-4">
-              {paginatedExpenses.length === 0 ? (
-                <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
-                  {filteredAndSortedExpenses.length === 0 
-                    ? (state.searchTerm || state.categoryFilter !== 'all' || state.dateFilter !== 'all')
-                      ? t('noExpensesMatch')
-                      : t('noExpensesThisMonth')
-                    : t('noExpensesThisPage')
-                  }
-                </div>
-              ) : (
-                paginatedExpenses.map(expense => {
-                  const category = state.categories.find(cat => cat.name === expense.category);
-                  const isRecent = (new Date() - new Date(expense.date)) < 24 * 60 * 60 * 1000; // Moins de 24h
-                  
-                  return (
-                    <div key={expense.id} className={`${theme.card} border ${theme.border} rounded-lg p-4 flex justify-between items-center ${
-                      isRecent ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''
-                    }`}>
-                      <div className="flex items-center space-x-3 flex-1">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: category?.color || '#gray' }}
-                        />
-                        <div className="flex-1">
-                          <p className={`font-medium ${theme.text}`}>{expense.description}</p>
-                          <p className={`text-sm ${theme.textSecondary}`}>
-                            {expense.category} • {dateUtils.formatDate(expense.date, state.language === 'fr' ? 'fr-FR' : 'en-US')}
-                            {isRecent && <span className="ml-2 text-blue-600 text-xs">• {t('recent')}</span>}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`font-bold ${theme.text}`}>
-                          {state.showBalances ? formatCurrency(expense.amount) : '•••'}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            actions.setEditingItem(expense);
-                            actions.toggleModal('editExpense', true);
-                          }}
-                        >
-                          <Icons.Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => actions.deleteExpense(expense.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Icons.Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <Pagination
-              currentPage={state.currentPage}
-              totalPages={totalPages}
-              onPageChange={actions.setPage}
-              t={t}
-            />
-          </div>
-        </div>
-      </div>
     </div>
   );
 });

@@ -170,7 +170,273 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
   const advice = getPersonalizedAdvice;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-[80px]">
+      {/* Section principale - Gestion des dettes */}
+      <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('debtManagement')}</h2>
+          <div className="text-right">
+            <p className={`text-2xl font-bold text-red-600`}>
+              {state.showBalances ? formatCurrency(computedValues.totalDebt) : '•••'}
+            </p>
+            <p className={`text-sm ${theme.textSecondary}`}>{t('totalDebts')}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('newDebt')}</h3>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (actions.addDebt(state.newDebt)) {
+                  actions.resetForm('newDebt');
+                }
+              }}
+              className="space-y-4"
+            >
+              <Input
+                label={t('debtName')}
+                type="text"
+                value={state.newDebt.name}
+                onChange={(value) => actions.updateForm('newDebt', { name: value })}
+                error={state.errors.name}
+                required
+                minLength={2}
+                maxLength={50}
+              />
+              <Input
+                label={t('currentBalance')}
+                type="number"
+                step="0.01"
+                min="0"
+                value={state.newDebt.balance}
+                onChange={(value) => actions.updateForm('newDebt', { balance: value })}
+                error={state.errors.balance}
+                required
+              />
+              <Input
+                label={t('minimumPayment')}
+                type="number"
+                step="0.01"
+                min="0"
+                value={state.newDebt.minPayment}
+                onChange={(value) => actions.updateForm('newDebt', { minPayment: value })}
+                error={state.errors.minPayment}
+                required
+              />
+              <Input
+                label={t('interestRate')}
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={state.newDebt.rate}
+                onChange={(value) => actions.updateForm('newDebt', { rate: value })}
+                error={state.errors.rate}
+                required
+              />
+              <Button
+                type="submit"
+                variant="danger"
+                className="w-full"
+                disabled={state.loading}
+                loading={state.loading}
+              >
+                {t('addDebt')}
+              </Button>
+            </form>
+          </div>
+          <div className="lg:col-span-2">
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('yourDebtsWithAnalysis')}</h3>
+            <div className="space-y-4">
+              {state.debts.map(debt => {
+                const monthsToPayOff = Math.ceil(debt.balance / debt.minPayment);
+                const totalInterest = debt.balance * (debt.rate / 100 / 12) * monthsToPayOff;
+                const progress = debt.balance > 0 ? ((debt.originalBalance || debt.balance) - debt.balance) / (debt.originalBalance || debt.balance) * 100 : 100;
+                return (
+                  <div key={debt.id} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center space-x-3">
+                        <h4 className={`font-semibold ${theme.text}`}>{debt.name}</h4>
+                        {debt.autoDebit && (
+                          <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full flex items-center">
+                            <Icons.CreditCard className="h-3 w-3 mr-1" />
+                            {t('autoDebit')}
+                          </span>
+                        )}
+                        {debt.rate > 15 && (
+                          <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                            {t('highRate')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            actions.setEditingItem(debt);
+                            actions.toggleModal('editDebt', true);
+                          }}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
+                          <Icons.Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => actions.toggleAutoDebit(debt.id)}
+                          className={`${debt.autoDebit ? 'text-green-600 hover:text-green-800' : 'text-gray-500 hover:text-gray-700'}`}
+                          title={debt.autoDebit ? t('disableAutoDebit') : t('enableAutoDebit')}
+                        >
+                          <Icons.CreditCard className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => actions.deleteDebt(debt.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Icons.Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Progression visuelle */}
+                    {progress > 0 && (
+                      <div className="mb-3">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className={theme.textSecondary}>{t('repaymentProgress')}</span>
+                          <span className={`font-medium text-green-600`}>{progress.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className="bg-green-500 h-2 rounded-full transition-all"
+                            style={{ width: `${Math.min(progress, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <p className={`text-sm ${theme.textSecondary}`}>{t('balance')}</p>
+                        <p className={`font-bold text-red-600`}>
+                          {state.showBalances ? formatCurrency(debt.balance) : '•••'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className={`text-sm ${theme.textSecondary}`}>{t('paymentMin')}</p>
+                        <p className={`font-medium ${theme.text}`}>
+                          {state.showBalances ? formatCurrency(debt.minPayment) : '•••'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className={`text-sm ${theme.textSecondary}`}>{t('rate')}</p>
+                        <p className={`font-medium ${debt.rate > 15 ? 'text-red-600' : debt.rate > 10 ? 'text-yellow-600' : 'text-green-600'}`}>
+                          {debt.rate}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className={`text-sm ${theme.textSecondary}`}>{t('remainingDuration')}</p>
+                        <p className={`font-medium ${monthsToPayOff > 24 ? 'text-red-600' : 'text-green-600'}`}>
+                          {monthsToPayOff} {t('months')}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {state.showBalances && (
+                      <div className={`mb-3 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
+                        <p className={`text-xs ${theme.textSecondary} mb-1`}>{t('projectionWithMinimumPayments')}</p>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className={theme.textSecondary}>{t('totalInterest')}</span>
+                            <span className="font-medium text-red-600 ml-2">{formatCurrency(totalInterest)}</span>
+                          </div>
+                          <div>
+                            <span className={theme.textSecondary}>{t('totalCost')}</span>
+                            <span className="font-medium ml-2">{formatCurrency(debt.balance + totalInterest)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="success"
+                        className="flex-1"
+                        onClick={() => {
+                          actions.setEditingItem(debt);
+                          actions.toggleModal('payment', true);
+                        }}
+                      >
+                        <Icons.CreditCard className="h-4 w-4 mr-2" />
+                        {t('recordPayment')}
+                      </Button>
+                      {debt.balance > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            // Calculer un paiement optimal (10% du solde)
+                            const optimalPayment = Math.min(debt.balance, debt.balance * 0.1);
+                            actions.recordPayment(debt.id, optimalPayment);
+                          }}
+                          title={t('suggestedPayment')}
+                        >
+                          <Icons.Zap className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {debt.paymentHistory && debt.paymentHistory.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <p className={`text-sm font-medium ${theme.text} mb-2`}>{t('recentHistory')}</p>
+                        <div className="space-y-1">
+                          {debt.paymentHistory.slice(-3).map((payment, index) => (
+                            <div key={payment.id || index} className="flex justify-between items-center text-xs">
+                              <span className={theme.textSecondary}>
+                                {new Date(payment.date).toLocaleDateString('fr-FR')}
+                              </span>
+                              <span className={`font-medium text-green-600`}>
+                                -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
+                              </span>
+                              <button
+                                type="button"
+                                className="ml-2 p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900/20"
+                                title={t('edit')}
+                                onClick={() => {
+                                  actions.setEditingPayment({ debtId: debt.id, payment });
+                                  actions.toggleModal('editPayment', true);
+                                }}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4.243 1.414 1.414-4.243a4 4 0 01.828-1.414z" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              
+              {state.debts.length === 0 && (
+                <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
+                  <Icons.CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500" />
+                  <p className="text-lg font-medium text-green-600">{t('congratulations')}</p>
+                  <p>{t('noDebtsRecorded')}</p>
+                  <p className="text-xs mt-2">{t('maintainExcellentSituation')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Score de santé des dettes */}
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
@@ -401,278 +667,6 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
           </div>
         </div>
       )}
-
-      {/* Section principale */}
-      <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('debtManagement')}</h2>
-          <div className="text-right">
-            <p className={`text-2xl font-bold text-red-600`}>
-              {state.showBalances ? formatCurrency(computedValues.totalDebt) : '•••'}
-            </p>
-            <p className={`text-sm ${theme.textSecondary}`}>{t('totalDebts')}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('newDebt')}</h3>
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (actions.addDebt(state.newDebt)) {
-                  actions.resetForm('newDebt');
-                }
-              }}
-              className="space-y-4"
-            >
-              <Input
-                label={t('debtName')}
-                type="text"
-                value={state.newDebt.name}
-                onChange={(value) => actions.updateForm('newDebt', { name: value })}
-                error={state.errors.name}
-                required
-                minLength={2}
-                maxLength={50}
-              />
-              
-              <Input
-                label={t('currentBalance')}
-                type="number"
-                step="0.01"
-                min="0"
-                value={state.newDebt.balance}
-                onChange={(value) => actions.updateForm('newDebt', { balance: value })}
-                error={state.errors.balance}
-                required
-              />
-              
-              <Input
-                label={t('minimumPayment')}
-                type="number"
-                step="0.01"
-                min="0"
-                value={state.newDebt.minPayment}
-                onChange={(value) => actions.updateForm('newDebt', { minPayment: value })}
-                error={state.errors.minPayment}
-                required
-              />
-              
-              <Input
-                label={t('interestRate')}
-                type="number"
-                step="0.1"
-                min="0"
-                max="100"
-                value={state.newDebt.rate}
-                onChange={(value) => actions.updateForm('newDebt', { rate: value })}
-                error={state.errors.rate}
-                required
-              />
-              
-              <Button
-                type="submit"
-                variant="danger"
-                className="w-full"
-                disabled={state.loading}
-                loading={state.loading}
-              >
-                {t('addDebt')}
-              </Button>
-            </form>
-          </div>
-
-          <div className="lg:col-span-2">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('yourDebtsWithAnalysis')}</h3>
-            <div className="space-y-4">
-              {state.debts.map(debt => {
-                const monthsToPayOff = Math.ceil(debt.balance / debt.minPayment);
-                const totalInterest = debt.balance * (debt.rate / 100 / 12) * monthsToPayOff;
-                const progress = debt.balance > 0 ? ((debt.originalBalance || debt.balance) - debt.balance) / (debt.originalBalance || debt.balance) * 100 : 100;
-                
-                return (
-                  <div key={debt.id} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center space-x-3">
-                        <h4 className={`font-semibold ${theme.text}`}>{debt.name}</h4>
-                        {debt.autoDebit && (
-                          <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full flex items-center">
-                            <Icons.CreditCard className="h-3 w-3 mr-1" />
-                            {t('autoDebit')}
-                          </span>
-                        )}
-                        {debt.rate > 15 && (
-                          <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
-                            {t('highRate')}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            actions.setEditingItem(debt);
-                            actions.toggleModal('editDebt', true);
-                          }}
-                          className="text-blue-500 hover:text-blue-700"
-                        >
-                          <Icons.Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => actions.toggleAutoDebit(debt.id)}
-                          className={`${debt.autoDebit ? 'text-green-600 hover:text-green-800' : 'text-gray-500 hover:text-gray-700'}`}
-                          title={debt.autoDebit ? t('disableAutoDebit') : t('enableAutoDebit')}
-                        >
-                          <Icons.CreditCard className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => actions.deleteDebt(debt.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Icons.Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Progression visuelle */}
-                    {progress > 0 && (
-                      <div className="mb-3">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className={theme.textSecondary}>{t('repaymentProgress')}</span>
-                          <span className={`font-medium text-green-600`}>{progress.toFixed(1)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div
-                            className="bg-green-500 h-2 rounded-full transition-all"
-                            style={{ width: `${Math.min(progress, 100)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-3">
-                      <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>{t('balance')}</p>
-                        <p className={`font-bold text-red-600`}>
-                          {state.showBalances ? formatCurrency(debt.balance) : '•••'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>{t('paymentMin')}</p>
-                        <p className={`font-medium ${theme.text}`}>
-                          {state.showBalances ? formatCurrency(debt.minPayment) : '•••'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>{t('rate')}</p>
-                        <p className={`font-medium ${debt.rate > 15 ? 'text-red-600' : debt.rate > 10 ? 'text-yellow-600' : 'text-green-600'}`}>
-                          {debt.rate}%
-                        </p>
-                      </div>
-                      <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>{t('remainingDuration')}</p>
-                        <p className={`font-medium ${monthsToPayOff > 24 ? 'text-red-600' : 'text-green-600'}`}>
-                          {monthsToPayOff} {t('months')}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {state.showBalances && (
-                      <div className={`mb-3 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                        <p className={`text-xs ${theme.textSecondary} mb-1`}>{t('projectionWithMinimumPayments')}</p>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className={theme.textSecondary}>{t('totalInterest')}</span>
-                            <span className="font-medium text-red-600 ml-2">{formatCurrency(totalInterest)}</span>
-                          </div>
-                          <div>
-                            <span className={theme.textSecondary}>{t('totalCost')}</span>
-                            <span className="font-medium ml-2">{formatCurrency(debt.balance + totalInterest)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="success"
-                        className="flex-1"
-                        onClick={() => {
-                          actions.setEditingItem(debt);
-                          actions.toggleModal('payment', true);
-                        }}
-                      >
-                        <Icons.CreditCard className="h-4 w-4 mr-2" />
-                        {t('recordPayment')}
-                      </Button>
-                      {debt.balance > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            // Calculer un paiement optimal (10% du solde)
-                            const optimalPayment = Math.min(debt.balance, debt.balance * 0.1);
-                            actions.recordPayment(debt.id, optimalPayment);
-                          }}
-                          title={t('suggestedPayment')}
-                        >
-                          <Icons.Zap className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    {debt.paymentHistory && debt.paymentHistory.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <p className={`text-sm font-medium ${theme.text} mb-2`}>{t('recentHistory')}</p>
-                        <div className="space-y-1">
-                          {debt.paymentHistory.slice(-3).map((payment, index) => (
-                            <div key={payment.id || index} className="flex justify-between items-center text-xs">
-                              <span className={theme.textSecondary}>
-                                {new Date(payment.date).toLocaleDateString('fr-FR')}
-                              </span>
-                              <span className={`font-medium text-green-600`}>
-                                -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
-                              </span>
-                              <button
-                                type="button"
-                                className="ml-2 p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900/20"
-                                title={t('edit')}
-                                onClick={() => {
-                                  actions.setEditingPayment({ debtId: debt.id, payment });
-                                  actions.toggleModal('editPayment', true);
-                                }}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4.243 1.414 1.414-4.243a4 4 0 01.828-1.414z" />
-                                </svg>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              
-              {state.debts.length === 0 && (
-                <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
-                  <Icons.CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500" />
-                  <p className="text-lg font-medium text-green-600">{t('congratulations')}</p>
-                  <p>{t('noDebtsRecorded')}</p>
-                  <p className="text-xs mt-2">{t('maintainExcellentSituation')}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 });

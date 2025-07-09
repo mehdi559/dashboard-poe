@@ -1,11 +1,12 @@
 // SavingsScreen.js - Version enrichie
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import * as Icons from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 
 const SavingsScreen = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
+  const [openGoalId, setOpenGoalId] = useState(null);
 
   // Calculateur d'impact des épargnes
   const getImpactCalculations = useMemo(() => {
@@ -122,7 +123,216 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-[80px]">
+      {/* Section principale - Objectifs d'épargne */}
+      <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('savingsGoals')}</h2>
+          <div className="text-right">
+            <p className={`text-2xl font-bold ${theme.text}`}>
+              {state.showBalances ? formatCurrency(computedValues.totalSavings) : '•••'}
+            </p>
+            <p className={`text-sm ${theme.textSecondary}`}>{t('totalSaved')}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('newGoal')}</h3>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (actions.addSavingsGoal(state.newGoal)) {
+                  actions.resetForm('newGoal');
+                }
+              }}
+              className="space-y-4"
+            >
+              <Input
+                label={t('goalName')}
+                type="text"
+                value={state.newGoal.name}
+                onChange={(value) => actions.updateForm('newGoal', { name: value })}
+                error={state.errors.name}
+                required
+                minLength={2}
+                maxLength={50}
+              />
+              <Input
+                label={t('targetAmount')}
+                type="number"
+                step="0.01"
+                min="0"
+                value={state.newGoal.targetAmount}
+                onChange={(value) => actions.updateForm('newGoal', { targetAmount: value })}
+                error={state.errors.targetAmount}
+                required
+              />
+              <Input
+                label={t('currentAmount')}
+                type="number"
+                step="0.01"
+                min="0"
+                value={state.newGoal.currentAmount}
+                onChange={(value) => actions.updateForm('newGoal', { currentAmount: value })}
+                error={state.errors.currentAmount}
+              />
+              <Button
+                type="submit"
+                variant="success"
+                className="w-full"
+                disabled={state.loading}
+                loading={state.loading}
+              >
+                {t('createGoal')}
+              </Button>
+            </form>
+          </div>
+          <div className="lg:col-span-2">
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('goalsWithImpact')}</h3>
+            <div className="space-y-4">
+              {getImpactCalculations.map(goal => {
+                const { progress, segments, filledSegments } = getProgressVisualization(goal);
+                const open = openGoalId === goal.id;
+                return (
+                  <div key={goal.id} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
+                    <div className="flex justify-between items-center mb-3">
+                      <div>
+                        <h4 className={`font-semibold ${theme.text}`}>{goal.name}</h4>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className={`font-medium ${theme.text}`}>{state.showBalances 
+                            ? `${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)}`
+                            : '••• / •••'
+                          }</span>
+                          <span className={`text-xs ${theme.textSecondary}`}>{progress.toFixed(1)}% {t('reached')}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            actions.setEditingItem(goal);
+                            actions.toggleModal('editSaving', true);
+                          }}
+                          title={t('edit')}
+                        >
+                          <Icons.Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => {
+                            if (window.confirm(t('confirmDeleteGoal') || 'Supprimer cet objectif ?')) {
+                              actions.deleteSavingsGoal(goal.id);
+                            }
+                          }}
+                          title={t('delete')}
+                        >
+                          <Icons.Trash2 className="h-4 w-4" />
+                        </Button>
+                        <button
+                          className="ml-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                          onClick={() => setOpenGoalId(open ? null : goal.id)}
+                          aria-label={open ? t('collapse') : t('expand')}
+                        >
+                          <Icons.ChevronDown className={`h-5 w-5 transition-transform ${open ? 'rotate-180' : ''}`} />
+                        </button>
+                      </div>
+                    </div>
+                    {/* Contenu dépliable */}
+                    {open && (
+                      <>
+                        {/* Progression visuelle avancée */}
+                        <div className="space-y-3">
+                          <div className="flex justify-between text-sm">
+                            <span className={theme.textSecondary}>{t('progression')}</span>
+                            <span className={`font-medium ${theme.text}`}>{state.showBalances 
+                              ? `${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)}`
+                              : '••• / •••'
+                            }</span>
+                          </div>
+                          {/* Barre de progression segmentée */}
+                          <div className="flex space-x-1">
+                            {Array.from({ length: segments }).map((_, index) => (
+                              <div
+                                key={index}
+                                className={`flex-1 h-3 rounded ${
+                                  index < filledSegments ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <p className={`text-xs ${theme.textSecondary}`}>
+                            {progress.toFixed(1)}% {t('reached')}
+                            {progress >= 100 && <span className="text-green-500 ml-2">{t('goalReached')}</span>}
+                          </p>
+                        </div>
+                        {/* Calculateur d'impact */}
+                        <div className={`mt-4 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
+                          <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('impactCalculator')}</h5>
+                          <div className="grid grid-cols-2 gap-4 text-xs">
+                            <div>
+                              <span className={theme.textSecondary}>{t('remainingToSave')}</span>
+                              <div className={`font-bold ${theme.text}`}>{formatCurrency(goal.remaining)}</div>
+                            </div>
+                            <div>
+                              <span className={theme.textSecondary}>{t('atCurrentRate')}</span>
+                              <div className={`font-bold ${goal.monthsToTarget > 24 ? 'text-red-600' : goal.monthsToTarget > 12 ? 'text-yellow-600' : 'text-green-600'}`}>{goal.monthsToTarget === Infinity ? t('undefined') : `${goal.monthsToTarget} ${t('months')}`}</div>
+                            </div>
+                            <div>
+                              <span className={theme.textSecondary}>{t('perMonth')}</span>
+                              <div className={`font-bold text-blue-600`}>{formatCurrency(goal.monthlyTarget)}</div>
+                            </div>
+                            <div>
+                              <span className={theme.textSecondary}>{t('perDay')}</span>
+                              <div className={`font-bold text-purple-600`}>{formatCurrency(goal.dailyTarget)}</div>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Historique des transactions */}
+                        {goal.transactions && goal.transactions.length > 0 && (
+                          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('recentOperations')}</h5>
+                            <div className="space-y-1">
+                              {goal.transactions.slice(-3).map((transaction, index) => (
+                                <div key={transaction.id || index} className="flex justify-between text-xs">
+                                  <span className={theme.textSecondary}>
+                                    {new Date(transaction.date).toLocaleDateString('fr-FR')} - {translateTransactionDescription(transaction.description)}
+                                  </span>
+                                  <span className={`font-medium ${transaction.type === 'add' ? 'text-green-600' : 'text-red-600'}`}>{transaction.type === 'add' ? '+' : '-'}{state.showBalances ? formatCurrency(transaction.amount) : '•••'}</span>
+                                </div>
+                              ))}
+                              {goal.transactions.length > 3 && (
+                                <p className={`text-xs ${theme.textSecondary} italic`}>
+                                  {t('otherOperations', { count: goal.transactions.length - 3 })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {/* Bouton enregistrer un mouvement */}
+                        <div className="mt-4 flex justify-end">
+                          <Button
+                            variant="success"
+                            onClick={() => {
+                              actions.setEditingItem(goal);
+                              actions.toggleModal('editSaving', true);
+                            }}
+                          >
+                            <Icons.PlusCircle className="h-4 w-4 mr-2" />
+                            {t('recordSavingTransaction') || 'Enregistrer un mouvement'}
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Défis d'épargne */}
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
@@ -159,7 +369,6 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                     currentAmount: 0,
                     transactions: []
                   };
-                  
                   if (actions.addSavingsGoal(newGoal)) {
                     // Notification de succès
                     financeManager.showNotification(t('challengeCreated', { name: challenge.name }), 'success');
@@ -221,199 +430,14 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
           })}
         </div>
       </div>
-
-      {/* Section principale */}
-      <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('savingsGoals')}</h2>
-          <div className="text-right">
-            <p className={`text-2xl font-bold ${theme.text}`}>
-              {state.showBalances ? formatCurrency(computedValues.totalSavings) : '•••'}
-            </p>
-            <p className={`text-sm ${theme.textSecondary}`}>{t('totalSaved')}</p>
-          </div>
+      
+      {state.savingsGoals.length === 0 && (
+        <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
+          <Icons.PiggyBank className="h-16 w-16 mx-auto mb-4 opacity-50" />
+          <p>{t('noSavingsGoals')}</p>
+          <p className="text-xs mt-2">{t('startWithChallenge')}</p>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('newGoal')}</h3>
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (actions.addSavingsGoal(state.newGoal)) {
-                  actions.resetForm('newGoal');
-                }
-              }}
-              className="space-y-4"
-            >
-              <Input
-                label={t('goalName')}
-                type="text"
-                value={state.newGoal.name}
-                onChange={(value) => actions.updateForm('newGoal', { name: value })}
-                error={state.errors.name}
-                required
-                minLength={2}
-                maxLength={50}
-              />
-              
-              <Input
-                label={t('targetAmount')}
-                type="number"
-                step="0.01"
-                min="0"
-                value={state.newGoal.targetAmount}
-                onChange={(value) => actions.updateForm('newGoal', { targetAmount: value })}
-                error={state.errors.targetAmount}
-                required
-              />
-              
-              <Input
-                label={t('currentAmount')}
-                type="number"
-                step="0.01"
-                min="0"
-                value={state.newGoal.currentAmount}
-                onChange={(value) => actions.updateForm('newGoal', { currentAmount: value })}
-                error={state.errors.currentAmount}
-              />
-              
-              <Button
-                type="submit"
-                variant="success"
-                className="w-full"
-                disabled={state.loading}
-                loading={state.loading}
-              >
-                {t('createGoal')}
-              </Button>
-            </form>
-          </div>
-
-          <div className="lg:col-span-2">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('goalsWithImpact')}</h3>
-            <div className="space-y-4">
-              {getImpactCalculations.map(goal => {
-                const { progress, segments, filledSegments } = getProgressVisualization(goal);
-                return (
-                  <div key={goal.id} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
-                    <div className="flex justify-between items-start mb-3">
-                      <h4 className={`font-semibold ${theme.text}`}>{goal.name}</h4>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            actions.setEditingItem(goal);
-                            actions.toggleModal('editSaving', true);
-                          }}
-                        >
-                          <Icons.Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => actions.deleteSavingsGoal(goal.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Icons.Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Progression visuelle avancée */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className={theme.textSecondary}>{t('progression')}</span>
-                        <span className={`font-medium ${theme.text}`}>
-                          {state.showBalances 
-                            ? `${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)}`
-                            : '••• / •••'
-                          }
-                        </span>
-                      </div>
-                      
-                      {/* Barre de progression segmentée */}
-                      <div className="flex space-x-1">
-                        {Array.from({ length: segments }).map((_, index) => (
-                          <div
-                            key={index}
-                            className={`flex-1 h-3 rounded ${
-                              index < filledSegments ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      
-                      <p className={`text-xs ${theme.textSecondary}`}>
-                        {progress.toFixed(1)}% {t('reached')}
-                        {progress >= 100 && <span className="text-green-500 ml-2">{t('goalReached')}</span>}
-                      </p>
-                    </div>
-
-                    {/* Calculateur d'impact */}
-                    <div className={`mt-4 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                      <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('impactCalculator')}</h5>
-                      <div className="grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                          <span className={theme.textSecondary}>{t('remainingToSave')}</span>
-                          <div className={`font-bold ${theme.text}`}>{formatCurrency(goal.remaining)}</div>
-                        </div>
-                        <div>
-                          <span className={theme.textSecondary}>{t('atCurrentRate')}</span>
-                          <div className={`font-bold ${goal.monthsToTarget > 24 ? 'text-red-600' : goal.monthsToTarget > 12 ? 'text-yellow-600' : 'text-green-600'}`}>
-                            {goal.monthsToTarget === Infinity ? t('undefined') : `${goal.monthsToTarget} ${t('months')}`}
-                          </div>
-                        </div>
-                        <div>
-                          <span className={theme.textSecondary}>{t('perMonth')}</span>
-                          <div className={`font-bold text-blue-600`}>{formatCurrency(goal.monthlyTarget)}</div>
-                        </div>
-                        <div>
-                          <span className={theme.textSecondary}>{t('perDay')}</span>
-                          <div className={`font-bold text-purple-600`}>{formatCurrency(goal.dailyTarget)}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Historique des transactions */}
-                    {goal.transactions && goal.transactions.length > 0 && (
-                      <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('recentOperations')}</h5>
-                        <div className="space-y-1">
-                          {goal.transactions.slice(-3).map((transaction, index) => (
-                            <div key={transaction.id || index} className="flex justify-between text-xs">
-                              <span className={theme.textSecondary}>
-                                {new Date(transaction.date).toLocaleDateString('fr-FR')} - {translateTransactionDescription(transaction.description)}
-                              </span>
-                              <span className={`font-medium ${transaction.type === 'add' ? 'text-green-600' : 'text-red-600'}`}>
-                                {transaction.type === 'add' ? '+' : '-'}{state.showBalances ? formatCurrency(transaction.amount) : '•••'}
-                              </span>
-                            </div>
-                          ))}
-                          {goal.transactions.length > 3 && (
-                            <p className={`text-xs ${theme.textSecondary} italic`}>
-                              {t('otherOperations', { count: goal.transactions.length - 3 })}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              
-              {state.savingsGoals.length === 0 && (
-                <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
-                  <Icons.PiggyBank className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p>{t('noSavingsGoals')}</p>
-                  <p className="text-xs mt-2">{t('startWithChallenge')}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 });
