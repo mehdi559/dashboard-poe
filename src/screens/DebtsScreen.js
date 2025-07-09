@@ -502,14 +502,27 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                           </span>
                         )}
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => actions.deleteDebt(debt.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Icons.Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            actions.setEditingItem(debt);
+                            actions.toggleModal('editDebt', true);
+                          }}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
+                          <Icons.Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => actions.deleteDebt(debt.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Icons.Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     
                     {/* Progression visuelle */}

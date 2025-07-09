@@ -34,6 +34,7 @@ import CategoryModal from './components/modals/CategoryModal';
 import EditExpenseModal from './components/modals/EditExpenseModal';
 import EditSavingModal from './components/modals/EditSavingModal';
 import PaymentModal from './components/modals/PaymentModal';
+import EditDebtModal from './components/modals/EditDebtModal';
 import ImportExportModal from './components/modals/ImportExportModal';
 
 // Import du chatbot
@@ -205,6 +206,7 @@ const App = () => {
       <EditExpenseModal financeManager={financeManager} theme={theme} t={t} />
       <EditSavingModal financeManager={financeManager} theme={theme} t={t} />
       <PaymentModal financeManager={financeManager} theme={theme} t={t} />
+      <EditDebtModal financeManager={financeManager} theme={theme} t={t} />
       
       {/* Import/Export Modal */}
       <Modal

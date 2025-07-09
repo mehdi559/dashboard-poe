@@ -95,6 +95,7 @@ export const initialState = {
   newGoal: { name: '', targetAmount: '', currentAmount: '' },
   newRecurring: { description: '', category: '', amount: '', dayOfMonth: '' },
   newDebt: { name: '', balance: '', minPayment: '', rate: '' },
+  editDebt: { name: '', balance: '', minPayment: '', rate: '' },
   paymentAmount: '',
   savingTransaction: { amount: '', description: '', type: 'add' }
 };
@@ -126,6 +127,7 @@ export const ACTIONS = {
   ADD_RECURRING_WITH_EXPENSE: 'ADD_RECURRING_WITH_EXPENSE',
   PROCESS_RECURRING_EXPENSES: 'PROCESS_RECURRING_EXPENSES',
   ADD_DEBT: 'ADD_DEBT',
+  UPDATE_DEBT: 'UPDATE_DEBT',
   DELETE_DEBT: 'DELETE_DEBT',
   RECORD_PAYMENT: 'RECORD_PAYMENT',
   TOGGLE_MODAL: 'TOGGLE_MODAL',
@@ -333,6 +335,13 @@ export const financeReducer = (state, action) => {
       return {
         ...state,
         debts: [...state.debts, { ...action.payload, id: Date.now(), paymentHistory: [] }]
+      };
+    case ACTIONS.UPDATE_DEBT:
+      return {
+        ...state,
+        debts: state.debts.map(debt =>
+          debt.id === action.payload.id ? { ...debt, ...action.payload } : debt
+        )
       };
     case ACTIONS.DELETE_DEBT:
       return {

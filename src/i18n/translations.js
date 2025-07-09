@@ -565,6 +565,7 @@ const translations = {
     rateMustBeValid: 'Le taux d\'intérêt doit être entre 0 et 100',
     // Messages de succès
     debtAdded: 'Dette ajoutée avec succès',
+    debtUpdated: 'Dette modifiée avec succès',
     debtDeleted: 'Dette supprimée',
     paymentRecorded: 'Paiement enregistré avec succès',
     // Messages de confirmation et d'erreur
@@ -581,6 +582,10 @@ const translations = {
     paymentAmountHelp: 'Le montant ne peut pas dépasser le solde de {{amount}}',
     record: 'Enregistrer',
     cancel: 'Annuler',
+    // Modal d'édition de dette
+    editDebtTitle: 'Modifier la dette - {{name}}',
+    editDebtInformation: 'Informations actuelles de la dette:',
+    update: 'Mettre à jour',
   },
   en: {
     // Navigation
@@ -1097,6 +1102,7 @@ const translations = {
     rateMustBeValid: 'Interest rate must be between 0 and 100',
     // Success messages
     debtAdded: 'Debt added successfully',
+    debtUpdated: 'Debt updated successfully',
     debtDeleted: 'Debt deleted',
     paymentRecorded: 'Payment recorded successfully',
     // Confirmation and error messages
@@ -1113,6 +1119,10 @@ const translations = {
     paymentAmountHelp: 'Amount cannot exceed balance of {{amount}}',
     record: 'Record',
     cancel: 'Cancel',
+    // Edit debt modal
+    editDebtTitle: 'Edit debt - {{name}}',
+    editDebtInformation: 'Current debt information:',
+    update: 'Update',
   },
   es: {
     title: 'Gestor Financiero Personal',
@@ -1619,6 +1629,7 @@ const translations = {
     rateMustBeValid: 'La tasa de interés debe estar entre 0 y 100',
     // Mensajes de éxito
     debtAdded: 'Deuda agregada exitosamente',
+    debtUpdated: 'Deuda actualizada exitosamente',
     debtDeleted: 'Deuda eliminada',
     paymentRecorded: 'Pago registrado exitosamente',
     // Mensajes de confirmación y error
@@ -1635,6 +1646,10 @@ const translations = {
     paymentAmountHelp: 'El monto no puede exceder el saldo de {{amount}}',
     record: 'Registrar',
     cancel: 'Cancelar',
+    // Modal de edición de deuda
+    editDebtTitle: 'Editar deuda - {{name}}',
+    editDebtInformation: 'Información actual de la deuda:',
+    update: 'Actualizar',
   }
 };
 

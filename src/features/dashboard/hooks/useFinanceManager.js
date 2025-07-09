@@ -640,6 +640,46 @@ const useFinanceManager = () => {
       return true;
     },
 
+    updateDebt: (debtId, debtData) => {
+      const rules = {
+        name: [
+          { validator: validators.required, message: t('debtNameRequired') },
+          { validator: validators.minLength(2), message: t('debtNameRequired') }
+        ],
+        balance: [
+          { validator: validators.required, message: t('balanceRequired') },
+          { validator: validators.positiveNumber, message: t('balanceMustBePositive') }
+        ],
+        minPayment: [
+          { validator: validators.required, message: t('minPaymentRequired') },
+          { validator: validators.positiveNumber, message: t('minPaymentMustBePositive') }
+        ],
+        rate: [
+          { validator: validators.required, message: t('rateRequired') },
+          { validator: validators.range(0, 100), message: t('rateMustBeValid') }
+        ]
+      };
+
+      const { isValid, errors } = validateForm(debtData, rules);
+      
+      if (!isValid) {
+        Object.entries(errors).forEach(([field, message]) => setError(field, message));
+        return false;
+      }
+
+      const sanitizedData = {
+        id: debtId,
+        name: sanitizers.text(debtData.name),
+        balance: sanitizers.currency(debtData.balance),
+        minPayment: sanitizers.currency(debtData.minPayment),
+        rate: sanitizers.number(debtData.rate)
+      };
+
+      dispatch({ type: ACTIONS.UPDATE_DEBT, payload: sanitizedData });
+      showNotification(t('debtUpdated'));
+      return true;
+    },
+
     deleteDebt: (id) => {
       if (window.confirm(t('confirmDeleteDebt'))) {
         dispatch({ type: ACTIONS.DELETE_DEBT, payload: id });
