@@ -6,7 +6,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, from: 'bot', text: 'Bonjour ! Je suis votre assistant financier IA. Comment puis-je vous aider ?' }
+    { id: 1, from: 'bot', text: t('chatbotWelcome') }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -47,15 +47,16 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           };
           
           if (actions.addExpense(expense)) {
-            return `✅ Parfait ! J'ai ajouté une dépense de ${formatCurrency(montant)} en catégorie "${categoryExists.name}". Votre budget ${categoryExists.name} est maintenant utilisé à ${((computedValues.currentMonthExpenses.filter(e => e.category === categoryExists.name).reduce((sum, e) => sum + e.amount, 0) + montant) / categoryExists.budget * 100).toFixed(1)}%.`;
+            const percentage = ((computedValues.currentMonthExpenses.filter(e => e.category === categoryExists.name).reduce((sum, e) => sum + e.amount, 0) + montant) / categoryExists.budget * 100).toFixed(1);
+            return t('expenseAddedSuccess', { amount: formatCurrency(montant), category: categoryExists.name, percentage });
           } else {
-            return `❌ Désolé, je n'ai pas pu ajouter cette dépense. Vérifiez que tous les champs sont valides.`;
+            return t('expenseAddError');
           }
         } else {
-          return `❌ Je n'ai pas trouvé la catégorie "${categorie}". Catégories disponibles : ${state.categories.map(c => c.name).join(', ')}. Vous pouvez aussi dire "crée une catégorie [nom] avec un budget de [montant]".`;
+          return t('categoryNotFound', { category: categorie, categories: state.categories.map(c => c.name).join(', ') });
         }
       } else if (montantMatch) {
-        return `J'ai bien vu le montant de ${montantMatch[1]}€, mais dans quelle catégorie ? Par exemple : "Ajoute une dépense de ${montantMatch[1]}€ en alimentation"`;
+        return t('amountSeenButNoCategory', { amount: montantMatch[1] });
       }
     }
 
@@ -70,9 +71,9 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         
         const categoryData = { name, budget };
         if (actions.addCategory(categoryData)) {
-          return `✅ Catégorie "${name}" créée avec un budget de ${formatCurrency(budget)} !`;
+          return t('categoryCreatedSuccess', { name, budget: formatCurrency(budget) });
         } else {
-          return `❌ Une catégorie avec ce nom existe déjà ou les données sont invalides.`;
+          return t('categoryExistsError');
         }
       }
     }
@@ -82,17 +83,17 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
       const savingsRate = computedValues.savingsRate;
       const budgetRatio = (computedValues.totalSpent / computedValues.totalBudget) * 100;
       
-      let analysis = `📊 **Analyse de votre situation financière :**\n\n`;
-      analysis += `💰 **Revenus :** ${formatCurrency(state.monthlyIncome)}\n`;
-      analysis += `💸 **Dépenses :** ${formatCurrency(computedValues.totalSpent)} (${budgetRatio.toFixed(1)}% du budget)\n`;
-      analysis += `💎 **Épargne :** ${formatCurrency(state.monthlyIncome - computedValues.totalSpent)} (${savingsRate.toFixed(1)}%)\n\n`;
+      let analysis = `${t('financialAnalysisTitle')}\n\n`;
+      analysis += `💰 **${t('income')} :** ${formatCurrency(state.monthlyIncome)}\n`;
+      analysis += `💸 **${t('expenses')} :** ${formatCurrency(computedValues.totalSpent)} (${t('budgetPercentage', { percentage: budgetRatio.toFixed(1) })})\n`;
+      analysis += `💎 **${t('savings')} :** ${formatCurrency(state.monthlyIncome - computedValues.totalSpent)} (${t('savingsPercentage', { percentage: savingsRate.toFixed(1) })})\n\n`;
       
       if (savingsRate >= 20) {
-        analysis += `🎉 Excellent ! Votre taux d'épargne de ${savingsRate.toFixed(1)}% est très bon.`;
+        analysis += t('excellentSavingsRate', { percentage: savingsRate.toFixed(1) });
       } else if (savingsRate >= 10) {
-        analysis += `👍 Votre taux d'épargne de ${savingsRate.toFixed(1)}% est correct, mais pourrait être amélioré.`;
+        analysis += t('goodSavingsRate', { percentage: savingsRate.toFixed(1) });
       } else {
-        analysis += `⚠️ Attention : votre taux d'épargne de ${savingsRate.toFixed(1)}% est faible. Recommandation : réduire les dépenses non essentielles.`;
+        analysis += t('lowSavingsRate', { percentage: savingsRate.toFixed(1) });
       }
       
       return analysis;
@@ -102,20 +103,20 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
     if (m.includes('conseil') || m.includes('recommandation') || m.includes('aide')) {
       const biggestCategory = computedValues.pieChartData.reduce((a, b) => a.value > b.value ? a : b, { value: 0 });
       
-      let advice = `💡 **Mes conseils personnalisés :**\n\n`;
+      let advice = `${t('personalizedAdviceTitle')}\n\n`;
       
       if (computedValues.totalSpent > computedValues.totalBudget) {
-        advice += `🚨 Vous avez dépassé votre budget de ${formatCurrency(computedValues.totalSpent - computedValues.totalBudget)}. `;
+        advice += t('budgetExceeded', { amount: formatCurrency(computedValues.totalSpent - computedValues.totalBudget) });
       }
       
       if (biggestCategory.name) {
-        advice += `📈 Votre plus grosse dépense est "${biggestCategory.name}" (${formatCurrency(biggestCategory.value)}). `;
+        advice += t('biggestExpense', { category: biggestCategory.name, amount: formatCurrency(biggestCategory.value) });
       }
       
       if (computedValues.savingsRate < 10) {
-        advice += `💡 Essayez la règle 50/30/20 : 50% besoins, 30% envies, 20% épargne.`;
+        advice += t('try503020Rule');
       } else {
-        advice += `✨ Continuez comme ça ! Pensez à diversifier votre épargne.`;
+        advice += t('continueGoodWork');
       }
       
       return advice;
@@ -124,27 +125,32 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
     // Questions sur les finances
     if (m.includes('budget restant')) {
       const remaining = computedValues.totalBudget - computedValues.totalSpent;
-      return `Il vous reste ${formatCurrency(remaining)} sur votre budget total de ${formatCurrency(computedValues.totalBudget)} ce mois-ci.`;
+      return t('remainingBudget', { remaining: formatCurrency(remaining), total: formatCurrency(computedValues.totalBudget) });
     }
 
     if (m.includes('total depenses')) {
-      return `Vous avez dépensé ${formatCurrency(computedValues.totalSpent)} ce mois-ci, soit ${((computedValues.totalSpent / state.monthlyIncome) * 100).toFixed(1)}% de vos revenus.`;
+      return t('totalExpenses', { amount: formatCurrency(computedValues.totalSpent), percentage: ((computedValues.totalSpent / state.monthlyIncome) * 100).toFixed(1) });
     }
 
     if (m.includes('epargne')) {
       const currentSavings = state.monthlyIncome - computedValues.totalSpent;
-      return `💰 Épargne ce mois : ${formatCurrency(currentSavings)} (${computedValues.savingsRate.toFixed(1)}%)\n💎 Épargne totale objectifs : ${formatCurrency(computedValues.totalSavings)}`;
+      return `${t('currentSavings', { amount: formatCurrency(currentSavings), percentage: computedValues.savingsRate.toFixed(1) })}\n${t('totalSavingsGoals', { amount: formatCurrency(computedValues.totalSavings) })}`;
     }
 
     if (m.includes('objectif') && (m.includes('epargne') || m.includes('progression'))) {
       if (state.savingsGoals.length === 0) {
-        return `Vous n'avez aucun objectif d'épargne défini. Voulez-vous que je vous aide à en créer un ?`;
+        return t('noSavingsGoals');
       }
       
-      let goals = `🎯 **Vos objectifs d'épargne :**\n\n`;
+      let goals = `${t('savingsGoalsTitle')}\n\n`;
       state.savingsGoals.forEach(goal => {
         const progress = (goal.currentAmount / goal.targetAmount) * 100;
-        goals += `• ${goal.name}: ${progress.toFixed(1)}% (${formatCurrency(goal.currentAmount)}/${formatCurrency(goal.targetAmount)})\n`;
+        goals += t('goalProgress', { 
+          name: goal.name, 
+          progress: progress.toFixed(1), 
+          current: formatCurrency(goal.currentAmount), 
+          target: formatCurrency(goal.targetAmount) 
+        }) + '\n';
       });
       
       return goals;
@@ -152,13 +158,13 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
 
     if (m.includes('dettes')) {
       if (state.debts.length === 0) {
-        return `🎉 Félicitations ! Vous n'avez aucune dette enregistrée.`;
+        return t('congratulationsNoDebts');
       }
       
       const totalDebt = computedValues.totalDebt;
       const monthlyPayments = state.debts.reduce((sum, debt) => sum + debt.minPayment, 0);
       
-      return `💳 **Résumé de vos dettes :**\n• Total : ${formatCurrency(totalDebt)}\n• Paiements mensuels minimum : ${formatCurrency(monthlyPayments)}\n• Impact sur budget : ${((monthlyPayments / state.monthlyIncome) * 100).toFixed(1)}% de vos revenus`;
+      return `${t('debtSummary')}\n${t('totalDebt', { amount: formatCurrency(totalDebt) })}\n${t('monthlyPayments', { amount: formatCurrency(monthlyPayments) })}\n${t('budgetImpact', { percentage: ((monthlyPayments / state.monthlyIncome) * 100).toFixed(1) })}`;
     }
 
     // Prédictions
@@ -168,22 +174,22 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
       const projectedTotal = computedValues.totalSpent + (dailyAverage * daysLeft);
       const projectedSavings = state.monthlyIncome - projectedTotal;
       
-      return `🔮 **Prévision fin de mois :**\n• Dépenses projetées : ${formatCurrency(projectedTotal)}\n• Épargne prévue : ${formatCurrency(projectedSavings)}\n• Confiance : 85%\n\n${projectedSavings > 0 ? '✅ Vous devriez finir le mois dans le vert !' : '⚠️ Attention, vous risquez de dépasser votre budget.'}`;
+      return `${t('endOfMonthPrediction')}\n${t('projectedExpenses', { amount: formatCurrency(projectedTotal) })}\n${t('projectedSavings', { amount: formatCurrency(projectedSavings) })}\n${t('confidence')}\n\n${projectedSavings > 0 ? t('shouldEndGreen') : t('riskExceedingBudget')}`;
     }
 
     // Réponses par défaut
     if (m.includes('bonjour') || m.includes('salut')) {
       const hour = new Date().getHours();
-      const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-      return `${greeting} ! Je suis là pour vous aider avec vos finances. Vous pouvez me demander une analyse, des conseils, ajouter des dépenses, ou poser des questions sur votre budget.`;
+      const greeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');
+      return t('greetingMessage', { greeting });
     }
 
     if (m.includes('merci')) {
-      return `De rien ! N'hésitez pas si vous avez d'autres questions sur vos finances. 😊`;
+      return t('thankYou');
     }
 
-    return `Je ne comprends pas cette question. Voici ce que je peux faire :\n\n💰 Analyser vos finances : "analyse ma situation"\n📊 Donner des conseils : "donne-moi des conseils"\n➕ Ajouter des dépenses : "ajoute 50€ en alimentation"\n🎯 Suivre vos objectifs : "progression épargne"\n🔮 Faire des prévisions : "prévision fin de mois"\n\nTapez votre question !`;
-  }, [state, actions, computedValues, formatCurrency, normalize]);
+    return `${t('dontUnderstand')}\n\n${t('analyzeFinances')}\n${t('giveAdvice')}\n${t('addExpenses')}\n${t('trackGoals')}\n${t('makePredictions')}\n\n${t('typeYourQuestion')}`;
+  }, [state, actions, computedValues, formatCurrency, normalize, t]);
 
   const simulateTyping = useCallback(async (response) => {
     setIsTyping(true);
@@ -211,7 +217,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-40 hover:scale-110"
-        aria-label="Ouvrir l'assistant IA"
+        aria-label={t('openAIAssistant')}
       >
         <Icons.MessageCircle className="h-7 w-7" />
       </button>
@@ -225,12 +231,12 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
             <Icons.Brain className="h-4 w-4" />
           </div>
-          <span className="font-semibold">Assistant IA</span>
+          <span className="font-semibold">{t('aiAssistant')}</span>
         </div>
         <button 
           onClick={() => setIsOpen(false)} 
           className="text-white/80 hover:text-white transition-colors"
-          aria-label="Fermer l'assistant"
+          aria-label={t('closeAssistant')}
         >
           <Icons.X className="h-5 w-5" />
         </button>
@@ -280,7 +286,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
       >
         <input
           className="flex-1 bg-transparent px-3 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none text-base"
-          placeholder="Posez votre question..."
+          placeholder={t('askYourQuestion')}
           value={input}
           onChange={e => setInput(e.target.value)}
           disabled={isTyping}
@@ -292,7 +298,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           size="sm"
           disabled={!input.trim() || isTyping}
           className="mx-2 bg-blue-600 hover:bg-blue-700"
-          aria-label="Envoyer le message"
+          aria-label={t('sendMessage')}
         >
           <Icons.Send className="h-4 w-4" />
         </Button>
