@@ -496,6 +496,12 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center space-x-3">
                         <h4 className={`font-semibold ${theme.text}`}>{debt.name}</h4>
+                        {debt.autoDebit && (
+                          <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full flex items-center">
+                            <Icons.CreditCard className="h-3 w-3 mr-1" />
+                            {t('autoDebit')}
+                          </span>
+                        )}
                         {debt.rate > 15 && (
                           <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
                             {t('highRate')}
@@ -513,6 +519,15 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                           className="text-blue-500 hover:text-blue-700"
                         >
                           <Icons.Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => actions.toggleAutoDebit(debt.id)}
+                          className={`${debt.autoDebit ? 'text-green-600 hover:text-green-800' : 'text-gray-500 hover:text-gray-700'}`}
+                          title={debt.autoDebit ? t('disableAutoDebit') : t('enableAutoDebit')}
+                        >
+                          <Icons.CreditCard className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
@@ -617,13 +632,26 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                         <p className={`text-sm font-medium ${theme.text} mb-2`}>{t('recentHistory')}</p>
                         <div className="space-y-1">
                           {debt.paymentHistory.slice(-3).map((payment, index) => (
-                            <div key={payment.id || index} className="flex justify-between text-xs">
+                            <div key={payment.id || index} className="flex justify-between items-center text-xs">
                               <span className={theme.textSecondary}>
                                 {new Date(payment.date).toLocaleDateString('fr-FR')}
                               </span>
                               <span className={`font-medium text-green-600`}>
                                 -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
                               </span>
+                              <button
+                                type="button"
+                                className="ml-2 p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900/20"
+                                title={t('edit')}
+                                onClick={() => {
+                                  actions.setEditingPayment({ debtId: debt.id, payment });
+                                  actions.toggleModal('editPayment', true);
+                                }}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4.243 1.414 1.414-4.243a4 4 0 01.828-1.414z" />
+                                </svg>
+                              </button>
                             </div>
                           ))}
                         </div>

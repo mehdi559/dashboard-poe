@@ -252,6 +252,9 @@ const useFinanceManager = () => {
     // Modal actions
     toggleModal: (modal, isOpen) => dispatch({ type: ACTIONS.TOGGLE_MODAL, payload: { modal, isOpen } }),
     setEditingItem: (item) => dispatch({ type: ACTIONS.SET_EDITING_ITEM, payload: item }),
+    setEditingPayment: (payload) => {
+      dispatch({ type: ACTIONS.SET_EDITING_PAYMENT, payload });
+    },
 
     // Search and filter actions
     setSearchTerm: (term) => dispatch({ type: ACTIONS.SET_SEARCH_TERM, payload: term }),
@@ -704,6 +707,28 @@ const useFinanceManager = () => {
       dispatch({ type: ACTIONS.RECORD_PAYMENT, payload: { debtId, amount: paymentAmount } });
       showNotification(t('paymentRecorded'));
       return true;
+    },
+
+    toggleAutoDebit: (debtId) => {
+      const debt = state.debts.find(d => d.id === debtId);
+      if (!debt) {
+        showNotification(t('debtNotFound'), 'error');
+        return false;
+      }
+
+      dispatch({ type: ACTIONS.TOGGLE_AUTO_DEBIT, payload: debtId });
+      
+      if (debt.autoDebit) {
+        showNotification(t('autoDebitDisabled'));
+      } else {
+        showNotification(t('autoDebitEnabled'));
+      }
+      
+      return true;
+    },
+
+    setPaymentAmount: (value) => {
+      dispatch({ type: ACTIONS.SET_PAYMENT_AMOUNT, payload: value });
     },
 
     // Data management

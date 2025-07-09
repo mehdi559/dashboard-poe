@@ -6,17 +6,21 @@ import Modal from '../ui/Modal';
 const EditDebtModal = memo(({ financeManager, theme, t }) => {
   const { state, actions } = financeManager;
 
-  // Réinitialiser le formulaire quand le modal s'ouvre
+  // Toujours appeler le hook, mais ne rien faire si pas d'item
   useEffect(() => {
     if (state.editingItem && state.modals.editDebt) {
       actions.updateForm('editDebt', {
         name: state.editingItem.name,
         balance: state.editingItem.balance,
         minPayment: state.editingItem.minPayment,
-        rate: state.editingItem.rate
+        rate: state.editingItem.rate,
+        autoDebit: state.editingItem.autoDebit || false
       });
     }
   }, [state.editingItem, state.modals.editDebt, actions]);
+
+  // Early return pour le rendu
+  if (!state.editingItem) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -32,8 +36,6 @@ const EditDebtModal = memo(({ financeManager, theme, t }) => {
     actions.setEditingItem(null);
     actions.resetForm('editDebt');
   };
-
-  if (!state.editingItem) return null;
 
   return (
     <Modal
@@ -106,6 +108,27 @@ const EditDebtModal = memo(({ financeManager, theme, t }) => {
           error={state.errors.rate}
           required
         />
+        
+        <div className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            id="autoDebit"
+            checked={state.editDebt.autoDebit || false}
+            onChange={(e) => actions.updateForm('editDebt', { autoDebit: e.target.checked })}
+            className="h-4 w-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <label htmlFor="autoDebit" className={`text-sm ${theme.text}`}>
+            {t('autoDebit')}
+          </label>
+        </div>
+        
+        {state.editDebt.autoDebit && (
+          <div className={`p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800`}>
+            <p className={`text-sm ${theme.textSecondary}`}>
+              {t('autoDebitDescription')}
+            </p>
+          </div>
+        )}
         
         <div className="flex space-x-2 pt-4">
           <Button type="submit" variant="primary" className="flex-1" loading={state.loading}>

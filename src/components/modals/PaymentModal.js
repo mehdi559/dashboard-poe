@@ -11,7 +11,7 @@ const PaymentModal = memo(({ financeManager, theme, t }) => {
     if (actions.recordPayment(state.editingItem.id, state.paymentAmount)) {
       actions.toggleModal('payment', false);
       actions.setEditingItem(null);
-      actions.updateForm('paymentAmount', '');
+      actions.setPaymentAmount('');
     }
   };
 
@@ -23,7 +23,7 @@ const PaymentModal = memo(({ financeManager, theme, t }) => {
       onClose={() => {
         actions.toggleModal('payment', false);
         actions.setEditingItem(null);
-        actions.updateForm('paymentAmount', '');
+        actions.setPaymentAmount('');
       }}
       title={t('recordPaymentFor', { name: state.editingItem.name })}
     >
@@ -54,8 +54,8 @@ const PaymentModal = memo(({ financeManager, theme, t }) => {
           step="0.01"
           min="0"
           max={state.editingItem.balance}
-          value={state.paymentAmount}
-          onChange={(value) => actions.updateForm('paymentAmount', value)}
+          value={state.paymentAmount || ''}
+          onChange={actions.setPaymentAmount}
           required
           aria-describedby="payment-help"
         />
@@ -73,7 +73,7 @@ const PaymentModal = memo(({ financeManager, theme, t }) => {
             onClick={() => {
               actions.toggleModal('payment', false);
               actions.setEditingItem(null);
-              actions.updateForm('paymentAmount', '');
+              actions.setPaymentAmount('');
             }}
             className="flex-1"
           >

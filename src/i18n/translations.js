@@ -586,6 +586,14 @@ const translations = {
     editDebtTitle: 'Modifier la dette - {{name}}',
     editDebtInformation: 'Informations actuelles de la dette:',
     update: 'Mettre à jour',
+    // Auto-débit des dettes
+    autoDebit: 'Auto-débit',
+    autoDebitEnabled: 'Auto-débit activé pour cette dette',
+    autoDebitDisabled: 'Auto-débit désactivé pour cette dette',
+    enableAutoDebit: 'Activer l\'auto-débit',
+    disableAutoDebit: 'Désactiver l\'auto-débit',
+    autoDebitDescription: 'Le paiement minimum sera automatiquement débité chaque mois',
+    debtNotFound: 'Dette non trouvée',
   },
   en: {
     // Navigation
@@ -1123,6 +1131,14 @@ const translations = {
     editDebtTitle: 'Edit debt - {{name}}',
     editDebtInformation: 'Current debt information:',
     update: 'Update',
+    // Auto-debit for debts
+    autoDebit: 'Auto-debit',
+    autoDebitEnabled: 'Auto-debit enabled for this debt',
+    autoDebitDisabled: 'Auto-debit disabled for this debt',
+    enableAutoDebit: 'Enable auto-debit',
+    disableAutoDebit: 'Disable auto-debit',
+    autoDebitDescription: 'Minimum payment will be automatically debited each month',
+    debtNotFound: 'Debt not found',
   },
   es: {
     title: 'Gestor Financiero Personal',
@@ -1650,6 +1666,14 @@ const translations = {
     editDebtTitle: 'Editar deuda - {{name}}',
     editDebtInformation: 'Información actual de la deuda:',
     update: 'Actualizar',
+    // Auto-débito para deudas
+    autoDebit: 'Auto-débito',
+    autoDebitEnabled: 'Auto-débito habilitado para esta deuda',
+    autoDebitDisabled: 'Auto-débito deshabilitado para esta deuda',
+    enableAutoDebit: 'Habilitar auto-débito',
+    disableAutoDebit: 'Deshabilitar auto-débito',
+    autoDebitDescription: 'El pago mínimo se debitará automáticamente cada mes',
+    debtNotFound: 'Deuda no encontrada',
   }
 };
 

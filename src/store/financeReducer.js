@@ -19,7 +19,8 @@ export const initialState = {
     { id: 2, name: 'food', budget: 400, color: '#10B981' },
     { id: 3, name: 'transport', budget: 200, color: '#F59E0B' },
     { id: 4, name: 'leisure', budget: 150, color: '#8B5CF6' },
-    { id: 5, name: 'health', budget: 100, color: '#EF4444' }
+    { id: 5, name: 'health', budget: 100, color: '#EF4444' },
+    { id: 6, name: 'debt', budget: 0, color: '#DC2626' }
   ],
   expenses: [
     { id: 1, date: '2025-01-15', category: 'food', amount: 45, description: 'Courses Carrefour' },
@@ -55,8 +56,8 @@ export const initialState = {
     { id: 2, description: 'Spotify', category: 'leisure', amount: 10, dayOfMonth: 20, active: true }
   ],
   debts: [
-    { id: 1, name: 'Prêt étudiant', balance: 15000, minPayment: 300, rate: 4.5, paymentHistory: [] },
-    { id: 2, name: 'Carte de crédit', balance: 3000, minPayment: 150, rate: 18.9, paymentHistory: [] }
+    { id: 1, name: 'Prêt étudiant', balance: 15000, minPayment: 300, rate: 4.5, paymentHistory: [], autoDebit: false },
+    { id: 2, name: 'Carte de crédit', balance: 3000, minPayment: 150, rate: 18.9, paymentHistory: [], autoDebit: false }
   ],
   // UI State for modals and forms
   modals: {
@@ -71,6 +72,7 @@ export const initialState = {
     editSaving: false
   },
   editingItem: null,
+  editingPayment: null,
   // Search and filters
   searchTerm: '',
   categoryFilter: 'all',
@@ -94,8 +96,8 @@ export const initialState = {
   newCategory: { name: '', budget: '' },
   newGoal: { name: '', targetAmount: '', currentAmount: '' },
   newRecurring: { description: '', category: '', amount: '', dayOfMonth: '' },
-  newDebt: { name: '', balance: '', minPayment: '', rate: '' },
-  editDebt: { name: '', balance: '', minPayment: '', rate: '' },
+  newDebt: { name: '', balance: '', minPayment: '', rate: '', autoDebit: false },
+  editDebt: { name: '', balance: '', minPayment: '', rate: '', autoDebit: false },
   paymentAmount: '',
   savingTransaction: { amount: '', description: '', type: 'add' }
 };
@@ -130,6 +132,7 @@ export const ACTIONS = {
   UPDATE_DEBT: 'UPDATE_DEBT',
   DELETE_DEBT: 'DELETE_DEBT',
   RECORD_PAYMENT: 'RECORD_PAYMENT',
+  TOGGLE_AUTO_DEBIT: 'TOGGLE_AUTO_DEBIT',
   TOGGLE_MODAL: 'TOGGLE_MODAL',
   SET_EDITING_ITEM: 'SET_EDITING_ITEM',
   SET_SEARCH_TERM: 'SET_SEARCH_TERM',
@@ -147,7 +150,9 @@ export const ACTIONS = {
   RESET_DATA: 'RESET_DATA',
   LOAD_FROM_STORAGE: 'LOAD_FROM_STORAGE',
   OPTIMIZE_BUDGETS: 'OPTIMIZE_BUDGETS',
-  UPDATE_CATEGORY_BUDGET: 'UPDATE_CATEGORY_BUDGET'
+  UPDATE_CATEGORY_BUDGET: 'UPDATE_CATEGORY_BUDGET',
+  SET_PAYMENT_AMOUNT: 'SET_PAYMENT_AMOUNT',
+  SET_EDITING_PAYMENT: 'SET_EDITING_PAYMENT'
 };
 
 export const financeReducer = (state, action) => {
@@ -337,6 +342,46 @@ export const financeReducer = (state, action) => {
         debts: [...state.debts, { ...action.payload, id: Date.now(), paymentHistory: [] }]
       };
     case ACTIONS.UPDATE_DEBT:
+      const updatedDebt = state.debts.find(debt => debt.id === action.payload.id);
+      const wasAutoDebitActive = updatedDebt?.autoDebit;
+      const isAutoDebitActive = action.payload.autoDebit;
+      
+      // Si l'auto-débit est activé, créer une dépense récurrente
+      if (isAutoDebitActive && !wasAutoDebitActive) {
+        const debt = state.debts.find(d => d.id === action.payload.id);
+        const recurringExpense = {
+          id: Date.now(),
+          description: `Paiement automatique - ${debt.name}`,
+          category: 'debt',
+          amount: debt.minPayment,
+          dayOfMonth: 15, // Paiement le 15 de chaque mois
+          active: true,
+          linkedDebtId: debt.id
+        };
+        
+        return {
+          ...state,
+          debts: state.debts.map(debt =>
+            debt.id === action.payload.id ? { ...debt, ...action.payload } : debt
+          ),
+          recurringExpenses: [...state.recurringExpenses, recurringExpense]
+        };
+      }
+      
+      // Si l'auto-débit est désactivé, supprimer la dépense récurrente
+      if (!isAutoDebitActive && wasAutoDebitActive) {
+        return {
+          ...state,
+          debts: state.debts.map(debt =>
+            debt.id === action.payload.id ? { ...debt, ...action.payload } : debt
+          ),
+          recurringExpenses: state.recurringExpenses.filter(exp => 
+            !exp.linkedDebtId || exp.linkedDebtId !== action.payload.id
+          )
+        };
+      }
+      
+      // Mise à jour normale sans changement d'auto-débit
       return {
         ...state,
         debts: state.debts.map(debt =>
@@ -344,10 +389,51 @@ export const financeReducer = (state, action) => {
         )
       };
     case ACTIONS.DELETE_DEBT:
+      const debtToDelete = state.debts.find(debt => debt.id === action.payload);
+      
       return {
         ...state,
-        debts: state.debts.filter(debt => debt.id !== action.payload)
+        debts: state.debts.filter(debt => debt.id !== action.payload),
+        // Supprimer aussi la dépense récurrente liée si elle existe
+        recurringExpenses: state.recurringExpenses.filter(exp => 
+          !exp.linkedDebtId || exp.linkedDebtId !== action.payload
+        )
       };
+    case ACTIONS.TOGGLE_AUTO_DEBIT:
+      const debt = state.debts.find(d => d.id === action.payload);
+      const newAutoDebitState = !debt.autoDebit;
+      
+      if (newAutoDebitState) {
+        // Activer l'auto-débit - créer une dépense récurrente
+        const recurringExpense = {
+          id: Date.now(),
+          description: `Paiement automatique - ${debt.name}`,
+          category: 'debt',
+          amount: debt.minPayment,
+          dayOfMonth: 15, // Paiement le 15 de chaque mois
+          active: true,
+          linkedDebtId: debt.id
+        };
+        
+        return {
+          ...state,
+          debts: state.debts.map(d =>
+            d.id === action.payload ? { ...d, autoDebit: true } : d
+          ),
+          recurringExpenses: [...state.recurringExpenses, recurringExpense]
+        };
+      } else {
+        // Désactiver l'auto-débit - supprimer la dépense récurrente
+        return {
+          ...state,
+          debts: state.debts.map(d =>
+            d.id === action.payload ? { ...d, autoDebit: false } : d
+          ),
+          recurringExpenses: state.recurringExpenses.filter(exp => 
+            !exp.linkedDebtId || exp.linkedDebtId !== action.payload
+          )
+        };
+      }
     case ACTIONS.RECORD_PAYMENT:
       return {
         ...state,
@@ -438,6 +524,10 @@ export const financeReducer = (state, action) => {
           cat.id === action.payload.id ? { ...cat, budget: action.payload.budget } : cat
         )
       };
+    case ACTIONS.SET_PAYMENT_AMOUNT:
+      return { ...state, paymentAmount: action.payload };
+    case ACTIONS.SET_EDITING_PAYMENT:
+      return { ...state, editingPayment: action.payload };
     default:
       return state;
   }
