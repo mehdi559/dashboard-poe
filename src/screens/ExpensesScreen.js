@@ -128,30 +128,30 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
           <div className={`${theme.card} rounded-xl border ${theme.border} p-4`}>
             <h3 className={`text-lg font-semibold ${theme.text} mb-3 flex items-center`}>
               <Icons.TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
-              Analyse ce mois
+              {t('expensesAnalysis')}
             </h3>
             <div className="space-y-3">
               <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                <p className={`text-sm font-medium ${theme.text}`}>Plus grosse dépense</p>
+                <p className={`text-sm font-medium ${theme.text}`}>{t('biggestExpense')}</p>
                 <p className={`text-xs ${theme.textSecondary}`}>
                   {analytics.biggestExpense.description} - {formatCurrency(analytics.biggestExpense.amount)}
                 </p>
               </div>
               <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                <p className={`text-sm font-medium ${theme.text}`}>Moyenne quotidienne</p>
+                <p className={`text-sm font-medium ${theme.text}`}>{t('averageDaily')}</p>
                 <p className={`text-xs ${theme.textSecondary}`}>
-                  {formatCurrency(analytics.averageDaily)} par jour actif
+                  {formatCurrency(analytics.averageDaily)} {t('perActiveDay')}
                 </p>
               </div>
               <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                <p className={`text-sm font-medium ${theme.text}`}>Tendance vs mois dernier</p>
+                <p className={`text-sm font-medium ${theme.text}`}>{t('trendVsLastMonth')}</p>
                 <div className="flex items-center space-x-1">
                   {analytics.lastMonthComparison.trend === 'up' ? (
                     <Icons.TrendingUp className="h-3 w-3 text-red-500" />
                   ) : (
                     <Icons.TrendingDown className="h-3 w-3 text-green-500" />
                   )}
-                  <p className={`text-xs ${analytics.lastMonthComparison.trend === 'up' ? 'text-red-500' : 'text-green-500'}`}>
+                  <p className={`text-xs ${analytics.lastMonthComparison.trend === 'up' ? 'text-red-500' : 'text-green-500'}`}> 
                     {analytics.lastMonthComparison.trend === 'up' ? '+' : '-'}{analytics.lastMonthComparison.percentage}%
                   </p>
                 </div>
@@ -163,7 +163,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
           <div className={`${theme.card} rounded-xl border ${theme.border} p-4`}>
             <h3 className={`text-lg font-semibold ${theme.text} mb-3 flex items-center`}>
               <Icons.Calendar className="h-5 w-5 mr-2 text-purple-600" />
-              Vos jours les plus dépensiers
+              {t('topSpendingDays')}
             </h3>
             <div className="space-y-2">
               {analytics.spendingByDay.map(([day, amount], index) => (
@@ -176,9 +176,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                     </div>
                     <span className={`text-sm ${theme.text}`}>{day}</span>
                   </div>
-                  <span className={`text-sm font-medium ${theme.text}`}>
-                    {formatCurrency(amount)}
-                  </span>
+                  <span className={`text-sm font-medium ${theme.text}`}>{formatCurrency(amount)}</span>
                 </div>
               ))}
             </div>
@@ -188,7 +186,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
           <div className={`${theme.card} rounded-xl border ${theme.border} p-4`}>
             <h3 className={`text-lg font-semibold ${theme.text} mb-3 flex items-center`}>
               <Icons.Lightbulb className="h-5 w-5 mr-2 text-yellow-500" />
-              Suggestions d'économie
+              {t('economySuggestions')}
             </h3>
             <div className="space-y-2">
               {analytics.economySuggestions.map((suggestion, index) => (
@@ -206,7 +204,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
         <div className={`${theme.card} rounded-xl border ${theme.border} p-4`}>
           <h3 className={`text-lg font-semibold ${theme.text} mb-3 flex items-center`}>
             <Icons.Eye className="h-5 w-5 mr-2 text-indigo-600" />
-            Patterns détectés
+            {t('detectedPatterns')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {patterns.map((pattern, index) => {
@@ -227,7 +225,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
       {/* Section principale */}
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>Gestion des Dépenses</h2>
+          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('expensesManagement')}</h2>
           <div className="flex space-x-2">
             <Button
               onClick={() => actions.exportExpensesToCSV()}
@@ -235,7 +233,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
               className="flex items-center space-x-2"
             >
               <Icons.Download className="h-4 w-4" />
-              <span>Exporter CSV</span>
+              <span>{t('exportCSV')}</span>
             </Button>
           </div>
         </div>
@@ -253,11 +251,11 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-1">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Ajouter une dépense</h3>
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('addExpense')}</h3>
             
             {/* Suggestions rapides */}
             <div className="mb-4">
-              <p className={`text-sm ${theme.textSecondary} mb-2`}>Suggestions rapides :</p>
+              <p className={`text-sm ${theme.textSecondary} mb-2`}>{t('quickSuggestions')}</p>
               <div className="flex flex-wrap gap-2">
                 {['Courses', 'Essence', 'Resto', 'Café'].map(suggestion => (
                   <button
@@ -292,7 +290,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
               
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Catégorie <span className="text-red-500">*</span>
+                  {t('category')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={state.newExpense.category}
@@ -302,7 +300,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                   }`}
                   required
                 >
-                  <option value="">Sélectionner une catégorie</option>
+                  <option value="">{t('selectCategory')}</option>
                   {state.categories.map(cat => (
                     <option key={cat.id} value={cat.name}>{cat.name}</option>
                   ))}
@@ -315,7 +313,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
               </div>
               
               <Input
-                label="Montant"
+                label={t('amount')}
                 type="number"
                 step="0.01"
                 min="0"
@@ -326,7 +324,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
               />
               
               <Input
-                label="Description"
+                label={t('description')}
                 type="text"
                 value={state.newExpense.description}
                 onChange={(value) => actions.updateForm('newExpense', { description: value })}
@@ -342,7 +340,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                 disabled={state.loading}
                 loading={state.loading}
               >
-                Ajouter la dépense
+                {t('addExpenseBtn')}
               </Button>
             </form>
           </div>
@@ -350,10 +348,10 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
           <div className="lg:col-span-2">
             <div className="flex justify-between items-center mb-4">
               <h3 className={`text-lg font-semibold ${theme.text}`}>
-                Dépenses ({filteredAndSortedExpenses.length})
+                {t('expenses')} ({filteredAndSortedExpenses.length})
               </h3>
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500">Trier par:</span>
+                <span className="text-sm text-gray-500">{t('sortBy')}</span>
                 <Button
                   variant="outline"
                   size="sm"
@@ -362,7 +360,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                     state.sortBy === 'date' ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                   }`}
                 >
-                  <span>Date</span>
+                  <span>{t('date')}</span>
                   {state.sortBy === 'date' && (
                     state.sortOrder === 'asc' 
                       ? <Icons.ChevronUp className="h-3 w-3" />
@@ -377,7 +375,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                     state.sortBy === 'amount' ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                   }`}
                 >
-                  <span>Montant</span>
+                  <span>{t('amount')}</span>
                   {state.sortBy === 'amount' && (
                     state.sortOrder === 'asc' 
                       ? <Icons.ChevronUp className="h-3 w-3" />
@@ -392,9 +390,9 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                 <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
                   {filteredAndSortedExpenses.length === 0 
                     ? (state.searchTerm || state.categoryFilter !== 'all' || state.dateFilter !== 'all')
-                      ? 'Aucune dépense ne correspond aux filtres'
-                      : 'Aucune dépense ce mois-ci'
-                    : 'Aucune dépense sur cette page'
+                      ? t('noExpensesMatch')
+                      : t('noExpensesThisMonth')
+                    : t('noExpensesThisPage')
                   }
                 </div>
               ) : (
@@ -415,7 +413,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                           <p className={`font-medium ${theme.text}`}>{expense.description}</p>
                           <p className={`text-sm ${theme.textSecondary}`}>
                             {expense.category} • {dateUtils.formatDate(expense.date, state.language === 'fr' ? 'fr-FR' : 'en-US')}
-                            {isRecent && <span className="ml-2 text-blue-600 text-xs">• Récent</span>}
+                            {isRecent && <span className="ml-2 text-blue-600 text-xs">• {t('recent')}</span>}
                           </p>
                         </div>
                       </div>

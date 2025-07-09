@@ -37,42 +37,42 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
   // Défis d'épargne prédéfinis
   const savingsChallenges = useMemo(() => [
     {
-      name: "Défi 365 jours",
-      description: "Épargnez 1€ le jour 1, 2€ le jour 2, etc.",
+      name: t('challenge365Days'),
+      description: t('challenge365Description'),
       targetAmount: 66795, // Somme de 1 à 365
-      duration: "365 jours",
-      dailyAmount: "Variable (1€ à 365€)",
-      difficulty: "Difficile",
+      duration: t('days365'),
+      dailyAmount: t('variable1to365'),
+      difficulty: t('difficult'),
       color: "red"
     },
     {
-      name: "Défi 52 semaines",
-      description: "Épargnez 1€ la semaine 1, 2€ la semaine 2, etc.",
+      name: t('challenge52Weeks'),
+      description: t('challenge52Description'),
       targetAmount: 1378, // Somme de 1 à 52
-      duration: "52 semaines",
-      dailyAmount: "Variable hebdomadaire",
-      difficulty: "Moyen",
+      duration: t('weeks52'),
+      dailyAmount: t('variableWeekly'),
+      difficulty: t('medium'),
       color: "yellow"
     },
     {
-      name: "Règle 5€/jour",
-      description: "Mettez de côté 5€ chaque jour",
+      name: t('rule5PerDay'),
+      description: t('rule5Description'),
       targetAmount: 1825, // 5€ * 365
-      duration: "1 an",
-      dailyAmount: "5€",
-      difficulty: "Facile",
+      duration: t('year1'),
+      dailyAmount: t('amount5'),
+      difficulty: t('easy'),
       color: "green"
     },
     {
-      name: "Épargne monnayeuse",
-      description: "Gardez toute votre monnaie de fin de journée",
+      name: t('coinSavings'),
+      description: t('coinDescription'),
       targetAmount: 365, // Estimation
-      duration: "1 an",
-      dailyAmount: "Variable",
-      difficulty: "Très facile",
+      duration: t('year1'),
+      dailyAmount: t('variable'),
+      difficulty: t('veryEasy'),
       color: "blue"
     }
-  ], []);
+  ], [t]);
 
   // Suggestions d'allocation d'épargne
   const getAllocationSuggestions = useMemo(() => {
@@ -81,25 +81,25 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
     
     return {
       emergency: {
-        name: "Fonds d'urgence",
+        name: t('emergencyFund'),
         recommended: monthlyIncome * 6, // 6 mois de revenus
         current: state.savingsGoals.find(g => g.name.toLowerCase().includes('urgence'))?.currentAmount || 0,
         priority: 1
       },
       vacation: {
-        name: "Vacances",
+        name: t('vacation'),
         recommended: monthlyIncome * 0.1 * 12, // 10% annuel
         current: state.savingsGoals.find(g => g.name.toLowerCase().includes('vacances'))?.currentAmount || 0,
         priority: 3
       },
       retirement: {
-        name: "Retraite",
+        name: t('retirement'),
         recommended: monthlyIncome * 0.15 * 12, // 15% annuel
         current: state.savingsGoals.find(g => g.name.toLowerCase().includes('retraite'))?.currentAmount || 0,
         priority: 2
       }
     };
-  }, [computedValues.totalSavings, state.monthlyIncome, state.savingsGoals]);
+  }, [computedValues.totalSavings, state.monthlyIncome, state.savingsGoals, t]);
 
   // Progression visuelle avancée
   const getProgressVisualization = (goal) => {
@@ -116,7 +116,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
           <Icons.Trophy className="h-6 w-6 mr-2 text-yellow-500" />
-          Défis d'Épargne
+          {t('savingsChallenges')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {savingsChallenges.map((challenge, index) => (
@@ -125,15 +125,15 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
               <p className={`text-xs ${theme.textSecondary} mb-3`}>{challenge.description}</p>
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className={theme.textSecondary}>Objectif:</span>
+                  <span className={theme.textSecondary}>{t('target')}:</span>
                   <span className={`font-medium text-${challenge.color}-600`}>{formatCurrency(challenge.targetAmount)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className={theme.textSecondary}>Durée:</span>
+                  <span className={theme.textSecondary}>{t('duration')}:</span>
                   <span className={theme.text}>{challenge.duration}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className={theme.textSecondary}>Difficulté:</span>
+                  <span className={theme.textSecondary}>{t('difficulty')}:</span>
                   <span className={`font-medium text-${challenge.color}-600`}>{challenge.difficulty}</span>
                 </div>
               </div>
@@ -151,11 +151,11 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                   
                   if (actions.addSavingsGoal(newGoal)) {
                     // Notification de succès
-                    financeManager.showNotification(`Défi "${challenge.name}" créé avec succès !`, 'success');
+                    financeManager.showNotification(t('challengeCreated', { name: challenge.name }), 'success');
                   }
                 }}
               >
-                Commencer
+                {t('start')}
               </Button>
             </div>
           ))}
@@ -166,7 +166,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
           <Icons.PieChart className="h-6 w-6 mr-2 text-indigo-500" />
-          Répartition Recommandée
+          {t('recommendedAllocation')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {Object.entries(getAllocationSuggestions).map(([key, allocation]) => {
@@ -180,16 +180,16 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                     allocation.priority === 2 ? 'bg-yellow-100 text-yellow-800' :
                     'bg-green-100 text-green-800'
                   }`}>
-                    Priorité {allocation.priority}
+                    {t('priority')} {allocation.priority}
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className={theme.textSecondary}>Actuel:</span>
+                    <span className={theme.textSecondary}>{t('current')}</span>
                     <span className={theme.text}>{formatCurrency(allocation.current)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className={theme.textSecondary}>Recommandé:</span>
+                    <span className={theme.textSecondary}>{t('recommended')}</span>
                     <span className={theme.text}>{formatCurrency(allocation.recommended)}</span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -202,7 +202,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                     ></div>
                   </div>
                   <p className={`text-xs ${theme.textSecondary}`}>
-                    {completionRate.toFixed(1)}% complété
+                    {completionRate.toFixed(1)}% {t('completed')}
                   </p>
                 </div>
               </div>
@@ -214,18 +214,18 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
       {/* Section principale */}
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>Objectifs d'Épargne</h2>
+          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('savingsGoals')}</h2>
           <div className="text-right">
             <p className={`text-2xl font-bold ${theme.text}`}>
               {state.showBalances ? formatCurrency(computedValues.totalSavings) : '•••'}
             </p>
-            <p className={`text-sm ${theme.textSecondary}`}>Total épargné</p>
+            <p className={`text-sm ${theme.textSecondary}`}>{t('totalSaved')}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Nouvel objectif</h3>
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('newGoal')}</h3>
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
@@ -236,7 +236,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
               className="space-y-4"
             >
               <Input
-                label="Nom de l'objectif"
+                label={t('goalName')}
                 type="text"
                 value={state.newGoal.name}
                 onChange={(value) => actions.updateForm('newGoal', { name: value })}
@@ -247,7 +247,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
               />
               
               <Input
-                label="Montant cible"
+                label={t('targetAmount')}
                 type="number"
                 step="0.01"
                 min="0"
@@ -258,7 +258,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
               />
               
               <Input
-                label="Montant actuel (optionnel)"
+                label={t('currentAmount')}
                 type="number"
                 step="0.01"
                 min="0"
@@ -274,13 +274,13 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                 disabled={state.loading}
                 loading={state.loading}
               >
-                Créer l'objectif
+                {t('createGoal')}
               </Button>
             </form>
           </div>
 
           <div className="lg:col-span-2">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Vos objectifs avec calculs d'impact</h3>
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('goalsWithImpact')}</h3>
             <div className="space-y-4">
               {getImpactCalculations.map(goal => {
                 const { progress, segments, filledSegments } = getProgressVisualization(goal);
@@ -313,7 +313,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                     {/* Progression visuelle avancée */}
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
-                        <span className={theme.textSecondary}>Progression</span>
+                        <span className={theme.textSecondary}>{t('progression')}</span>
                         <span className={`font-medium ${theme.text}`}>
                           {state.showBalances 
                             ? `${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)}`
@@ -335,31 +335,31 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                       </div>
                       
                       <p className={`text-xs ${theme.textSecondary}`}>
-                        {progress.toFixed(1)}% atteint
-                        {progress >= 100 && <span className="text-green-500 ml-2">🎉 Objectif atteint !</span>}
+                        {progress.toFixed(1)}% {t('reached')}
+                        {progress >= 100 && <span className="text-green-500 ml-2">{t('goalReached')}</span>}
                       </p>
                     </div>
 
                     {/* Calculateur d'impact */}
                     <div className={`mt-4 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                      <h5 className={`text-sm font-medium ${theme.text} mb-2`}>📊 Calculateur d'impact:</h5>
+                      <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('impactCalculator')}</h5>
                       <div className="grid grid-cols-2 gap-4 text-xs">
                         <div>
-                          <span className={theme.textSecondary}>Reste à épargner:</span>
+                          <span className={theme.textSecondary}>{t('remainingToSave')}</span>
                           <div className={`font-bold ${theme.text}`}>{formatCurrency(goal.remaining)}</div>
                         </div>
                         <div>
-                          <span className={theme.textSecondary}>Au rythme actuel:</span>
+                          <span className={theme.textSecondary}>{t('atCurrentRate')}</span>
                           <div className={`font-bold ${goal.monthsToTarget > 24 ? 'text-red-600' : goal.monthsToTarget > 12 ? 'text-yellow-600' : 'text-green-600'}`}>
-                            {goal.monthsToTarget === Infinity ? 'Indéfini' : `${goal.monthsToTarget} mois`}
+                            {goal.monthsToTarget === Infinity ? t('undefined') : `${goal.monthsToTarget} ${t('months')}`}
                           </div>
                         </div>
                         <div>
-                          <span className={theme.textSecondary}>Par mois (1 an):</span>
+                          <span className={theme.textSecondary}>{t('perMonth')}</span>
                           <div className={`font-bold text-blue-600`}>{formatCurrency(goal.monthlyTarget)}</div>
                         </div>
                         <div>
-                          <span className={theme.textSecondary}>Par jour (1 an):</span>
+                          <span className={theme.textSecondary}>{t('perDay')}</span>
                           <div className={`font-bold text-purple-600`}>{formatCurrency(goal.dailyTarget)}</div>
                         </div>
                       </div>
@@ -368,7 +368,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                     {/* Historique des transactions */}
                     {goal.transactions && goal.transactions.length > 0 && (
                       <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <h5 className={`text-sm font-medium ${theme.text} mb-2`}>Dernières opérations:</h5>
+                        <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('recentOperations')}</h5>
                         <div className="space-y-1">
                           {goal.transactions.slice(-3).map((transaction, index) => (
                             <div key={transaction.id || index} className="flex justify-between text-xs">
@@ -382,7 +382,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                           ))}
                           {goal.transactions.length > 3 && (
                             <p className={`text-xs ${theme.textSecondary} italic`}>
-                              ... et {goal.transactions.length - 3} autres opérations
+                              {t('otherOperations', { count: goal.transactions.length - 3 })}
                             </p>
                           )}
                         </div>
@@ -395,8 +395,8 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
               {state.savingsGoals.length === 0 && (
                 <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
                   <Icons.PiggyBank className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p>Aucun objectif d'épargne défini</p>
-                  <p className="text-xs mt-2">Commencez par un défi ou créez votre propre objectif !</p>
+                  <p>{t('noSavingsGoals')}</p>
+                  <p className="text-xs mt-2">{t('startWithChallenge')}</p>
                 </div>
               )}
             </div>
