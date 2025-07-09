@@ -105,8 +105,17 @@ const App = () => {
   const { state, actions } = financeManager;
 
   // Helper pour les traductions
-  const t = useCallback((key) => {
-    return translations[state.language]?.[key] || translations.fr[key] || key;
+  const t = useCallback((key, params = {}) => {
+    let translation = translations[state.language]?.[key] || translations.fr[key] || key;
+    
+    // Gestion des interpolations
+    if (params && typeof params === 'object') {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        translation = translation.replace(new RegExp(`{{${paramKey}}}`, 'g'), paramValue);
+      });
+    }
+    
+    return translation;
   }, [state.language]);
 
   // Passer t à financeManager après sa création
