@@ -193,7 +193,7 @@ const App = () => {
       <DashboardHeader financeManager={financeManager} theme={theme} t={t} />
 
       {/* Main Content */}
-      <main className="ml-20 lg:ml-72 pt-20 px-6 py-8 transition-all duration-500">
+      <main className="ml-16 lg:ml-64 pt-20 px-8 lg:px-12 py-8 transition-all duration-500">
         <div className="max-w-7xl mx-auto">
           {renderScreen()}
         </div>

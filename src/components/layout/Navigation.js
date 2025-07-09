@@ -19,7 +19,7 @@ const Navigation = memo(({ financeManager, t }) => {
   ], [t]);
 
   return (
-    <nav className={`fixed left-0 top-0 h-full ${isCollapsed ? 'w-20' : 'w-72'} 
+    <nav className={`fixed left-0 top-0 h-full ${isCollapsed ? 'w-16' : 'w-64'} 
       bg-gradient-to-b from-slate-900 via-gray-900 to-slate-800 
       backdrop-blur-xl border-r border-gray-700/50 shadow-2xl z-30 transition-all duration-500 ease-out
       before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-600/5 before:to-purple-600/5`}>
