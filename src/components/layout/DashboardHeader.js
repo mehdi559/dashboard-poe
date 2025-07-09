@@ -35,7 +35,7 @@ const DashboardHeader = memo(({
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 backdrop-blur-2xl bg-gradient-to-r from-slate-900/95 via-gray-900/95 to-slate-800/95 border-b border-gray-700/50 shadow-2xl">
-      <div className="ml-20 lg:ml-72 transition-all duration-500 px-6 py-4">
+      <div className="ml-16 lg:ml-64 transition-all duration-500 px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Left: Dynamic Welcome Section */}
           <div className="flex items-center space-x-6">
