@@ -17,15 +17,6 @@ import {
 const DashboardScreen = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
   const [dashboardTab, setDashboardTab] = useState('today');
-  
-  const QuickStats = memo(() => (
-    <EnhancedQuickStats 
-      state={state}
-      computedValues={computedValues}
-      formatCurrency={formatCurrency}
-      theme={theme}
-    />
-  ));
 
   const WidgetCard = memo(({ title, icon: Icon, children, color = 'blue', className = '' }) => (
     <div className={`${theme.card} rounded-xl border ${theme.border} overflow-hidden ${className}`}>
@@ -41,16 +32,15 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
   // Génération d'insights IA basée sur les vraies données
   const generateFinancialInsights = useCallback(() => [
-    `Vous avez dépensé ${formatCurrency(computedValues.totalSpent)} ce mois, soit ${computedValues.totalSpent < computedValues.totalBudget ? 'moins' : 'plus'} que votre budget de ${formatCurrency(computedValues.totalBudget)}`,
-    `Votre taux d'épargne actuel est de ${computedValues.savingsRate.toFixed(1)}%`,
-    `Votre catégorie la plus dépensière est ${computedValues.pieChartData.length > 0 ? computedValues.pieChartData.reduce((a, b) => a.value > b.value ? a : b).name : 'aucune'}`
-  ], [computedValues, formatCurrency]);
+    `${t('youHaveSpent')} ${formatCurrency(computedValues.totalSpent)} ${t('thisMonth')}, ${t('which_is')} ${computedValues.totalSpent < computedValues.totalBudget ? t('less') : t('more')} ${t('thanYourBudgetOf')} ${formatCurrency(computedValues.totalBudget)}`,
+    `${t('yourCurrentSavingsRate')} ${computedValues.savingsRate.toFixed(1)}%`,
+    `${t('yourTopSpendingCategory')} ${computedValues.pieChartData.length > 0 ? t(computedValues.pieChartData.reduce((a, b) => a.value > b.value ? a : b).name) : t('none')}`
+  ], [computedValues, formatCurrency, t, state.language]);
 
   const generatePersonalizedRecommendations = useCallback(() => [
-    computedValues.totalSpent > computedValues.totalBudget ? 'Réduisez vos dépenses non essentielles ce mois' : 'Excellent contrôle budgétaire !',
-    computedValues.savingsRate < 20 ? 'Essayez d\'épargner au moins 20% de vos revenus' : 'Bon taux d\'épargne !',
-    'Considérez automatiser vos épargnes pour atteindre vos objectifs plus rapidement'
-  ], [computedValues]);
+    computedValues.totalSpent > computedValues.totalBudget ? t('reduceNonEssentialExpenses') : t('excellentBudgetControl'),
+    computedValues.savingsRate < 20 ? t('tryToSave20Percent') : t('goodSavingsRate')
+  ], [computedValues, t, state.language]);
 
   const predictEndOfMonth = useCallback(() => ({
     projectedEndBalance: state.monthlyIncome - computedValues.totalSpent - (computedValues.totalSpent * 0.3),
@@ -63,9 +53,9 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
     const score = Math.round((savingsRate * 50 + budgetRespect * 50));
     return {
       score: Math.min(100, Math.max(0, score)),
-      message: score > 70 ? 'Excellente santé financière' : score > 40 ? 'Bonne gestion' : 'À améliorer'
+      message: score > 70 ? t('excellentHealth') : score > 40 ? t('goodManagement') : t('needsImprovement')
     };
-  }, [computedValues]);
+  }, [computedValues, t]);
 
   const insights = generateFinancialInsights();
   const recommendations = generatePersonalizedRecommendations();
@@ -74,11 +64,11 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
   return (
     <div className={`min-h-screen ${theme.bg} transition-colors duration-500`}>
-      <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-40 backdrop-blur-lg bg-opacity-90`}>
+      <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-10 backdrop-blur-lg bg-opacity-90`}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Dashboard Financier IA
+              {t('aiFinancialDashboard')}
             </h1>
             
             <div className="flex items-center space-x-2">
@@ -86,13 +76,13 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                 value={state.selectedMonth}
                 onChange={(e) => actions.setSelectedMonth(e.target.value)}
                 className={`px-3 py-1 rounded-lg ${theme.card} ${theme.text} border ${theme.border} text-sm`}
-                aria-label="Sélectionner le mois"
+                aria-label={t('selectMonth')}
               >
                 {Array.from({length: 12}, (_, i) => {
                   const date = new Date(state.selectedYear, i);
                   return (
                     <option key={i} value={`${state.selectedYear}-${String(i + 1).padStart(2, '0')}`}>
-                      {date.toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long' })}
+                      {date.toLocaleDateString(state.language === 'fr' ? 'fr-FR' : state.language === 'es' ? 'es-ES' : 'en-US', { month: 'long' })}
                     </option>
                   );
                 })}
@@ -101,7 +91,7 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                 value={state.selectedYear}
                 onChange={(e) => actions.setSelectedYear(parseInt(e.target.value))}
                 className={`px-3 py-1 rounded-lg ${theme.card} ${theme.text} border ${theme.border} text-sm`}
-                aria-label="Sélectionner l'année"
+                aria-label={t('selectYear')}
               >
                 {[2023, 2024, 2025, 2026].map(year => (
                   <option key={year} value={year}>{year}</option>
@@ -112,14 +102,14 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
           
           <div className="flex items-center space-x-1 mt-4 overflow-x-auto">
             {[
-              { id: 'overview', label: 'Vue d\'ensemble', icon: Icons.LayoutDashboard },
-              { id: 'today', label: 'Aujourd\'hui', icon: Icons.Calendar },
-              { id: 'budget', label: 'Budget', icon: Icons.PieChart },
-              { id: 'activity', label: 'Activité', icon: Icons.Activity },
-              { id: 'insights', label: 'Insights IA', icon: Icons.Brain },
-              { id: 'goals', label: 'Objectifs', icon: Icons.Target },
-              { id: 'reports', label: 'Rapports', icon: Icons.BarChart },
-              { id: 'tools', label: 'Outils', icon: Icons.Settings }
+              { id: 'overview', label: t('overview'), icon: Icons.LayoutDashboard },
+              { id: 'today', label: t('today'), icon: Icons.Calendar },
+              { id: 'budget', label: t('budget'), icon: Icons.PieChart },
+              { id: 'activity', label: t('activity'), icon: Icons.Activity },
+              { id: 'insights', label: t('aiInsights'), icon: Icons.Brain },
+              { id: 'goals', label: t('goals'), icon: Icons.Target },
+              { id: 'reports', label: t('reports'), icon: Icons.BarChart },
+              { id: 'tools', label: t('tools'), icon: Icons.Settings }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -129,7 +119,7 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                     ? `bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400` 
                     : `${theme.text} hover:bg-gray-100 dark:hover:bg-gray-800`
                 }`}
-                aria-label={`Aller à ${tab.label}`}
+                aria-label={`${t('goTo')} ${tab.label}`}
               >
                 <tab.icon className="h-4 w-4" />
                 <span className="text-sm font-medium">{tab.label}</span>
@@ -142,12 +132,13 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {dashboardTab === 'today' && (
           <div className="space-y-6">
-            <WidgetCard title="Résumé d'aujourd'hui" icon={Icons.Sun} color="orange">
+            <WidgetCard title={t('todaysSummary')} icon={Icons.Sun} color="orange">
               <TodaySection 
                 computedValues={computedValues}
                 formatCurrency={formatCurrency}
                 theme={theme}
                 state={state}
+                t={t}
               />
             </WidgetCard>
           </div>
@@ -156,10 +147,16 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
         {dashboardTab === 'overview' && (
           <>
             <div className="mb-6">
-              <QuickStats />
+              <EnhancedQuickStats 
+                state={state}
+                computedValues={computedValues}
+                formatCurrency={formatCurrency}
+                theme={theme}
+                t={t}
+              />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <WidgetCard title="Score de Santé Financière" icon={Icons.Heart} color="green">
+              <WidgetCard title={t('financialHealthScore')} icon={Icons.Heart} color="green">
                 <div className="space-y-3">
                   <div className="flex items-center justify-center">
                     <div className="relative w-16 h-16">
@@ -182,21 +179,21 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                 </div>
               </WidgetCard>
 
-              <WidgetCard title="Prédictions Fin de Mois" icon={Icons.TrendingUp} color="purple">
+              <WidgetCard title={t('endOfMonthPredictions')} icon={Icons.TrendingUp} color="purple">
                 <div className="space-y-3">
                   <div className={`text-2xl font-bold ${theme.text}`}>
                     {state.showBalances ? formatCurrency(predictions.projectedEndBalance) : '•••'}
                   </div>
-                  <p className={`text-sm ${theme.textSecondary}`}>Solde prévu fin de mois</p>
+                  <p className={`text-sm ${theme.textSecondary}`}>{t('projectedBalance')}</p>
                   <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
                     <p className={`text-xs ${theme.textSecondary}`}>
-                      Confiance: {predictions.confidence}%
+                      {t('confidence')}: {predictions.confidence}%
                     </p>
                   </div>
                 </div>
               </WidgetCard>
 
-              <WidgetCard title="Graphique des Dépenses" icon={Icons.PieChart} color="blue">
+              <WidgetCard title={t('expenseChart')} icon={Icons.PieChart} color="blue">
                 <div className="h-40">
                   {computedValues.pieChartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -208,7 +205,7 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                           outerRadius={60}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          label={({name, percent}) => `${t(name)} ${(percent * 100).toFixed(0)}%`}
                         >
                           {computedValues.pieChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -219,17 +216,18 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                     </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <p className={`text-sm ${theme.textSecondary}`}>Aucune dépense ce mois</p>
+                      <p className={`text-sm ${theme.textSecondary}`}>{t('noExpensesThisMonth')}</p>
                     </div>
                   )}
                 </div>
               </WidgetCard>
 
-              <WidgetCard title="Comparaison Hebdomadaire" icon={Icons.BarChart3} color="indigo">
+              <WidgetCard title={t('weeklyComparison')} icon={Icons.BarChart3} color="indigo">
                 <WeekComparison 
                   computedValues={computedValues}
                   formatCurrency={formatCurrency}
                   theme={theme}
+                  t={t}
                 />
               </WidgetCard>
             </div>
@@ -238,12 +236,13 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
         {dashboardTab === 'budget' && (
           <div className="space-y-6">
-            <WidgetCard title="Aperçu Budgétaire Détaillé" icon={Icons.Target} color="green">
+            <WidgetCard title={t('detailedBudgetOverview')} icon={Icons.Target} color="green">
               <BudgetOverview 
                 state={state}
                 computedValues={computedValues}
                 formatCurrency={formatCurrency}
                 theme={theme}
+                t={t}
               />
             </WidgetCard>
           </div>
@@ -251,11 +250,12 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
         {dashboardTab === 'activity' && (
           <div className="space-y-6">
-            <WidgetCard title="Activité Récente" icon={Icons.Clock} color="blue">
+            <WidgetCard title={t('recentActivity')} icon={Icons.Clock} color="blue">
               <RecentActivity 
                 computedValues={computedValues}
                 formatCurrency={formatCurrency}
                 theme={theme}
+                t={t}
               />
             </WidgetCard>
           </div>
@@ -263,16 +263,17 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
         {dashboardTab === 'insights' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <WidgetCard title="Alertes & Insights Temps Réel" icon={Icons.Zap} color="red">
+            <WidgetCard title={t('realTimeInsights')} icon={Icons.Zap} color="red">
               <RealTimeInsights 
                 state={state}
                 computedValues={computedValues}
                 formatCurrency={formatCurrency}
                 theme={theme}
+                t={t}
               />
             </WidgetCard>
 
-            <WidgetCard title="Analyses Financières IA" icon={Icons.Lightbulb} color="blue">
+            <WidgetCard title={t('financialAnalysisAI')} icon={Icons.Lightbulb} color="blue">
               <div className="space-y-3">
                 {insights.map((insight, index) => (
                   <div key={index} className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
@@ -282,8 +283,8 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
               </div>
             </WidgetCard>
 
-            <WidgetCard title="Recommandations Personnalisées" icon={Icons.Sparkles} color="purple" className="lg:col-span-2">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <WidgetCard title={t('personalizedRecommendations')} icon={Icons.Sparkles} color="purple" className="lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {recommendations.map((rec, index) => (
                   <div key={index} className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
                     <p className={`text-sm ${theme.text}`}>{rec}</p>
@@ -296,12 +297,13 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
         {dashboardTab === 'goals' && (
           <div className="space-y-6">
-            <WidgetCard title="Objectifs du Mois" icon={Icons.Trophy} color="yellow">
+            <WidgetCard title={t('monthlyGoals')} icon={Icons.Trophy} color="yellow">
               <MonthlyGoals 
                 state={state}
                 computedValues={computedValues}
                 formatCurrency={formatCurrency}
                 theme={theme}
+                t={t}
               />
             </WidgetCard>
           </div>
@@ -313,10 +315,11 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
               computedValues={computedValues}
               formatCurrency={formatCurrency}
               theme={theme}
+              t={t}
             />
             
             <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
-              <h3 className={`text-xl font-bold ${theme.text} mb-6`}>Évolution Mensuelle</h3>
+              <h3 className={`text-xl font-bold ${theme.text} mb-6`}>{t('monthlyEvolution')}</h3>
               <div className="h-96">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={computedValues.monthlyData}>
@@ -324,9 +327,9 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                     <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip formatter={(value) => formatCurrency(value)} />
-                    <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} name="Revenus" />
-                    <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Dépenses" />
-                    <Line type="monotone" dataKey="savings" stroke="#3b82f6" strokeWidth={2} name="Économies" />
+                    <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} name={t('revenues')} />
+                    <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name={t('expenses')} />
+                    <Line type="monotone" dataKey="savings" stroke="#3b82f6" strokeWidth={2} name={t('savings')} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -336,12 +339,13 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
         {dashboardTab === 'tools' && (
           <div className="space-y-6">
-            <h2 className={`text-xl font-bold ${theme.text} mb-4`}>Outils Interactifs</h2>
+            <h2 className={`text-xl font-bold ${theme.text} mb-4`}>{t('interactiveTools')}</h2>
             <InteractiveWidgets 
               state={state}
               actions={actions}
               formatCurrency={formatCurrency}
               theme={theme}
+              t={t}
             />
           </div>
         )}

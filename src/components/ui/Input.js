@@ -47,6 +47,7 @@ const Input = memo(({
           }
           dark:text-white placeholder-gray-400
         `}
+
         placeholder={placeholder}
         disabled={disabled}
         required={required}

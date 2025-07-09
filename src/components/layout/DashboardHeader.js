@@ -14,9 +14,9 @@ const DashboardHeader = memo(({
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [notifications] = useState([
-    { id: 1, type: 'success', message: 'Budget mis à jour', time: '2 min' },
-    { id: 2, type: 'warning', message: 'Dépense importante détectée', time: '5 min' },
-    { id: 3, type: 'info', message: 'Rappel: Épargne mensuelle', time: '1h' }
+    { id: 1, type: 'success', message: t('budgetUpdated'), time: '2 min' },
+    { id: 2, type: 'warning', message: t('largeExpenseDetected'), time: '5 min' },
+    { id: 3, type: 'info', message: t('monthlySavingsReminder'), time: '1h' }
   ]);
 
   useEffect(() => {
@@ -28,9 +28,9 @@ const DashboardHeader = memo(({
 
   const getGreeting = () => {
     const hour = currentTime.getHours();
-    if (hour < 12) return '🌅 Bonjour';
-    if (hour < 18) return '☀️ Bon après-midi';
-    return '🌙 Bonsoir';
+    if (hour < 12) return t('greeting.morning');
+    if (hour < 18) return t('greeting.afternoon');
+    return t('greeting.evening');
   };
 
   return (
@@ -54,15 +54,15 @@ const DashboardHeader = memo(({
               
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-                  {getGreeting()}, {state.userName || 'Utilisateur'} 
+                  {getGreeting()}, {state.userName || t('user')} 
                 </h1>
                 <div className="flex items-center space-x-4 mt-1">
                   <p className="text-sm text-gray-400">
-                    Gérez vos finances intelligemment
+                    {t('manageFinancesSmart')}
                   </p>
                   <div className="flex items-center space-x-2 text-xs text-gray-500">
                     <Icons.Clock className="h-3 w-3" />
-                    <span>{currentTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>{currentTime.toLocaleTimeString(state.language === 'fr' ? 'fr-FR' : state.language === 'es' ? 'es-ES' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </div>
               </div>
@@ -70,32 +70,8 @@ const DashboardHeader = memo(({
           </div>
 
           {/* Center: Search Bar futuriste */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full group">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-center">
-                <Icons.Search className="absolute left-4 h-5 w-5 text-gray-400 group-hover:text-blue-400 transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Rechercher transactions, budgets..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 \
-                    rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 \
-                    focus:bg-gray-800/70 transition-all duration-300 text-sm"
-                />
-                {searchQuery && (
-                  <button 
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-4 text-gray-400 hover:text-white transition-colors"
-                  >
-                    <Icons.X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
+          {/* SUPPRIMÉ : Barre de recherche et icône */}
+          
           {/* Right: Enhanced Actions */}
           <div className="flex items-center space-x-4">
             {/* Income Display avec animation */}
@@ -109,7 +85,7 @@ const DashboardHeader = memo(({
               </div>
               <div>
                 <p className="text-xs font-medium text-emerald-400 uppercase tracking-wider">
-                  Revenus mensuels
+                  {t('monthlyIncome')}
                 </p>
                 <button
                   onClick={() => actions.toggleModal('income', true)}
@@ -123,16 +99,7 @@ const DashboardHeader = memo(({
             {/* Quick Actions avec effets */}
             <div className="flex items-center space-x-3">
               {/* Notifications */}
-              <div className="relative">
-                <button className="p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-yellow-400 \
-                  transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-yellow-500/25 group">
-                  <Icons.Bell className="h-5 w-5" />
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-red-500 to-pink-500 \
-                    rounded-full flex items-center justify-center text-xs font-bold text-white animate-pulse">
-                    {notifications.length}
-                  </div>
-                </button>
-              </div>
+              {/* SUPPRIMÉ : Bouton notification cloche */}
 
               {/* Toggle Balance */}
               <button
@@ -142,7 +109,7 @@ const DashboardHeader = memo(({
                     ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-400 shadow-lg shadow-blue-500/25' 
                     : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-blue-400'
                 }`}
-                title={state.showBalances ? 'Masquer les montants' : 'Afficher les montants'}
+                title={state.showBalances ? t('hideAmounts') : t('showAmounts')}
               >
                 {state.showBalances ? 
                   <Icons.Eye className="h-5 w-5 group-hover:scale-110 transition-transform" /> : 
@@ -158,7 +125,7 @@ const DashboardHeader = memo(({
                     ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 shadow-lg shadow-yellow-500/25' 
                     : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-yellow-400'
                 }`}
-                title={state.darkMode ? 'Mode clair' : 'Mode sombre'}
+                title={state.darkMode ? t('lightMode') : t('darkMode')}
               >
                 {state.darkMode ? 
                   <Icons.Sun className="h-5 w-5 group-hover:rotate-180 transition-transform duration-500" /> : 
@@ -166,23 +133,63 @@ const DashboardHeader = memo(({
                 }
               </button>
 
+              {/* Langue - menu déroulant */}
+              <div className="relative">
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    setShowSettings(showSettings === 'lang' ? false : 'lang');
+                  }}
+                  className="p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-blue-400 transition-all duration-300 hover:scale-110 group flex items-center"
+                  title={t('changeLanguage')}
+                >
+                  <Icons.Globe className="h-5 w-5" />
+                  <span className="ml-2 uppercase text-xs">{state.language}</span>
+                </button>
+                {showSettings === 'lang' && (
+                  <div className="absolute right-0 top-full mt-2 w-36 rounded-xl shadow-2xl border border-gray-700/50 bg-gradient-to-b from-gray-900 to-slate-900 backdrop-blur-xl z-50 overflow-hidden">
+                    <button
+                      onClick={() => { actions.setLanguage('fr'); setShowSettings(false); }}
+                      className={`w-full flex items-center px-4 py-3 text-sm hover:bg-gray-800/50 transition-all duration-200 ${state.language === 'fr' ? 'text-blue-400 font-bold' : 'text-gray-300'}`}
+                    >
+                      <span className="mr-2">🇫🇷</span> Français
+                    </button>
+                    <button
+                      onClick={() => { actions.setLanguage('en'); setShowSettings(false); }}
+                      className={`w-full flex items-center px-4 py-3 text-sm hover:bg-gray-800/50 transition-all duration-200 ${state.language === 'en' ? 'text-blue-400 font-bold' : 'text-gray-300'}`}
+                    >
+                      <span className="mr-2">🇬🇧</span> English
+                    </button>
+                    <button
+                      onClick={() => { actions.setLanguage('es'); setShowSettings(false); }}
+                      className={`w-full flex items-center px-4 py-3 text-sm hover:bg-gray-800/50 transition-all duration-200 ${state.language === 'es' ? 'text-blue-400 font-bold' : 'text-gray-300'}`}
+                    >
+                      <span className="mr-2">🇪🇸</span> Español
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Settings Menu amélioré */}
               <div className="relative">
                 <button
-                  onClick={() => setShowSettings(!showSettings)}
+                  onClick={e => {
+                    e.stopPropagation();
+                    setShowSettings(showSettings === 'settings' ? false : 'settings');
+                  }}
                   className={`p-3 rounded-xl transition-all duration-300 hover:scale-110 group ${
-                    showSettings 
+                    showSettings === 'settings' 
                       ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 shadow-lg shadow-purple-500/25' 
                       : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-purple-400'
                   }`}
                   title="Paramètres avancés"
                 >
                   <Icons.Settings className={`h-5 w-5 transition-transform duration-300 ${
-                    showSettings ? 'rotate-180' : 'group-hover:rotate-90'
+                    showSettings === 'settings' ? 'rotate-180' : 'group-hover:rotate-90'
                   }`} />
                 </button>
 
-                {showSettings && (
+                {showSettings === 'settings' && (
                   <>
                     <div 
                       className="fixed inset-0 z-10"
@@ -192,7 +199,7 @@ const DashboardHeader = memo(({
                       bg-gradient-to-b from-gray-900 to-slate-900 backdrop-blur-xl z-20 overflow-hidden">
                       <div className="p-2 space-y-1">
                         <div className="px-4 py-2 text-xs font-medium text-gray-400 uppercase tracking-wider border-b border-gray-700/50">
-                          Paramètres
+                          {t('settings')}
                         </div>
                         
                         <button
@@ -207,8 +214,8 @@ const DashboardHeader = memo(({
                             <Icons.DollarSign className="h-4 w-4 text-white" />
                           </div>
                           <div>
-                            <div className="font-medium">Devise</div>
-                            <div className="text-xs text-gray-500">Gérer les devises</div>
+                            <div className="font-medium">{t('currency')}</div>
+                            <div className="text-xs text-gray-500">{t('manageCurrencies')}</div>
                           </div>
                         </button>
                         
@@ -224,8 +231,8 @@ const DashboardHeader = memo(({
                             <Icons.Download className="h-4 w-4 text-white" />
                           </div>
                           <div>
-                            <div className="font-medium">Import/Export</div>
-                            <div className="text-xs text-gray-500">Sauvegarder vos données</div>
+                            <div className="font-medium">{t('importExport')}</div>
+                            <div className="text-xs text-gray-500">{t('saveData')}</div>
                           </div>
                         </button>
                       </div>

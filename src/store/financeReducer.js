@@ -15,16 +15,16 @@ export const initialState = {
   monthlyIncome: 3500,
   // Financial Data
   categories: [
-    { id: 1, name: 'Logement', budget: 800, color: '#3B82F6' },
-    { id: 2, name: 'Alimentation', budget: 400, color: '#10B981' },
-    { id: 3, name: 'Transport', budget: 200, color: '#F59E0B' },
-    { id: 4, name: 'Loisirs', budget: 150, color: '#8B5CF6' },
-    { id: 5, name: 'Santé', budget: 100, color: '#EF4444' }
+    { id: 1, name: 'housing', budget: 800, color: '#3B82F6' },
+    { id: 2, name: 'food', budget: 400, color: '#10B981' },
+    { id: 3, name: 'transport', budget: 200, color: '#F59E0B' },
+    { id: 4, name: 'leisure', budget: 150, color: '#8B5CF6' },
+    { id: 5, name: 'health', budget: 100, color: '#EF4444' }
   ],
   expenses: [
-    { id: 1, date: '2025-01-15', category: 'Alimentation', amount: 45, description: 'Courses Carrefour' },
-    { id: 2, date: '2025-01-14', category: 'Transport', amount: 15, description: 'Métro' },
-    { id: 3, date: '2025-01-13', category: 'Loisirs', amount: 25, description: 'Cinéma' }
+    { id: 1, date: '2025-01-15', category: 'food', amount: 45, description: 'Courses Carrefour' },
+    { id: 2, date: '2025-01-14', category: 'transport', amount: 15, description: 'Métro' },
+    { id: 3, date: '2025-01-13', category: 'leisure', amount: 25, description: 'Cinéma' }
   ],
   savingsGoals: [
     { 
@@ -51,8 +51,8 @@ export const initialState = {
     }
   ],
   recurringExpenses: [
-    { id: 1, description: 'Netflix', category: 'Loisirs', amount: 15, dayOfMonth: 15, active: true },
-    { id: 2, description: 'Spotify', category: 'Loisirs', amount: 10, dayOfMonth: 20, active: true }
+    { id: 1, description: 'Netflix', category: 'leisure', amount: 15, dayOfMonth: 15, active: true },
+    { id: 2, description: 'Spotify', category: 'leisure', amount: 10, dayOfMonth: 20, active: true }
   ],
   debts: [
     { id: 1, name: 'Prêt étudiant', balance: 15000, minPayment: 300, rate: 4.5, paymentHistory: [] },

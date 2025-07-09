@@ -2,7 +2,7 @@ import React, { useState, memo, useMemo } from 'react';
 import * as Icons from 'lucide-react';
 
 // Composant pour les QuickStats améliorées avec tendances
-export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency, previousMonthData, theme }) => {
+export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency, previousMonthData, theme, t }) => {
   // Calcul des tendances (simulation avec données aléatoires pour l'exemple)
   const getTrendData = (current, previous = null) => {
     if (!previous) {
@@ -49,7 +49,7 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       <div className="bg-green-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
         <div className="flex items-center justify-between w-full">
-          <span className="text-white text-xs font-medium">Revenus</span>
+          <span className="text-white text-xs font-medium">{t('income')}</span>
           <Icons.TrendingUp className="h-5 w-5 text-white opacity-80" />
         </div>
         <div className="text-xl font-bold text-white mt-2">
@@ -60,7 +60,7 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
       
       <div className="bg-red-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
         <div className="flex items-center justify-between w-full">
-          <span className="text-white text-xs font-medium">Dépenses</span>
+          <span className="text-white text-xs font-medium">{t('expenses')}</span>
           <Icons.TrendingDown className="h-5 w-5 text-white opacity-80" />
         </div>
         <div className="text-xl font-bold text-white mt-2">
@@ -71,7 +71,7 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
       
       <div className="bg-blue-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
         <div className="flex items-center justify-between w-full">
-          <span className="text-white text-xs font-medium">Épargne</span>
+          <span className="text-white text-xs font-medium">{t('savings')}</span>
           <Icons.PiggyBank className="h-5 w-5 text-white opacity-80" />
         </div>
         <div className="text-xl font-bold text-white mt-2">
@@ -82,7 +82,7 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
 
       <div className="bg-purple-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
         <div className="flex items-center justify-between w-full">
-          <span className="text-white text-xs font-medium">Taux épargne</span>
+          <span className="text-white text-xs font-medium">{t('savingsRate')}</span>
           <Icons.Percent className="h-5 w-5 text-white opacity-80" />
         </div>
         <div className="text-xl font-bold text-white mt-2">
@@ -93,33 +93,33 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
       
       <div className="bg-orange-500 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
         <div className="flex items-center justify-between w-full">
-          <span className="text-white text-xs font-medium">Reste budget</span>
+          <span className="text-white text-xs font-medium">{t('remainingBudget')}</span>
           <Icons.Wallet className="h-5 w-5 text-white opacity-80" />
         </div>
         <div className="text-xl font-bold text-white mt-2">
           {state.showBalances ? formatCurrency(Math.max(0, remainingBudget)) : `•••`}
         </div>
         <div className="text-xs text-white opacity-75">
-          {remainingBudget > 0 ? 'Disponible' : 'Dépassé'}
+          {remainingBudget > 0 ? t('available') : t('exceeded')}
         </div>
       </div>
       
       <div className="bg-teal-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
         <div className="flex items-center justify-between w-full">
-          <span className="text-white text-xs font-medium">Plus grosse dépense</span>
+          <span className="text-white text-xs font-medium">{t('biggestExpense')}</span>
           <Icons.AlertCircle className="h-5 w-5 text-white opacity-80" />
         </div>
         <div className="text-xl font-bold text-white mt-2">
           {state.showBalances ? formatCurrency(biggestExpense) : `•••`}
         </div>
-        <div className="text-xs text-white opacity-75">Ce mois</div>
+        <div className="text-xs text-white opacity-75">{t('thisMonth')}</div>
       </div>
     </div>
   );
 });
 
 // Section "Aujourd'hui"
-export const TodaySection = memo(({ computedValues, formatCurrency, theme, state }) => {
+export const TodaySection = memo(({ computedValues, formatCurrency, theme, state, t }) => {
   const today = new Date().toISOString().split('T')[0];
   const todayExpenses = computedValues.currentMonthExpenses.filter(e => e.date === today);
   const todayTotal = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -136,7 +136,7 @@ export const TodaySection = memo(({ computedValues, formatCurrency, theme, state
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
           <div className="flex items-center justify-between mb-2">
-            <span className={`text-sm font-medium ${theme.text}`}>Dépensé aujourd'hui</span>
+            <span className={`text-sm font-medium ${theme.text}`}>{t('spentToday')}</span>
             <Icons.Calendar className={`h-4 w-4 ${theme.textSecondary}`} />
           </div>
           <div className={`text-2xl font-bold ${theme.text}`}>
@@ -149,27 +149,27 @@ export const TodaySection = memo(({ computedValues, formatCurrency, theme, state
 
         <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
           <div className="flex items-center justify-between mb-2">
-            <span className={`text-sm font-medium ${theme.text}`}>Reste aujourd'hui</span>
+            <span className={`text-sm font-medium ${theme.text}`}>{t('remainingToday')}</span>
             <Icons.Target className={`h-4 w-4 ${theme.textSecondary}`} />
           </div>
           <div className={`text-2xl font-bold ${remainingToday > 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatCurrency(remainingToday)}
           </div>
           <div className={`text-xs ${theme.textSecondary} mt-1`}>
-            Sur {formatCurrency(dailyBudget)} prévu
+            {t('onBudget')} {formatCurrency(dailyBudget)} {t('expected')}
           </div>
         </div>
 
         <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
           <div className="flex items-center justify-between mb-2">
-            <span className={`text-sm font-medium ${theme.text}`}>Vs hier</span>
+            <span className={`text-sm font-medium ${theme.text}`}>{t('vsYesterday')}</span>
             <Icons.Clock className={`h-4 w-4 ${theme.textSecondary}`} />
           </div>
           <div className={`text-2xl font-bold ${todayTotal > yesterdayAtThisTime ? 'text-red-600' : 'text-green-600'}`}>
             {todayTotal > yesterdayAtThisTime ? '+' : ''}{formatCurrency(todayTotal - yesterdayAtThisTime)}
           </div>
           <div className={`text-xs ${theme.textSecondary} mt-1`}>
-            À cette heure
+            {t('atThisHour')}
           </div>
         </div>
       </div>
@@ -178,7 +178,7 @@ export const TodaySection = memo(({ computedValues, formatCurrency, theme, state
       <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
         <h4 className={`font-semibold ${theme.text} mb-3 flex items-center`}>
           <Icons.Bell className="h-4 w-4 mr-2" />
-          Prochaines échéances (3 jours)
+          {t('upcomingPayments')} (3 {t('days')})
         </h4>
         <div className="space-y-2">
           {state.recurringExpenses.slice(0, 3).map(recurring => (
@@ -196,7 +196,7 @@ export const TodaySection = memo(({ computedValues, formatCurrency, theme, state
 });
 
 // Section Activité Récente
-export const RecentActivity = memo(({ computedValues, formatCurrency, theme }) => {
+export const RecentActivity = memo(({ computedValues, formatCurrency, theme, t }) => {
   const recentExpenses = computedValues.currentMonthExpenses
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
@@ -206,7 +206,7 @@ export const RecentActivity = memo(({ computedValues, formatCurrency, theme }) =
       {recentExpenses.length === 0 ? (
         <div className="text-center py-6">
           <Icons.Receipt className={`h-12 w-12 mx-auto mb-3 ${theme.textSecondary} opacity-50`} />
-          <p className={`${theme.textSecondary}`}>Aucune activité récente</p>
+          <p className={`${theme.textSecondary}`}>{t('noRecentActivity')}</p>
         </div>
       ) : (
         recentExpenses.map((expense, index) => (
@@ -238,7 +238,7 @@ export const RecentActivity = memo(({ computedValues, formatCurrency, theme }) =
 });
 
 // Aperçu Budgétaire Détaillé
-export const BudgetOverview = memo(({ state, computedValues, formatCurrency, theme }) => {
+export const BudgetOverview = memo(({ state, computedValues, formatCurrency, theme, t }) => {
   const categoryProgress = state.categories.map(category => {
     const spent = computedValues.currentMonthExpenses
       .filter(e => e.category === category.name)
@@ -280,7 +280,7 @@ export const BudgetOverview = memo(({ state, computedValues, formatCurrency, the
                 {formatCurrency(category.spent)} / {formatCurrency(category.budget)}
               </p>
               <p className={`text-xs ${theme.textSecondary}`}>
-                Reste: {formatCurrency(category.remaining)}
+                {t('remaining')}: {formatCurrency(category.remaining)}
               </p>
             </div>
           </div>
@@ -294,11 +294,11 @@ export const BudgetOverview = memo(({ state, computedValues, formatCurrency, the
           
           <div className="flex justify-between items-center mt-2">
             <span className={`text-xs ${theme.textSecondary}`}>
-              {category.percentage.toFixed(1)}% utilisé
+              {category.percentage.toFixed(1)}% {t('used')}
             </span>
             {category.status === 'over' && (
               <span className="text-xs text-red-500 font-medium">
-                Dépassé de {formatCurrency(category.spent - category.budget)}
+                {t('exceededBy')}: {formatCurrency(category.spent - category.budget)}
               </span>
             )}
           </div>
@@ -309,7 +309,7 @@ export const BudgetOverview = memo(({ state, computedValues, formatCurrency, the
 });
 
 // Comparaison Semaine vs Semaine Précédente
-export const WeekComparison = memo(({ computedValues, formatCurrency, theme }) => {
+export const WeekComparison = memo(({ computedValues, formatCurrency, theme, t }) => {
   // Simulation données semaine actuelle vs précédente
   const weekData = useMemo(() => {
     const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -327,7 +327,7 @@ export const WeekComparison = memo(({ computedValues, formatCurrency, theme }) =
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className={`font-semibold ${theme.text}`}>Cette semaine vs précédente</h4>
+        <h4 className={`font-semibold ${theme.text}`}>{t('thisWeekVsLastWeek')}</h4>
         <div className={`flex items-center space-x-2 ${weekDiff > 0 ? 'text-red-600' : 'text-green-600'}`}>
           {weekDiff > 0 ? <Icons.TrendingUp className="h-4 w-4" /> : <Icons.TrendingDown className="h-4 w-4" />}
           <span className="text-sm font-medium">
@@ -345,12 +345,12 @@ export const WeekComparison = memo(({ computedValues, formatCurrency, theme }) =
               <div 
                 className="bg-blue-500 rounded"
                 style={{ height: `${(data.thisWeek / 120) * 60}px`, minHeight: '4px' }}
-                title={`Cette semaine: ${formatCurrency(data.thisWeek)}`}
+                title={`${t('thisWeek')}: ${formatCurrency(data.thisWeek)}`}
               ></div>
               <div 
                 className="bg-gray-400 rounded"
                 style={{ height: `${(data.lastWeek / 120) * 60}px`, minHeight: '4px' }}
-                title={`Semaine précédente: ${formatCurrency(data.lastWeek)}`}
+                title={`${t('lastWeek')}: ${formatCurrency(data.lastWeek)}`}
               ></div>
             </div>
             
@@ -364,11 +364,11 @@ export const WeekComparison = memo(({ computedValues, formatCurrency, theme }) =
       <div className="flex items-center justify-center space-x-4 text-xs">
         <div className="flex items-center space-x-1">
           <div className="w-3 h-3 bg-blue-500 rounded"></div>
-          <span className={theme.textSecondary}>Cette semaine</span>
+          <span className={theme.textSecondary}>{t('thisWeek')}</span>
         </div>
         <div className="flex items-center space-x-1">
           <div className="w-3 h-3 bg-gray-400 rounded"></div>
-          <span className={theme.textSecondary}>Semaine précédente</span>
+          <span className={theme.textSecondary}>{t('lastWeek')}</span>
         </div>
       </div>
     </div>
@@ -376,7 +376,7 @@ export const WeekComparison = memo(({ computedValues, formatCurrency, theme }) =
 });
 
 // Alertes & Insights Temps Réel
-export const RealTimeInsights = memo(({ state, computedValues, formatCurrency, theme }) => {
+export const RealTimeInsights = memo(({ state, computedValues, formatCurrency, theme, t }) => {
   const insights = useMemo(() => {
     const alerts = [];
     
@@ -390,8 +390,8 @@ export const RealTimeInsights = memo(({ state, computedValues, formatCurrency, t
       alerts.push({
         type: 'warning',
         icon: Icons.AlertTriangle,
-        message: `${bigExpenses.length} dépense${bigExpenses.length > 1 ? 's' : ''} inhabituelle${bigExpenses.length > 1 ? 's' : ''} détectée${bigExpenses.length > 1 ? 's' : ''}`,
-        action: 'Voir détails'
+        message: `${bigExpenses.length} ${t('unusualExpensesDetected')}`,
+        action: t('seeDetails')
       });
     }
 
@@ -406,8 +406,8 @@ export const RealTimeInsights = memo(({ state, computedValues, formatCurrency, t
         alerts.push({
           type: 'info',
           icon: Icons.Repeat,
-          message: `${count} achats en ${category} ce mois - habitude détectée`,
-          action: 'Analyser'
+          message: `${count} ${t('purchasesInCategory')} ${category} ${t('thisMonth')} - ${t('habitDetected')}`,
+          action: t('analyze')
         });
       }
     });
@@ -424,14 +424,14 @@ export const RealTimeInsights = memo(({ state, computedValues, formatCurrency, t
         alerts.push({
           type: 'warning',
           icon: Icons.AlertCircle,
-          message: `Budget ${cat.name} bientôt atteint (${percentage.toFixed(0)}%)`,
-          action: 'Voir budget'
+          message: `${t('budget')} ${cat.name} ${t('almostReached')} (${percentage.toFixed(0)}%)`,
+          action: t('seeBudget')
         });
       }
     });
 
     return alerts.slice(0, 4); // Limite à 4 alertes
-  }, [state.categories, computedValues, formatCurrency]);
+  }, [state.categories, computedValues, formatCurrency, t]);
 
   const getAlertColor = (type) => {
     switch (type) {
@@ -447,7 +447,7 @@ export const RealTimeInsights = memo(({ state, computedValues, formatCurrency, t
         <div className={`p-4 rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/20 text-center`}>
           <Icons.CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
           <p className="text-sm text-green-700 dark:text-green-300">
-            Tout va bien ! Aucune alerte détectée.
+            {t('allGood')}! {t('noAlertsDetected')}
           </p>
         </div>
       ) : (
@@ -475,12 +475,12 @@ export const RealTimeInsights = memo(({ state, computedValues, formatCurrency, t
 });
 
 // Objectifs du Mois
-export const MonthlyGoals = memo(({ state, computedValues, formatCurrency, theme }) => {
+export const MonthlyGoals = memo(({ state, computedValues, formatCurrency, theme, t }) => {
   // Simulation objectifs du mois
   const monthlyGoals = useMemo(() => [
     {
       id: 1,
-      title: 'Rester sous budget total',
+      title: t('stayUnderTotalBudget'),
       target: computedValues.totalBudget,
       current: computedValues.totalSpent,
       type: 'spending',
@@ -488,7 +488,7 @@ export const MonthlyGoals = memo(({ state, computedValues, formatCurrency, theme
     },
     {
       id: 2,
-      title: 'Épargner 20% des revenus',
+      title: t('save20OfIncome'),
       target: state.monthlyIncome * 0.2,
       current: state.monthlyIncome - computedValues.totalSpent,
       type: 'saving',
@@ -496,13 +496,13 @@ export const MonthlyGoals = memo(({ state, computedValues, formatCurrency, theme
     },
     {
       id: 3,
-      title: 'Maximum 3 sorties loisirs',
+      title: t('max3LeisureTrips'),
       target: 3,
       current: computedValues.currentMonthExpenses.filter(e => e.category === 'Loisirs').length,
       type: 'frequency',
       icon: Icons.Calendar
     }
-  ], [state, computedValues]);
+  ], [state, computedValues, t]);
 
   return (
     <div className="space-y-4">
@@ -529,7 +529,7 @@ export const MonthlyGoals = memo(({ state, computedValues, formatCurrency, theme
                   ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                   : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
               }`}>
-                {isOnTrack ? 'Sur la voie' : 'Attention'}
+                {isOnTrack ? t('onTrack') : t('attention')}
               </div>
             </div>
 
@@ -553,7 +553,7 @@ export const MonthlyGoals = memo(({ state, computedValues, formatCurrency, theme
               </div>
 
               <div className={`text-xs ${theme.textSecondary}`}>
-                {progress.toFixed(0)}% {goal.type === 'spending' ? 'utilisé' : 'atteint'}
+                {progress.toFixed(0)}% {goal.type === 'spending' ? t('used') : t('reached')}
               </div>
             </div>
           </div>
@@ -564,22 +564,29 @@ export const MonthlyGoals = memo(({ state, computedValues, formatCurrency, theme
 });
 
 // Mini-Rapports Visuels
-export const MiniReports = memo(({ computedValues, formatCurrency, theme }) => {
+export const MiniReports = memo(({ computedValues, formatCurrency, theme, t }) => {
   // Calcul velocity (rythme de dépense)
   const today = new Date();
   const dayOfMonth = today.getDate();
   const expectedSpent = (computedValues.totalBudget / 30) * dayOfMonth;
   const velocity = computedValues.totalSpent / expectedSpent;
 
-  // Simulation heatmap jours de la semaine
-  const weekdayData = useMemo(() => {
-    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-    return days.map((day, index) => ({
-      day,
+  // Générer les jours traduits à chaque render
+  const days = [t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat'), t('sun')];
+
+  // Générer les valeurs stables une seule fois
+  const [weekdayValues] = useState(() =>
+    Array.from({ length: 7 }, () => ({
       amount: Math.floor(Math.random() * 80) + 20,
       intensity: Math.random()
-    }));
-  }, []);
+    }))
+  );
+
+  // Combiner jours traduits et valeurs stables
+  const weekdayData = days.map((day, i) => ({
+    day,
+    ...weekdayValues[i]
+  }));
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -587,7 +594,7 @@ export const MiniReports = memo(({ computedValues, formatCurrency, theme }) => {
       <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
         <h4 className={`font-semibold ${theme.text} mb-4 flex items-center`}>
           <Icons.Gauge className="h-4 w-4 mr-2" />
-          Rythme de dépense
+          {t('expenseVelocity')}
         </h4>
         
         <div className="flex items-center justify-center mb-4">
@@ -609,10 +616,10 @@ export const MiniReports = memo(({ computedValues, formatCurrency, theme }) => {
 
         <div className="text-center">
           <p className={`text-sm ${theme.textSecondary} mb-1`}>
-            {velocity > 1.2 ? 'Trop rapide' : velocity > 0.8 ? 'Rythme normal' : 'Sous contrôle'}
+            {velocity > 1.2 ? t('tooFast') : velocity > 0.8 ? t('normalVelocity') : t('underControl')}
           </p>
           <p className={`text-xs ${theme.textSecondary}`}>
-            {formatCurrency(computedValues.totalSpent)} sur {formatCurrency(expectedSpent)} attendu
+            {t('totalSpent')} {formatCurrency(computedValues.totalSpent)} {t('onExpected')} {formatCurrency(expectedSpent)}
           </p>
         </div>
       </div>
@@ -621,7 +628,7 @@ export const MiniReports = memo(({ computedValues, formatCurrency, theme }) => {
       <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
         <h4 className={`font-semibold ${theme.text} mb-4 flex items-center`}>
           <Icons.Calendar className="h-4 w-4 mr-2" />
-          Habitudes hebdomadaires
+          {t('weeklyHabits')}
         </h4>
         
         <div className="grid grid-cols-7 gap-1">
@@ -644,7 +651,7 @@ export const MiniReports = memo(({ computedValues, formatCurrency, theme }) => {
         
         <div className="mt-3 text-center">
           <p className={`text-xs ${theme.textSecondary}`}>
-            Plus foncé = plus de dépenses
+            {t('darkerMoreExpenses')}
           </p>
         </div>
       </div>
@@ -653,7 +660,7 @@ export const MiniReports = memo(({ computedValues, formatCurrency, theme }) => {
 });
 
 // Widgets Interactifs (gardés mais renommés pour éviter doublon)
-export const InteractiveWidgets = memo(({ state, actions, formatCurrency, theme }) => {
+export const InteractiveWidgets = memo(({ state, actions, formatCurrency, theme, t }) => {
   const [quickExpense, setQuickExpense] = useState({ amount: '', description: '', category: '' });
   const [savingsCalculator, setSavingsCalculator] = useState({ monthlyAmount: '', months: '' });
 
@@ -683,13 +690,13 @@ export const InteractiveWidgets = memo(({ state, actions, formatCurrency, theme 
       <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
         <h3 className={`font-semibold ${theme.text} mb-3 flex items-center`}>
           <Icons.Plus className="h-4 w-4 mr-2" />
-          Dépense rapide
+          {t('quickExpense')}
         </h3>
         
         <div className="space-y-3">
           <input
             type="number"
-            placeholder="Montant"
+            placeholder={t('amount')}
             value={quickExpense.amount}
             onChange={(e) => setQuickExpense(prev => ({ ...prev, amount: e.target.value }))}
             className={`w-full p-2 text-base rounded border ${theme.border} ${theme.input}`}
@@ -697,7 +704,7 @@ export const InteractiveWidgets = memo(({ state, actions, formatCurrency, theme 
           
           <input
             type="text"
-            placeholder="Description"
+            placeholder={t('description')}
             value={quickExpense.description}
             onChange={(e) => setQuickExpense(prev => ({ ...prev, description: e.target.value }))}
             className={`w-full p-2 text-base rounded border ${theme.border} ${theme.input}`}
@@ -708,7 +715,7 @@ export const InteractiveWidgets = memo(({ state, actions, formatCurrency, theme 
             onChange={(e) => setQuickExpense(prev => ({ ...prev, category: e.target.value }))}
             className={`w-full p-2 text-base rounded border ${theme.border} ${theme.input}`}
           >
-            <option value="">Sélectionner catégorie</option>
+            <option value="">{t('selectCategory')}</option>
             {state.categories.map(cat => (
               <option key={cat.id} value={cat.name}>{cat.name}</option>
             ))}
@@ -719,7 +726,7 @@ export const InteractiveWidgets = memo(({ state, actions, formatCurrency, theme 
             disabled={!quickExpense.amount || !quickExpense.description || !quickExpense.category}
             className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Ajouter dépense
+            {t('addExpense')}
           </button>
         </div>
       </div>
@@ -728,13 +735,13 @@ export const InteractiveWidgets = memo(({ state, actions, formatCurrency, theme 
       <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
         <h3 className={`font-semibold ${theme.text} mb-3 flex items-center`}>
           <Icons.Calculator className="h-4 w-4 mr-2" />
-          Simulateur d'épargne
+          {t('savingsCalculator')}
         </h3>
         
         <div className="space-y-3">
           <input
             type="number"
-            placeholder="Montant mensuel"
+            placeholder={t('monthlyAmount')}
             value={savingsCalculator.monthlyAmount}
             onChange={(e) => setSavingsCalculator(prev => ({ ...prev, monthlyAmount: e.target.value }))}
             className={`w-full p-2 text-base rounded border ${theme.border} ${theme.input}`}
@@ -742,14 +749,14 @@ export const InteractiveWidgets = memo(({ state, actions, formatCurrency, theme 
           
           <input
             type="number"
-            placeholder="Nombre de mois"
+            placeholder={t('numberOfMonths')}
             value={savingsCalculator.months}
             onChange={(e) => setSavingsCalculator(prev => ({ ...prev, months: e.target.value }))}
             className={`w-full p-2 text-base rounded border ${theme.border} ${theme.input}`}
           />
           
           <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border} text-center`}>
-            <p className={`text-sm ${theme.textSecondary} mb-1`}>Total épargné</p>
+            <p className={`text-sm ${theme.textSecondary} mb-1`}>{t('totalSaved')}</p>
             <p className={`text-2xl font-bold text-green-600`}>
               {formatCurrency(calculateSavings())}
             </p>

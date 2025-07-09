@@ -40,7 +40,7 @@ const Navigation = memo(({ financeManager, t }) => {
                   <h1 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                     FinanceAI
                   </h1>
-                  <p className="text-xs text-gray-400">Future Finance</p>
+                  <p className="text-xs text-gray-400">{t('futureFinance')}</p>
                 </div>
               )}
             </div>
@@ -49,6 +49,7 @@ const Navigation = memo(({ financeManager, t }) => {
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white 
                 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/25"
+              title={isCollapsed ? t('expandSidebar') : t('collapseSidebar')}
             >
               <Icons.PanelLeftClose className={`h-4 w-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
             </button>
@@ -85,7 +86,7 @@ const Navigation = memo(({ financeManager, t }) => {
                           ? 'bg-gray-800/60 text-white scale-102 shadow-lg'
                           : 'text-gray-400 hover:text-gray-300'
                       } group-hover:shadow-2xl`}
-                    aria-label={`Aller à ${tab.name}`}
+                    aria-label={`${t('goTo')} ${tab.name}`}
                     style={{
                       animationDelay: `${index * 100}ms`
                     }}
@@ -95,15 +96,6 @@ const Navigation = memo(({ financeManager, t }) => {
                       <Icon className={`h-6 w-6 transition-all duration-300 ${
                         isActive ? 'scale-110' : isHovered ? 'scale-105' : ''
                       } ${isActive && tab.icon === Icons.RefreshCw ? 'animate-spin' : ''}`} />
-                      
-                      {/* Badge de notification */}
-                      {tab.notifications > 0 && (
-                        <div className={`absolute -top-2 -right-2 w-5 h-5 bg-gradient-to-r from-red-500 to-pink-500 
-                          rounded-full flex items-center justify-center text-xs font-bold text-white
-                          shadow-lg shadow-red-500/50 animate-pulse ${isCollapsed ? '-right-1' : ''}`}>
-                          {tab.notifications}
-                        </div>
-                      )}
                     </div>
                     
                     {/* Texte avec animation de slide */}
@@ -140,16 +132,16 @@ const Navigation = memo(({ financeManager, t }) => {
           {!isCollapsed ? (
             <div className="text-center">
               <div className="text-xs text-gray-500 mb-2">
-                Powered by AI • v2.0.1
+                {t('poweredByAI')} • v2.0.1
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-green-400 font-medium">Système opérationnel</span>
+                <span className="text-xs text-green-400 font-medium">{t('systemOperational')}</span>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="w-3 h-3 bg-gradient-to-r from-green-400 to-blue-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+              <div className="w-3 h-3 bg-gradient-to-r from-green-400 to-blue-500 rounded-full animate-pulse shadow-lg shadow-green-500/50" title={t('systemOperational')}></div>
             </div>
           )}
         </div>

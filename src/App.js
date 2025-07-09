@@ -161,7 +161,7 @@ const App = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center space-x-3">
             <LoadingSpinner size="lg" />
-            <span className={`text-lg ${theme.text}`}>Chargement...</span>
+            <span className={`text-lg ${theme.text}`}>{t('loading')}</span>
           </div>
         </div>
       )}
@@ -194,7 +194,7 @@ const App = () => {
       <Modal
         isOpen={state.modals.import}
         onClose={() => actions.toggleModal('import', false)}
-        title="Gestion des données"
+        title={t('dataManagement')}
         maxWidth="max-w-lg"
       >
         <ImportExportModal financeManager={financeManager} theme={theme} t={t} />

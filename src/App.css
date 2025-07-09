@@ -35,6 +35,11 @@
   --shadow-hover: 0 8px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* Correction visibilité texte input en mode sombre */
+.dark input, .dark textarea {
+  color: #fff !important;
+}
+
 /* Reset et base */
 * {
   margin: 0;
