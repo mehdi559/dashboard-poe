@@ -17,7 +17,7 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
     // Analyse par jour de la semaine
     const dayAnalysis = expenses.reduce((acc, exp) => {
       const day = new Date(exp.date).getDay();
-      const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+      const dayNames = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
       const dayName = dayNames[day];
       acc[dayName] = (acc[dayName] || 0) + exp.amount;
       return acc;
@@ -29,9 +29,9 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
     if (mostExpensiveDay.day) {
       insights.push({
         type: 'behavior',
-        title: 'Jour de dépense préféré',
+        title: t('preferredSpendingDay'),
         value: mostExpensiveDay.day,
-        detail: `Vous dépensez le plus le ${mostExpensiveDay.day} (${formatCurrency(mostExpensiveDay.amount)})`,
+        detail: t('youSpendMostOn', { day: mostExpensiveDay.day, amount: formatCurrency(mostExpensiveDay.amount) }),
         icon: Icons.Calendar
       });
     }
@@ -49,9 +49,9 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
     if (mostFrequent && mostFrequent[1] > 2) {
       insights.push({
         type: 'pattern',
-        title: 'Montant récurrent',
+        title: t('recurringAmount'),
         value: formatCurrency(mostFrequent[0]),
-        detail: `Vous dépensez souvent ${formatCurrency(mostFrequent[0])} (${mostFrequent[1]} fois)`,
+        detail: t('youOftenSpend', { amount: formatCurrency(mostFrequent[0]), count: mostFrequent[1] }),
         icon: Icons.Repeat
       });
     }
@@ -69,9 +69,9 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
       const percentage = (dominantCategory[1] / computedValues.totalSpent) * 100;
       insights.push({
         type: 'category',
-        title: 'Catégorie dominante',
+        title: t('dominantCategory'),
         value: dominantCategory[0],
-        detail: `${dominantCategory[0]} représente ${percentage.toFixed(1)}% de vos dépenses`,
+        detail: t('representsPercentage', { category: dominantCategory[0], percentage: percentage.toFixed(1) }),
         icon: Icons.PieChart
       });
     }
@@ -87,19 +87,19 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
     // Facteur épargne (0-30 points)
     const savingsScore = Math.min(30, (computedValues.savingsRate / 20) * 30);
     score += savingsScore;
-    factors.push({ name: 'Taux d\'épargne', score: savingsScore, max: 30 });
+    factors.push({ name: t('savingsRate'), score: savingsScore, max: 30 });
     
     // Facteur budget (0-25 points)
     const budgetRespect = computedValues.totalSpent <= computedValues.totalBudget ? 25 : 
                          Math.max(0, 25 - ((computedValues.totalSpent - computedValues.totalBudget) / computedValues.totalBudget) * 25);
     score += budgetRespect;
-    factors.push({ name: 'Respect du budget', score: budgetRespect, max: 25 });
+    factors.push({ name: t('budgetRespect'), score: budgetRespect, max: 25 });
     
     // Facteur dettes (0-20 points)
     const debtScore = computedValues.totalDebt === 0 ? 20 : 
                      Math.max(0, 20 - (computedValues.totalDebt / (state.monthlyIncome * 12)) * 20);
     score += debtScore;
-    factors.push({ name: 'Gestion des dettes', score: debtScore, max: 20 });
+    factors.push({ name: t('debtManagement'), score: debtScore, max: 20 });
     
     // Facteur diversification (0-15 points)
     const activeCategoriesCount = state.categories.filter(cat => 
@@ -107,19 +107,19 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
     ).length;
     const diversificationScore = Math.min(15, (activeCategoriesCount / state.categories.length) * 15);
     score += diversificationScore;
-    factors.push({ name: 'Diversification', score: diversificationScore, max: 15 });
+    factors.push({ name: t('diversification'), score: diversificationScore, max: 15 });
     
     // Facteur régularité (0-10 points)
     const daysWithExpenses = [...new Set(computedValues.currentMonthExpenses.map(e => e.date))].length;
     const totalDays = new Date().getDate();
     const regularityScore = Math.min(10, (1 - daysWithExpenses / totalDays) * 10); // Moins de jours avec dépenses = mieux
     score += regularityScore;
-    factors.push({ name: 'Régularité', score: regularityScore, max: 10 });
+    factors.push({ name: t('regularity'), score: regularityScore, max: 10 });
     
     return { 
       total: Math.round(score), 
       factors,
-      level: score >= 80 ? 'Excellent' : score >= 60 ? 'Bon' : score >= 40 ? 'Moyen' : 'À améliorer',
+      level: score >= 80 ? t('excellent') : score >= 60 ? t('good') : score >= 40 ? t('medium') : t('needsImprovement'),
       color: score >= 80 ? 'green' : score >= 60 ? 'blue' : score >= 40 ? 'yellow' : 'red'
     };
   }, [computedValues, state.categories, state.monthlyIncome]);
@@ -141,9 +141,9 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
         predictedSpending: computedValues.totalSpent * 1.05, // +5% inflation
         budgetStatus: computedValues.totalSpent > computedValues.totalBudget ? 'risk' : 'safe',
         recommendations: [
-          computedValues.totalSpent > computedValues.totalBudget && 'Réduisez vos dépenses le mois prochain',
-          computedValues.savingsRate < 10 && 'Augmentez votre épargne',
-          'Continuez vos efforts budgétaires'
+          computedValues.totalSpent > computedValues.totalBudget && t('reduceExpensesNextMonth'),
+          computedValues.savingsRate < 10 && t('increaseSavings'),
+          t('continueBudgetEfforts')
         ].filter(Boolean)
       }
     };
@@ -187,35 +187,35 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
     <div className="space-y-6">
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>Rapports Financiers Intelligents</h2>
+          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('intelligentFinancialReports')}</h2>
           <div className="flex space-x-2">
             <Button
               variant={reportType === 'overview' ? 'primary' : 'outline'}
               onClick={() => setReportType('overview')}
               size="sm"
             >
-              Vue d'ensemble
+              {t('overview')}
             </Button>
             <Button
               variant={reportType === 'behavioral' ? 'primary' : 'outline'}
               onClick={() => setReportType('behavioral')}
               size="sm"
             >
-              Comportemental
+              {t('behavioral')}
             </Button>
             <Button
               variant={reportType === 'projections' ? 'primary' : 'outline'}
               onClick={() => setReportType('projections')}
               size="sm"
             >
-              Projections
+              {t('projections')}
             </Button>
             <Button
               variant={reportType === 'benchmarks' ? 'primary' : 'outline'}
               onClick={() => setReportType('benchmarks')}
               size="sm"
             >
-              Performances
+              {t('performances')}
             </Button>
             <Button
               onClick={actions.exportData}
@@ -223,7 +223,7 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
               className="flex items-center space-x-2"
             >
               <Icons.Download className="h-4 w-4" />
-              <span>Exporter</span>
+              <span>{t('export')}</span>
             </Button>
           </div>
         </div>
@@ -238,7 +238,7 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
               'from-red-50 to-pink-100 dark:from-red-900/20 dark:to-pink-900/30'
             } border ${theme.border}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className={`text-xl font-bold ${theme.text}`}>Score Financier Global</h3>
+                <h3 className={`text-xl font-bold ${theme.text}`}>{t('globalFinancialScore')}</h3>
                 <div className="flex items-center space-x-2">
                   <div className={`text-4xl font-bold text-${financialScore.color}-600`}>
                     {financialScore.total}
@@ -274,7 +274,7 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
             {/* Graphique radar */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Analyse Multidimensionnelle</h3>
+                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('multidimensionalAnalysis')}</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart data={radarData}>
@@ -294,40 +294,40 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
               </div>
 
               <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Résumé Mensuel Détaillé</h3>
+                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('detailedMonthlySummary')}</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Revenus</span>
+                    <span className={theme.textSecondary}>{t('income')}</span>
                     <span className={`font-bold text-green-600`}>
                       {state.showBalances ? `+${formatCurrency(state.monthlyIncome)}` : '+•••'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Dépenses</span>
+                    <span className={theme.textSecondary}>{t('expenses')}</span>
                     <span className={`font-bold text-red-600`}>
                       {state.showBalances ? `-${formatCurrency(computedValues.totalSpent)}` : '-•••'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Récurrent</span>
+                    <span className={theme.textSecondary}>{t('recurring')}</span>
                     <span className={`font-bold text-orange-600`}>
                       {state.showBalances ? `-${formatCurrency(computedValues.totalRecurring)}` : '-•••'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Dettes</span>
+                    <span className={theme.textSecondary}>{t('debts')}</span>
                     <span className={`font-bold text-purple-600`}>
                       {state.showBalances ? formatCurrency(computedValues.totalDebt) : '•••'}
                     </span>
                   </div>
                   <div className="flex justify-between border-t pt-3">
-                    <span className={`font-semibold ${theme.text}`}>Solde</span>
+                    <span className={`font-semibold ${theme.text}`}>{t('balance')}</span>
                     <span className={`font-bold ${(state.monthlyIncome - computedValues.totalSpent) > 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {state.showBalances ? formatCurrency(state.monthlyIncome - computedValues.totalSpent) : '•••'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Taux d'épargne</span>
+                    <span className={theme.textSecondary}>{t('savingsRateLabel')}</span>
                     <span className={`font-medium ${computedValues.savingsRate > 20 ? 'text-green-600' : computedValues.savingsRate > 10 ? 'text-yellow-600' : 'text-red-600'}`}>
                       {computedValues.savingsRate.toFixed(1)}%
                     </span>
@@ -359,7 +359,7 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
 
             {/* Analyse par catégorie détaillée */}
             <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-              <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Répartition Comportementale par Catégorie</h3>
+              <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('behavioralCategoryDistribution')}</h3>
               <div className="space-y-3">
                 {state.categories.map(category => {
                   const spent = computedValues.currentMonthExpenses
@@ -392,17 +392,17 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
                       
                       <div className="grid grid-cols-3 gap-4 text-xs">
                         <div>
-                          <span className={theme.textSecondary}>Budget utilisé:</span>
+                          <span className={theme.textSecondary}>{t('budgetUsed')}</span>
                           <div className={`font-medium ${budgetPercentage > 100 ? 'text-red-600' : budgetPercentage > 80 ? 'text-yellow-600' : 'text-green-600'}`}>
                             {budgetPercentage.toFixed(1)}%
                           </div>
                         </div>
                         <div>
-                          <span className={theme.textSecondary}>Transactions:</span>
+                          <span className={theme.textSecondary}>{t('transactions')}</span>
                           <div className={theme.text}>{transactionCount}</div>
                         </div>
                         <div>
-                          <span className={theme.textSecondary}>Moy./transaction:</span>
+                          <span className={theme.textSecondary}>{t('avgTransaction')}</span>
                           <div className={theme.text}>{formatCurrency(avgTransaction)}</div>
                         </div>
                       </div>
@@ -431,23 +431,23 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
               <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
                 <h3 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
                   <Icons.Calendar className="h-5 w-5 mr-2 text-blue-600" />
-                  Projections Fin d'Année
+                  {t('endOfYearProjections')}
                 </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Épargne totale projetée:</span>
+                    <span className={theme.textSecondary}>{t('projectedTotalSavings')}</span>
                     <span className={`font-bold text-green-600`}>
                       {formatCurrency(projections.endOfYear.savings)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Dépenses totales projetées:</span>
+                    <span className={theme.textSecondary}>{t('projectedTotalExpenses')}</span>
                     <span className={`font-bold text-red-600`}>
                       {formatCurrency(projections.endOfYear.totalSpent)}
                     </span>
                   </div>
                   <div className="pt-3 border-t">
-                    <h4 className={`font-medium ${theme.text} mb-2`}>Objectifs d'épargne:</h4>
+                    <h4 className={`font-medium ${theme.text} mb-2`}>{t('savingsGoals')}</h4>
                     {projections.endOfYear.goals.map(goal => (
                       <div key={goal.id} className="flex justify-between text-sm">
                         <span className={theme.textSecondary}>{goal.name}:</span>
@@ -463,23 +463,23 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
               <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
                 <h3 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
                   <Icons.TrendingUp className="h-5 w-5 mr-2 text-purple-600" />
-                  Prévisions Mois Prochain
+                  {t('nextMonthForecasts')}
                 </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Dépenses prévues:</span>
+                    <span className={theme.textSecondary}>{t('predictedExpenses')}</span>
                     <span className={theme.text}>
                       {formatCurrency(projections.nextMonth.predictedSpending)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Statut budget:</span>
+                    <span className={theme.textSecondary}>{t('budgetStatus')}</span>
                     <span className={`font-medium ${projections.nextMonth.budgetStatus === 'risk' ? 'text-red-600' : 'text-green-600'}`}>
-                      {projections.nextMonth.budgetStatus === 'risk' ? 'À risque' : 'Sécurisé'}
+                      {projections.nextMonth.budgetStatus === 'risk' ? t('atRisk') : t('secure')}
                     </span>
                   </div>
                   <div className="pt-3 border-t">
-                    <h4 className={`font-medium ${theme.text} mb-2`}>Recommandations:</h4>
+                    <h4 className={`font-medium ${theme.text} mb-2`}>{t('recommendations')}</h4>
                     <ul className="space-y-1">
                       {projections.nextMonth.recommendations.map((rec, index) => (
                         <li key={index} className={`text-sm ${theme.textSecondary} flex items-center space-x-2`}>
@@ -495,7 +495,7 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
 
             {/* Graphique de tendances */}
             <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-              <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Évolution des Derniers Mois</h3>
+              <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('monthlyEvolution')}</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={computedValues.monthlyData}>
@@ -510,7 +510,7 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
                       stroke="#10b981" 
                       fill="#10b981" 
                       fillOpacity={0.6}
-                      name="Épargne"
+                      name={t('savings')}
                     />
                     <Area 
                       type="monotone" 
@@ -519,7 +519,7 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
                       stroke="#ef4444" 
                       fill="#ef4444" 
                       fillOpacity={0.6}
-                      name="Dépenses"
+                      name={t('expenses')}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -534,11 +534,11 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
             <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
               <h3 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
                 <Icons.BarChart3 className="h-5 w-5 mr-2 text-indigo-600" />
-                Vos Performances Historiques
+                {t('historicalPerformance')}
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border} text-center`}>
-                  <div className={`text-xs ${theme.textSecondary} mb-1`}>Ce mois</div>
+                  <div className={`text-xs ${theme.textSecondary} mb-1`}>{t('thisMonth')}</div>
                   <div className={`text-lg font-bold ${theme.text}`}>
                     {formatCurrency(benchmarks.current)}
                   </div>
@@ -547,25 +547,25 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
                   </div>
                 </div>
                 <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border} text-center`}>
-                  <div className={`text-xs ${theme.textSecondary} mb-1`}>Mois dernier</div>
+                  <div className={`text-xs ${theme.textSecondary} mb-1`}>{t('lastMonth')}</div>
                   <div className={`text-lg font-bold ${theme.text}`}>
                     {formatCurrency(benchmarks.lastMonth)}
                   </div>
-                  <div className={`text-xs ${theme.textSecondary}`}>Référence</div>
+                  <div className={`text-xs ${theme.textSecondary}`}>{t('reference')}</div>
                 </div>
                 <div className={`p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 text-center`}>
-                  <div className={`text-xs text-green-600 mb-1`}>Meilleur mois</div>
+                  <div className={`text-xs text-green-600 mb-1`}>{t('bestMonth')}</div>
                   <div className={`text-lg font-bold text-green-700`}>
                     {formatCurrency(benchmarks.bestMonth)}
                   </div>
-                  <div className={`text-xs text-green-600`}>🎯 Objectif</div>
+                  <div className={`text-xs text-green-600`}>🎯 {t('target')}</div>
                 </div>
                 <div className={`p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 text-center`}>
-                  <div className={`text-xs text-red-600 mb-1`}>Pire mois</div>
+                  <div className={`text-xs text-red-600 mb-1`}>{t('worstMonth')}</div>
                   <div className={`text-lg font-bold text-red-700`}>
                     {formatCurrency(benchmarks.worstMonth)}
                   </div>
-                  <div className={`text-xs text-red-600`}>⚠️ À éviter</div>
+                  <div className={`text-xs text-red-600`}>⚠️ {t('toAvoid')}</div>
                 </div>
               </div>
             </div>
@@ -573,22 +573,22 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
             {/* Analyse comparative */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Analyse Comparative</h3>
+                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('comparativeAnalysis')}</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className={theme.textSecondary}>Vs moyenne personnelle:</span>
+                    <span className={theme.textSecondary}>{t('vsPersonalAverage')}</span>
                     <span className={`font-bold ${benchmarks.current < benchmarks.average ? 'text-green-600' : 'text-red-600'}`}>
                       {((benchmarks.current - benchmarks.average) / benchmarks.average * 100).toFixed(1)}%
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className={theme.textSecondary}>Vs meilleur mois:</span>
+                    <span className={theme.textSecondary}>{t('vsBestMonth')}</span>
                     <span className={`font-bold ${benchmarks.current < benchmarks.bestMonth ? 'text-green-600' : 'text-red-600'}`}>
                       {((benchmarks.current - benchmarks.bestMonth) / benchmarks.bestMonth * 100).toFixed(1)}%
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className={theme.textSecondary}>Distance du pire mois:</span>
+                    <span className={theme.textSecondary}>{t('distanceFromWorst')}</span>
                     <span className={`font-bold text-green-600`}>
                       {((benchmarks.worstMonth - benchmarks.current) / benchmarks.worstMonth * 100).toFixed(1)}%
                     </span>
@@ -597,14 +597,14 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
               </div>
 
               <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Tendances</h3>
+                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('trends')}</h3>
                 <div className="h-32">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={[
-                      { name: 'Meilleur', value: benchmarks.bestMonth },
-                      { name: 'Moyenne', value: benchmarks.average },
-                      { name: 'Actuel', value: benchmarks.current },
-                      { name: 'Pire', value: benchmarks.worstMonth }
+                      { name: t('best'), value: benchmarks.bestMonth },
+                      { name: t('average'), value: benchmarks.average },
+                      { name: t('current'), value: benchmarks.current },
+                      { name: t('worst'), value: benchmarks.worstMonth }
                     ]}>
                       <XAxis dataKey="name" />
                       <YAxis />
