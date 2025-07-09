@@ -11,3 +11,40 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Scrollbar personnalisée pour les opérations d'épargne */
+.scrollbar-visible-light::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-visible-light::-webkit-scrollbar-track {
+  background: #F3F4F6;
+  border-radius: 4px;
+}
+
+.scrollbar-visible-light::-webkit-scrollbar-thumb {
+  background: #9CA3AF;
+  border-radius: 4px;
+}
+
+.scrollbar-visible-light::-webkit-scrollbar-thumb:hover {
+  background: #6B7280;
+}
+
+.scrollbar-visible-dark::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-visible-dark::-webkit-scrollbar-track {
+  background: #374151;
+  border-radius: 4px;
+}
+
+.scrollbar-visible-dark::-webkit-scrollbar-thumb {
+  background: #6B7280;
+  border-radius: 4px;
+}
+
+.scrollbar-visible-dark::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}

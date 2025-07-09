@@ -190,7 +190,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
           <div className="lg:col-span-2">
             <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('goalsWithImpact')}</h3>
             <div className="space-y-4">
-              {getImpactCalculations.map(goal => {
+              {computedValues.savingsForSelectedMonth.map(goal => {
                 const { progress, segments, filledSegments } = getProgressVisualization(goal);
                 const open = openGoalId === goal.id;
                 return (
@@ -200,11 +200,22 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                         <h4 className={`font-semibold ${theme.text}`}>{goal.name}</h4>
                         <div className="flex items-center space-x-2 mt-1">
                           <span className={`font-medium ${theme.text}`}>{state.showBalances 
-                            ? `${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)}`
+                            ? `${formatCurrency(goal.cumulativeAmount)} / ${formatCurrency(goal.targetAmount)}`
                             : '••• / •••'
                           }</span>
-                          <span className={`text-xs ${theme.textSecondary}`}>{progress.toFixed(1)}% {t('reached')}</span>
+                          <span className={`text-xs ${theme.textSecondary}`}>{goal.cumulativeProgress.toFixed(1)}% {t('reached')}</span>
                         </div>
+                        {/* Affichage de la progression du mois */}
+                        {goal.monthAmount > 0 && (
+                          <div className="flex items-center space-x-2 mt-1">
+                            <span className={`text-xs text-green-600 font-medium`}>
+                              +{formatCurrency(goal.monthAmount)} {t('thisMonth')}
+                            </span>
+                            <span className={`text-xs ${theme.textSecondary}`}>
+                              ({goal.monthProgress.toFixed(1)}% {t('progressThisMonth')})
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button
@@ -248,7 +259,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                           <div className="flex justify-between text-sm">
                             <span className={theme.textSecondary}>{t('progression')}</span>
                             <span className={`font-medium ${theme.text}`}>{state.showBalances 
-                              ? `${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)}`
+                              ? `${formatCurrency(goal.cumulativeAmount)} / ${formatCurrency(goal.targetAmount)}`
                               : '••• / •••'
                             }</span>
                           </div>
@@ -264,9 +275,28 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                             ))}
                           </div>
                           <p className={`text-xs ${theme.textSecondary}`}>
-                            {progress.toFixed(1)}% {t('reached')}
-                            {progress >= 100 && <span className="text-green-500 ml-2">{t('goalReached')}</span>}
+                            {goal.cumulativeProgress.toFixed(1)}% {t('reached')}
+                            {goal.cumulativeProgress >= 100 && <span className="text-green-500 ml-2">{t('goalReached')}</span>}
                           </p>
+                          
+                          {/* Progression du mois en cours */}
+                          {goal.monthAmount > 0 && (
+                            <div className={`mt-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800`}>
+                              <div className="flex justify-between items-center mb-2">
+                                <span className={`text-sm font-medium ${theme.text}`}>{t('progressThisMonth')}</span>
+                                <span className={`text-sm font-bold text-green-600`}>+{formatCurrency(goal.monthAmount)}</span>
+                              </div>
+                              <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2">
+                                <div 
+                                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${Math.min(goal.monthProgress, 100)}%` }}
+                                />
+                              </div>
+                              <p className={`text-xs ${theme.textSecondary} mt-1`}>
+                                {goal.monthProgress.toFixed(1)}% {t('ofTargetThisMonth')}
+                              </p>
+                            </div>
+                          )}
                         </div>
                         {/* Calculateur d'impact */}
                         <div className={`mt-4 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
@@ -274,7 +304,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                           <div className="grid grid-cols-2 gap-4 text-xs">
                             <div>
                               <span className={theme.textSecondary}>{t('remainingToSave')}</span>
-                              <div className={`font-bold ${theme.text}`}>{formatCurrency(goal.remaining)}</div>
+                              <div className={`font-bold ${theme.text}`}>{formatCurrency(goal.targetAmount - goal.cumulativeAmount)}</div>
                             </div>
                             <div>
                               <span className={theme.textSecondary}>{t('atCurrentRate')}</span>
@@ -282,33 +312,57 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                             </div>
                             <div>
                               <span className={theme.textSecondary}>{t('perMonth')}</span>
-                              <div className={`font-bold text-blue-600`}>{formatCurrency(goal.monthlyTarget)}</div>
+                              <div className={`font-bold text-blue-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 12)}</div>
                             </div>
                             <div>
                               <span className={theme.textSecondary}>{t('perDay')}</span>
-                              <div className={`font-bold text-purple-600`}>{formatCurrency(goal.dailyTarget)}</div>
+                              <div className={`font-bold text-purple-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 365)}</div>
                             </div>
                           </div>
                         </div>
-                        {/* Historique des transactions */}
+                        {/* Historique des transactions du mois sélectionné avec carrousel */}
                         {goal.transactions && goal.transactions.length > 0 && (
                           <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                            <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('recentOperations')}</h5>
-                            <div className="space-y-1">
-                              {goal.transactions.slice(-3).map((transaction, index) => (
-                                <div key={transaction.id || index} className="flex justify-between text-xs">
-                                  <span className={theme.textSecondary}>
-                                    {new Date(transaction.date).toLocaleDateString('fr-FR')} - {translateTransactionDescription(transaction.description)}
-                                  </span>
-                                  <span className={`font-medium ${transaction.type === 'add' ? 'text-green-600' : 'text-red-600'}`}>{transaction.type === 'add' ? '+' : '-'}{state.showBalances ? formatCurrency(transaction.amount) : '•••'}</span>
+                            <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('operationsThisMonth') || 'Opérations de ce mois'}</h5>
+                            {(() => {
+                              const monthTransactions = goal.transactions.filter(transaction => 
+                                transaction.date.startsWith(state.selectedMonth)
+                              );
+                              
+                              if (monthTransactions.length === 0) {
+                                return (
+                                  <p className={`text-xs ${theme.textSecondary} italic`}>
+                                    {t('noOperationsThisMonth') || 'Aucune opération ce mois'}
+                                  </p>
+                                );
+                              }
+
+                              return (
+                                <div className="relative">
+                                  {/* Zone de défilement avec hauteur fixe pour 3 opérations */}
+                                  <div 
+                                    className={`h-[72px] overflow-y-auto pr-2 ${theme.darkMode ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
+                                    style={{
+                                      scrollbarWidth: 'auto',
+                                      scrollbarColor: theme.darkMode ? '#6B7280' : '#9CA3AF'
+                                    }}
+                                  >
+                                    <div className="space-y-1">
+                                      {monthTransactions.map((transaction, index) => (
+                                        <div key={transaction.id || index} className="flex justify-between text-xs py-1">
+                                          <span className={theme.textSecondary}>
+                                            {new Date(transaction.date).toLocaleDateString('fr-FR')} - {translateTransactionDescription(transaction.description)}
+                                          </span>
+                                          <span className={`font-medium ${transaction.type === 'add' ? 'text-green-600' : 'text-red-600'}`}>
+                                            {transaction.type === 'add' ? '+' : '-'}{state.showBalances ? formatCurrency(transaction.amount) : '•••'}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
                                 </div>
-                              ))}
-                              {goal.transactions.length > 3 && (
-                                <p className={`text-xs ${theme.textSecondary} italic`}>
-                                  {t('otherOperations', { count: goal.transactions.length - 3 })}
-                                </p>
-                              )}
-                            </div>
+                              );
+                            })()}
                           </div>
                         )}
                         {/* Bouton enregistrer un mouvement */}

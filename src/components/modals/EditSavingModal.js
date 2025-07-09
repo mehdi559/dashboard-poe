@@ -6,8 +6,15 @@ import Modal from '../ui/Modal';
 const EditSavingModal = memo(({ financeManager, theme, t }) => {
   const { state, actions, formatCurrency } = financeManager;
 
+  console.log('EditSavingModal render:', {
+    isOpen: state.modals.editSaving,
+    editingItem: state.editingItem,
+    savingTransaction: state.savingTransaction
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('EditSavingModal handleSubmit called with savingTransaction:', state.savingTransaction);
     if (actions.addSavingsTransaction(state.editingItem.id, state.savingTransaction)) {
       actions.toggleModal('editSaving', false);
       actions.setEditingItem(null);
@@ -15,7 +22,12 @@ const EditSavingModal = memo(({ financeManager, theme, t }) => {
     }
   };
 
-  if (!state.editingItem) return null;
+  if (!state.editingItem) {
+    console.log('EditSavingModal: no editingItem, returning null');
+    return null;
+  }
+
+  const progress = ((state.editingItem.currentAmount / state.editingItem.targetAmount) * 100).toFixed(1);
 
   return (
     <Modal
@@ -29,29 +41,40 @@ const EditSavingModal = memo(({ financeManager, theme, t }) => {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
-          <p className={`text-sm ${theme.textSecondary} mb-2`}>{t('goalInformation')}</p>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span>{t('currentAmount')}</span>
-              <span className="font-medium text-green-600">
+          <p className={`text-sm font-medium ${theme.text} mb-3`}>{t('goalInformation')}</p>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between items-center">
+              <span className={theme.textSecondary}>{t('currentAmount')}</span>
+              <span className="font-medium text-green-600 dark:text-green-400">
                 {formatCurrency(state.editingItem.currentAmount)}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span>{t('target')}</span>
-              <span className={theme.text}>{formatCurrency(state.editingItem.targetAmount)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>{t('progression')}</span>
-              <span className={theme.text}>
-                {((state.editingItem.currentAmount / state.editingItem.targetAmount) * 100).toFixed(1)}%
+            <div className="flex justify-between items-center">
+              <span className={theme.textSecondary}>{t('target')}</span>
+              <span className={`font-medium ${theme.text}`}>
+                {formatCurrency(state.editingItem.targetAmount)}
               </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className={theme.textSecondary}>{t('progression')}</span>
+              <span className={`font-medium ${theme.text}`}>
+                {progress}%
+              </span>
+            </div>
+            {/* Barre de progression */}
+            <div className="mt-2">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  className="h-2 rounded-full bg-green-500"
+                  style={{ width: `${Math.min(parseFloat(progress), 100)}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>
         
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className={`block text-sm font-medium ${theme.text}`}>
             {t('operationType')} <span className="text-red-500">*</span>
           </label>
           <select
@@ -64,6 +87,17 @@ const EditSavingModal = memo(({ financeManager, theme, t }) => {
             <option value="remove">{t('removeMoney')}</option>
           </select>
         </div>
+        
+        <Input
+          label={t('date')}
+          type="date"
+          value={state.savingTransaction.date || new Date().toISOString().split('T')[0]}
+          onChange={(value) => {
+            console.log('DEBUG Date changed in modal:', value);
+            actions.updateForm('savingTransaction', { date: value });
+          }}
+          required
+        />
         
         <Input
           label={t('amount')}

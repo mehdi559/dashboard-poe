@@ -202,37 +202,115 @@ export const RecentActivity = memo(({ computedValues, formatCurrency, theme, t }
     .slice(0, 5);
 
   return (
-    <div className="space-y-3">
-      {recentExpenses.length === 0 ? (
-        <div className="text-center py-6">
-          <Icons.Receipt className={`h-12 w-12 mx-auto mb-3 ${theme.textSecondary} opacity-50`} />
-          <p className={`${theme.textSecondary}`}>{t('noRecentActivity')}</p>
+    <div className="space-y-4">
+      <h3 className={`text-lg font-semibold ${theme.text} flex items-center`}>
+        <Icons.Activity className="h-5 w-5 mr-2" />
+        {t('recentActivity')}
+      </h3>
+      
+      {recentExpenses.length > 0 ? (
+        <div className="space-y-3">
+          {recentExpenses.map(expense => (
+            <div key={expense.id} className={`flex items-center justify-between p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <div>
+                  <p className={`font-medium ${theme.text}`}>{expense.description}</p>
+                  <p className={`text-sm ${theme.textSecondary}`}>
+                    {new Date(expense.date).toLocaleDateString('fr-FR')} • {expense.category}
+                  </p>
+                </div>
+              </div>
+              <span className={`font-bold text-red-600`}>
+                -{formatCurrency(expense.amount)}
+              </span>
+            </div>
+          ))}
         </div>
       ) : (
-        recentExpenses.map((expense, index) => (
-          <div key={expense.id} className={`flex items-center justify-between p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-            <div className="flex items-center space-x-3">
-              <div className={`w-2 h-2 rounded-full ${
-                index === 0 ? 'bg-green-500' : 
-                index === 1 ? 'bg-blue-500' : 'bg-gray-400'
-              }`}></div>
-              <div>
-                <p className={`font-medium ${theme.text}`}>{expense.description}</p>
-                <p className={`text-sm ${theme.textSecondary}`}>{expense.category}</p>
-              </div>
-            </div>
+        <div className={`text-center py-8 ${theme.textSecondary}`}>
+          <Icons.Inbox className="h-12 w-12 mx-auto mb-2 opacity-50" />
+          <p>{t('noRecentActivity')}</p>
+        </div>
+      )}
+    </div>
+  );
+});
+
+// Widget de progression des économies
+export const SavingsProgressWidget = memo(({ state, computedValues, formatCurrency, theme, t }) => {
+  const savingsGoals = computedValues.savingsForSelectedMonth;
+  const totalSavings = computedValues.totalSavings;
+  const totalSavingsThisMonth = computedValues.totalSavingsThisMonth;
+
+  return (
+    <div className="space-y-4">
+      <h3 className={`text-lg font-semibold ${theme.text} flex items-center`}>
+        <Icons.PiggyBank className="h-5 w-5 mr-2 text-green-600" />
+        {t('savingsProgress')}
+      </h3>
+      
+      <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <p className={`text-sm ${theme.textSecondary}`}>{t('totalSaved')}</p>
+            <p className={`text-2xl font-bold ${theme.text}`}>
+              {state.showBalances ? formatCurrency(totalSavings) : '•••'}
+            </p>
+          </div>
+          {totalSavingsThisMonth > 0 && (
             <div className="text-right">
-              <p className={`font-semibold ${theme.text}`}>{formatCurrency(expense.amount)}</p>
+              <p className={`text-sm text-green-600 font-medium`}>
+                +{formatCurrency(totalSavingsThisMonth)} {t('thisMonth')}
+              </p>
               <p className={`text-xs ${theme.textSecondary}`}>
-                {new Date(expense.date).toLocaleDateString('fr-FR', { 
-                  day: 'numeric', 
-                  month: 'short' 
-                })}
+                {t('progressThisMonth')}
               </p>
             </div>
+          )}
+        </div>
+        
+        {savingsGoals.length > 0 ? (
+          <div className="space-y-3">
+            {savingsGoals.slice(0, 3).map(goal => (
+              <div key={goal.id} className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className={`text-sm font-medium ${theme.text}`}>{goal.name}</span>
+                  <span className={`text-sm ${theme.textSecondary}`}>
+                    {goal.cumulativeProgress.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(goal.cumulativeProgress, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={theme.textSecondary}>
+                    {state.showBalances ? formatCurrency(goal.cumulativeAmount) : '•••'} / {state.showBalances ? formatCurrency(goal.targetAmount) : '•••'}
+                  </span>
+                  {goal.monthAmount > 0 && (
+                    <span className="text-green-600 font-medium">
+                      +{formatCurrency(goal.monthAmount)} {t('thisMonth')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+            {savingsGoals.length > 3 && (
+              <p className={`text-xs ${theme.textSecondary} text-center`}>
+                {t('andMoreGoals', { count: savingsGoals.length - 3 })}
+              </p>
+            )}
           </div>
-        ))
-      )}
+        ) : (
+          <div className={`text-center py-4 ${theme.textSecondary}`}>
+            <Icons.Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">{t('noSavingsGoals')}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 });

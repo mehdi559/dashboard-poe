@@ -107,7 +107,15 @@ const App = () => {
 
   // Helper pour les traductions
   const t = useCallback((key, params = {}) => {
-    let translation = translations[state.language]?.[key] || translations.fr[key] || key;
+    // Logique améliorée pour la sélection de traduction
+    let translation;
+    if (translations[state.language] && translations[state.language][key]) {
+      translation = translations[state.language][key];
+    } else if (translations.fr && translations.fr[key]) {
+      translation = translations.fr[key];
+    } else {
+      translation = key; // Fallback sur la clé elle-même
+    }
     
     // Gestion des interpolations
     if (params && typeof params === 'object') {

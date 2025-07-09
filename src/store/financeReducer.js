@@ -99,7 +99,7 @@ export const initialState = {
   newDebt: { name: '', balance: '', minPayment: '', rate: '', autoDebit: false },
   editDebt: { name: '', balance: '', minPayment: '', rate: '', autoDebit: false },
   paymentAmount: '',
-  savingTransaction: { amount: '', description: '', type: 'add' }
+  savingTransaction: { amount: '', description: '', type: 'add', date: new Date().toISOString().split('T')[0] }
 };
 
 export const ACTIONS = {
@@ -168,7 +168,16 @@ export const financeReducer = (state, action) => {
     case ACTIONS.SET_ACTIVE_TAB:
       return { ...state, activeTab: action.payload };
     case ACTIONS.SET_SELECTED_MONTH:
-      return { ...state, selectedMonth: action.payload };
+      // Mettre à jour le mois sélectionné et la date du formulaire savingTransaction
+      const selectedDate = action.payload + '-15'; // Utiliser le 15 du mois sélectionné
+      return { 
+        ...state, 
+        selectedMonth: action.payload,
+        savingTransaction: {
+          ...state.savingTransaction,
+          date: selectedDate
+        }
+      };
     case ACTIONS.SET_SELECTED_YEAR:
       return { ...state, selectedYear: action.payload };
     case ACTIONS.SET_USER_NAME:
@@ -223,10 +232,12 @@ export const financeReducer = (state, action) => {
         }]
       };
     case ACTIONS.ADD_SAVINGS_TRANSACTION:
+      const debugPayload = action.payload;
+      console.log('DEBUG transaction ajoutée:', debugPayload);
       return {
         ...state,
         savingsGoals: state.savingsGoals.map(goal =>
-          goal.id === action.payload.goalId
+          Number(goal.id) === Number(action.payload.goalId)
             ? {
                 ...goal,
                 currentAmount: action.payload.type === 'add' 
@@ -234,7 +245,7 @@ export const financeReducer = (state, action) => {
                   : Math.max(0, goal.currentAmount - action.payload.amount),
                 transactions: [...(goal.transactions || []), {
                   id: Date.now(),
-                  date: new Date().toISOString().split('T')[0],
+                  date: action.payload.date,
                   amount: action.payload.amount,
                   type: action.payload.type,
                   description: action.payload.description
@@ -338,9 +349,55 @@ export const financeReducer = (state, action) => {
         )
       };
     case ACTIONS.ADD_DEBT:
+      const newDebt = {
+        ...action.payload, 
+        id: Date.now(), 
+        paymentHistory: [],
+        initialBalance: action.payload.balance // Sauvegarder le solde initial
+      };
+      
+      // Si l'auto-débit est activé, créer une dépense récurrente ET une dépense normale immédiate
+      if (action.payload.autoDebit) {
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        const paymentDate = new Date(currentYear, currentMonth, 15);
+        
+        // Si le 15 du mois est déjà passé, utiliser la date d'aujourd'hui
+        const expenseDate = paymentDate <= today ? today : paymentDate;
+        
+        const recurringExpense = {
+          id: Date.now() + 1,
+          description: `Paiement automatique - ${newDebt.name}`,
+          category: 'debt',
+          amount: newDebt.minPayment,
+          dayOfMonth: 15, // Paiement le 15 de chaque mois
+          active: true,
+          linkedDebtId: newDebt.id,
+          lastProcessed: expenseDate.toISOString().split('T')[0]
+        };
+        
+        const immediateExpense = {
+          id: Date.now() + 2,
+          date: expenseDate.toISOString().split('T')[0],
+          category: 'debt',
+          amount: newDebt.minPayment,
+          description: `Paiement automatique - ${newDebt.name} (récurrente)`,
+          linkedDebtId: newDebt.id
+        };
+        
+        return {
+          ...state,
+          debts: [...state.debts, newDebt],
+          recurringExpenses: [...state.recurringExpenses, recurringExpense],
+          expenses: [...state.expenses, immediateExpense]
+        };
+      }
+      
+      // Si pas d'auto-débit, créer seulement la dette
       return {
         ...state,
-        debts: [...state.debts, { ...action.payload, id: Date.now(), paymentHistory: [] }]
+        debts: [...state.debts, newDebt]
       };
     case ACTIONS.UPDATE_DEBT:
       const updatedDebt = state.debts.find(debt => debt.id === action.payload.id);
@@ -381,7 +438,11 @@ export const financeReducer = (state, action) => {
         return {
           ...state,
           debts: state.debts.map(debt =>
-            debt.id === action.payload.id ? { ...debt, ...action.payload } : debt
+            debt.id === action.payload.id ? { 
+              ...debt, 
+              ...action.payload,
+              initialBalance: debt.initialBalance || debt.balance // Préserver le solde initial
+            } : debt
           ),
           recurringExpenses: [...state.recurringExpenses, recurringExpense],
           expenses: [...state.expenses, immediateExpense]
@@ -393,7 +454,11 @@ export const financeReducer = (state, action) => {
         return {
           ...state,
           debts: state.debts.map(debt =>
-            debt.id === action.payload.id ? { ...debt, ...action.payload } : debt
+            debt.id === action.payload.id ? { 
+              ...debt, 
+              ...action.payload,
+              initialBalance: debt.initialBalance || debt.balance // Préserver le solde initial
+            } : debt
           ),
           recurringExpenses: state.recurringExpenses.filter(exp => 
             !exp.linkedDebtId || exp.linkedDebtId !== action.payload.id
@@ -408,7 +473,11 @@ export const financeReducer = (state, action) => {
       return {
         ...state,
         debts: state.debts.map(debt =>
-          debt.id === action.payload.id ? { ...debt, ...action.payload } : debt
+          debt.id === action.payload.id ? { 
+            ...debt, 
+            ...action.payload,
+            initialBalance: debt.initialBalance || debt.balance // Préserver le solde initial
+          } : debt
         )
       };
     case ACTIONS.DELETE_DEBT:
@@ -493,7 +562,8 @@ export const financeReducer = (state, action) => {
                 paymentHistory: [...(debt.paymentHistory || []), {
                   id: Date.now(),
                   date: new Date().toISOString().split('T')[0],
-                  amount: action.payload.amount
+                  amount: action.payload.amount,
+                  description: action.payload.description || 'Paiement'
                 }]
               }
             : debt
@@ -528,6 +598,17 @@ export const financeReducer = (state, action) => {
         [action.payload.form]: { ...state[action.payload.form], ...action.payload.data }
       };
     case ACTIONS.RESET_FORM:
+      // Pour savingTransaction, préserver la date du mois sélectionné
+      if (action.payload === 'savingTransaction') {
+        const selectedDate = state.selectedMonth + '-15';
+        return {
+          ...state,
+          [action.payload]: {
+            ...initialState[action.payload],
+            date: selectedDate
+          }
+        };
+      }
       return {
         ...state,
         [action.payload]: initialState[action.payload]

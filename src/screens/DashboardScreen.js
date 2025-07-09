@@ -10,7 +10,8 @@ import {
   RealTimeInsights,
   MonthlyGoals,
   MiniReports,
-  InteractiveWidgets 
+  InteractiveWidgets,
+  SavingsProgressWidget
 } from '../components/dashboard/DashboardWidgets';
 
 // Dashboard Screen
@@ -299,6 +300,16 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
           <div className="space-y-6">
             <WidgetCard title={t('monthlyGoals')} icon={Icons.Trophy} color="yellow">
               <MonthlyGoals 
+                state={state}
+                computedValues={computedValues}
+                formatCurrency={formatCurrency}
+                theme={theme}
+                t={t}
+              />
+            </WidgetCard>
+            
+            <WidgetCard title={t('savingsProgress')} icon={Icons.PiggyBank} color="green">
+              <SavingsProgressWidget 
                 state={state}
                 computedValues={computedValues}
                 formatCurrency={formatCurrency}

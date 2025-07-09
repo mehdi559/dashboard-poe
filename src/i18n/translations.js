@@ -26,6 +26,8 @@ const translations = {
     sort: 'Trier',
     export: 'Exporter',
     import: 'Importer',
+    showDetails: 'Afficher les détails',
+    hideDetails: 'Masquer les détails',
     // Forms
     amount: 'Montant',
     description: 'Description',
@@ -65,6 +67,13 @@ const translations = {
     week: 'Cette semaine',
     month: 'Ce mois',
     year: 'Cette année',
+    // Navigation temporelle
+    previousMonth: 'Mois précédent',
+    nextMonth: 'Mois suivant',
+    currentMonth: 'Mois actuel',
+    pastMonth: 'Mois passé',
+    futureMonth: 'Mois futur',
+    goToCurrentMonth: 'Aller au mois actuel',
     // Months
     months: [
       'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -359,6 +368,10 @@ const translations = {
     months: 'mois',
     // Historique
     recentOperations: 'Dernières opérations:',
+    operationsThisMonth: 'Opérations de ce mois',
+    noOperationsThisMonth: 'Aucune opération ce mois',
+    paymentsThisMonth: 'Paiements de ce mois',
+    paymentHistory: 'Historique complet',
     otherOperations: '... et {{count}} autres opérations',
     // États vides
     noSavingsGoals: 'Aucun objectif d\'épargne défini',
@@ -386,6 +399,7 @@ const translations = {
     monthlySavings: 'Épargne mensuelle',
     initialSavings: 'Épargne initiale',
     workBonus: 'Bonus travail',
+    recordSavingTransaction: 'Enregistrer un mouvement',
     // --- Calendrier/Calendar ---
     smartReminders: 'Rappels Intelligents',
     intelligentFinancialCalendar: 'Calendrier Financier Intelligent',
@@ -489,6 +503,11 @@ const translations = {
     minimumPayment: 'Paiement minimum',
     interestRate: 'Taux d\'intérêt (%)',
     addDebt: 'Ajouter la dette',
+    paymentMode: 'Mode de paiement',
+    automatic: 'Automatique',
+    manual: 'Manuel',
+    autoDebitDescription: 'Prélèvement automatique',
+    manualPaymentDescription: 'Paiement manuel',
     yourDebtsWithAnalysis: 'Vos dettes avec analyse avancée',
     highRate: 'Taux élevé',
     repaymentProgress: 'Progression du remboursement',
@@ -720,6 +739,20 @@ const translations = {
     aiAssistant: 'Assistant IA',
     askYourQuestion: 'Posez votre question...',
     sendMessage: 'Envoyer le message',
+    // Nouvelles traductions pour la progression des économies
+    progressThisMonth: 'Progression ce mois',
+    ofTargetThisMonth: 'de l\'objectif ce mois',
+    cumulativeProgress: 'Progression cumulative',
+    monthlyProgress: 'Progression mensuelle',
+    savingsProgress: 'Progression épargne',
+    andMoreGoals: 'et {count} autres objectifs',
+    noSavingsGoals: 'Aucun objectif d\'épargne',
+    // Nouvelles traductions pour les dettes
+    paymentsThisMonth: 'Paiements ce mois',
+    ofMinimumPayment: 'du paiement minimum',
+    paidTotal: 'payé au total',
+    remaining: 'restant',
+    otherPayments: 'et {count} autres paiements',
   },
   en: {
     // Navigation
@@ -785,14 +818,13 @@ const translations = {
     week: 'This week',
     month: 'This month',
     year: 'This year',
-    // Jours de la semaine courts
-    mon: 'Mon',
-    tue: 'Tue',
-    wed: 'Wed',
-    thu: 'Thu',
-    fri: 'Fri',
-    sat: 'Sat',
-    sun: 'Sun',
+    // Navigation temporelle
+    previousMonth: 'Previous month',
+    nextMonth: 'Next month',
+    currentMonth: 'Current month',
+    pastMonth: 'Past month',
+    futureMonth: 'Future month',
+    goToCurrentMonth: 'Go to current month',
     // Months
     months: [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -1030,6 +1062,10 @@ const translations = {
     months: 'months',
     // History
     recentOperations: 'Recent operations:',
+    operationsThisMonth: 'Operations this month',
+    noOperationsThisMonth: 'No operations this month',
+    paymentsThisMonth: 'Payments this month',
+    paymentHistory: 'Complete history',
     otherOperations: '... and {{count}} other operations',
     // Empty states
     noSavingsGoals: 'No savings goals defined',
@@ -1057,6 +1093,7 @@ const translations = {
     monthlySavings: 'Monthly savings',
     initialSavings: 'Initial savings',
     workBonus: 'Work bonus',
+    recordSavingTransaction: 'Record transaction',
     // --- Calendar ---
     smartReminders: 'Smart Reminders',
     intelligentFinancialCalendar: 'Intelligent Financial Calendar',
@@ -1160,6 +1197,11 @@ const translations = {
     minimumPayment: 'Minimum payment',
     interestRate: 'Interest rate (%)',
     addDebt: 'Add debt',
+    paymentMode: 'Payment mode',
+    automatic: 'Automatic',
+    manual: 'Manual',
+    autoDebitDescription: 'Automatic debit',
+    manualPaymentDescription: 'Manual payment',
     yourDebtsWithAnalysis: 'Your debts with advanced analysis',
     highRate: 'High rate',
     repaymentProgress: 'Repayment progress',
@@ -1391,6 +1433,20 @@ const translations = {
     aiAssistant: 'AI Assistant',
     askYourQuestion: 'Ask your question...',
     sendMessage: 'Send message',
+    // Nouvelles traductions pour la progression des économies
+    progressThisMonth: 'Progression ce mois',
+    ofTargetThisMonth: 'de l\'objectif ce mois',
+    cumulativeProgress: 'Progression cumulative',
+    monthlyProgress: 'Progression mensuelle',
+    savingsProgress: 'Progression épargne',
+    andMoreGoals: 'et {count} autres objectifs',
+    noSavingsGoals: 'Aucun objectif d\'épargne',
+    // Nouvelles traductions pour les dettes
+    paymentsThisMonth: 'Paiements ce mois',
+    ofMinimumPayment: 'du paiement minimum',
+    paidTotal: 'payé au total',
+    remaining: 'restant',
+    otherPayments: 'et {count} autres paiements',
   },
   es: {
     title: 'Gestor Financiero Personal',
@@ -1718,6 +1774,7 @@ const translations = {
     monthlySavings: 'Ahorro mensual',
     initialSavings: 'Ahorro inicial',
     workBonus: 'Bono trabajo',
+    recordSavingTransaction: 'Registrar transacción',
     // --- Calendario ---
     smartReminders: 'Recordatorios Inteligentes',
     intelligentFinancialCalendar: 'Calendario Financiero Inteligente',
@@ -1741,7 +1798,7 @@ const translations = {
     // Etiquetas y textos
     expenses: 'gast.',
     total: 'Total:',
-    noExpenses: 'Sin gastos',
+    noExpenses: 'No expenses',
     planned: 'Previsto:',
     daysWithExpenses: 'Días con gastos:',
     activityRate: 'Tasa de actividad:',
@@ -2052,6 +2109,20 @@ const translations = {
     aiAssistant: 'Asistente IA',
     askYourQuestion: 'Haz tu pregunta...',
     sendMessage: 'Enviar mensaje',
+    // Nouvelles traductions pour la progression des économies
+    progressThisMonth: 'Progression ce mois',
+    ofTargetThisMonth: 'de l\'objectif ce mois',
+    cumulativeProgress: 'Progression cumulative',
+    monthlyProgress: 'Progression mensuelle',
+    savingsProgress: 'Progression épargne',
+    andMoreGoals: 'et {count} autres objectifs',
+    noSavingsGoals: 'Aucun objectif d\'épargne',
+    // Nouvelles traductions pour les dettes
+    paymentsThisMonth: 'Paiements ce mois',
+    ofMinimumPayment: 'du paiement minimum',
+    paidTotal: 'payé au total',
+    remaining: 'restant',
+    otherPayments: 'et {count} autres paiements',
   }
 };
 

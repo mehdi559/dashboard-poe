@@ -8,6 +8,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
   const [selectedStrategy, setSelectedStrategy] = useState('snowball');
   const [simulationAmount, setSimulationAmount] = useState('');
+  const [expandedDebts, setExpandedDebts] = useState(new Set()); // Pour gérer l'affichage détaillé de chaque dette
 
   // Stratégies de remboursement
   const getRepaymentStrategies = useMemo(() => {
@@ -236,6 +237,58 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                 error={state.errors.rate}
                 required
               />
+              
+              {/* Sélecteur de mode de paiement */}
+              <div className="space-y-1">
+                <label className={`block text-sm font-medium ${theme.text}`}>
+                  {t('paymentMode') || 'Mode de paiement'} <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => actions.updateForm('newDebt', { autoDebit: true })}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      state.newDebt.autoDebit 
+                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Icons.CreditCard className={`h-4 w-4 ${state.newDebt.autoDebit ? 'text-green-600' : 'text-gray-500'}`} />
+                      <div className="text-left">
+                        <div className={`font-medium text-sm ${state.newDebt.autoDebit ? 'text-green-600' : theme.text}`}>
+                          {t('automatic') || 'Automatique'}
+                        </div>
+                        <div className={`text-xs ${state.newDebt.autoDebit ? 'text-green-500' : theme.textSecondary}`}>
+                          {t('autoDebitDescription') || 'Prélèvement automatique'}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => actions.updateForm('newDebt', { autoDebit: false })}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      !state.newDebt.autoDebit 
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Icons.Hand className={`h-4 w-4 ${!state.newDebt.autoDebit ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <div className="text-left">
+                        <div className={`font-medium text-sm ${!state.newDebt.autoDebit ? 'text-blue-600' : theme.text}`}>
+                          {t('manual') || 'Manuel'}
+                        </div>
+                        <div className={`text-xs ${!state.newDebt.autoDebit ? 'text-blue-500' : theme.textSecondary}`}>
+                          {t('manualPaymentDescription') || 'Paiement manuel'}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
               <Button
                 type="submit"
                 variant="danger"
@@ -250,10 +303,10 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
           <div className="lg:col-span-2">
             <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('yourDebtsWithAnalysis')}</h3>
             <div className="space-y-4">
-              {state.debts.map(debt => {
-                const monthsToPayOff = Math.ceil(debt.balance / debt.minPayment);
-                const totalInterest = debt.balance * (debt.rate / 100 / 12) * monthsToPayOff;
-                const progress = debt.balance > 0 ? ((debt.originalBalance || debt.balance) - debt.balance) / (debt.originalBalance || debt.balance) * 100 : 100;
+              {computedValues.debtsForSelectedMonth.map(debt => {
+                const monthsToPayOff = Math.ceil(debt.remainingBalance / debt.minPayment);
+                const totalInterest = debt.remainingBalance * (debt.rate / 100 / 12) * monthsToPayOff;
+                const progress = debt.initialBalance > 0 ? ((debt.initialBalance - debt.remainingBalance) / debt.initialBalance) * 100 : 100;
                 return (
                   <div key={debt.id} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
                     <div className="flex justify-between items-start mb-3">
@@ -303,7 +356,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                       </div>
                     </div>
                     
-                    {/* Progression visuelle */}
+                    {/* Progression cumulative */}
                     {progress > 0 && (
                       <div className="mb-3">
                         <div className="flex justify-between text-sm mb-1">
@@ -316,110 +369,200 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                             style={{ width: `${Math.min(progress, 100)}%` }}
                           ></div>
                         </div>
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-3">
-                      <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>{t('balance')}</p>
-                        <p className={`font-bold text-red-600`}>
-                          {state.showBalances ? formatCurrency(debt.balance) : '•••'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>{t('paymentMin')}</p>
-                        <p className={`font-medium ${theme.text}`}>
-                          {state.showBalances ? formatCurrency(debt.minPayment) : '•••'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>{t('rate')}</p>
-                        <p className={`font-medium ${debt.rate > 15 ? 'text-red-600' : debt.rate > 10 ? 'text-yellow-600' : 'text-green-600'}`}>
-                          {debt.rate}%
-                        </p>
-                      </div>
-                      <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>{t('remainingDuration')}</p>
-                        <p className={`font-medium ${monthsToPayOff > 24 ? 'text-red-600' : 'text-green-600'}`}>
-                          {monthsToPayOff} {t('months')}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {state.showBalances && (
-                      <div className={`mb-3 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                        <p className={`text-xs ${theme.textSecondary} mb-1`}>{t('projectionWithMinimumPayments')}</p>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className={theme.textSecondary}>{t('totalInterest')}</span>
-                            <span className="font-medium text-red-600 ml-2">{formatCurrency(totalInterest)}</span>
-                          </div>
-                          <div>
-                            <span className={theme.textSecondary}>{t('totalCost')}</span>
-                            <span className="font-medium ml-2">{formatCurrency(debt.balance + totalInterest)}</span>
-                          </div>
+                        <div className="flex justify-between text-xs mt-1">
+                          <span className={theme.textSecondary}>
+                            {state.showBalances ? formatCurrency(debt.cumulativeAmount) : '•••'} {t('paidTotal')}
+                          </span>
+                          <span className={theme.textSecondary}>
+                            {state.showBalances ? formatCurrency(debt.remainingBalance) : '•••'} {t('remaining')}
+                          </span>
                         </div>
                       </div>
                     )}
                     
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="success"
-                        className="flex-1"
-                        onClick={() => {
-                          actions.setEditingItem(debt);
-                          actions.toggleModal('payment', true);
-                        }}
-                      >
-                        <Icons.CreditCard className="h-4 w-4 mr-2" />
-                        {t('recordPayment')}
-                      </Button>
-                      {debt.balance > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            // Calculer un paiement optimal (10% du solde)
-                            const optimalPayment = Math.min(debt.balance, debt.balance * 0.1);
-                            actions.recordPayment(debt.id, optimalPayment);
-                          }}
-                          title={t('suggestedPayment')}
-                        >
-                          <Icons.Zap className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                    {/* Progression du mois en cours */}
+                    {debt.monthAmount > 0 && (
+                      <div className={`mb-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800`}>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className={`text-sm font-medium ${theme.text}`}>{t('paymentsThisMonth')}</span>
+                          <span className={`text-sm font-bold text-green-600`}>-{formatCurrency(debt.monthAmount)}</span>
+                        </div>
+                        <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${Math.min(debt.monthProgress, 100)}%` }}
+                          />
+                        </div>
+                        <p className={`text-xs ${theme.textSecondary} mt-1`}>
+                          {debt.monthProgress.toFixed(1)}% {t('ofMinimumPayment')}
+                        </p>
+                      </div>
+                    )}
                     
-                    {debt.paymentHistory && debt.paymentHistory.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <p className={`text-sm font-medium ${theme.text} mb-2`}>{t('recentHistory')}</p>
-                        <div className="space-y-1">
-                          {debt.paymentHistory.slice(-3).map((payment, index) => (
-                            <div key={payment.id || index} className="flex justify-between items-center text-xs">
-                              <span className={theme.textSecondary}>
-                                {new Date(payment.date).toLocaleDateString('fr-FR')}
-                              </span>
-                              <span className={`font-medium text-green-600`}>
-                                -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
-                              </span>
-                              <button
-                                type="button"
-                                className="ml-2 p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900/20"
-                                title={t('edit')}
-                                onClick={() => {
-                                  actions.setEditingPayment({ debtId: debt.id, payment });
-                                  actions.toggleModal('editPayment', true);
-                                }}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4.243 1.414 1.414-4.243a4 4 0 01.828-1.414z" />
-                                </svg>
-                              </button>
+                    {/* Détails techniques (affichés seulement si développé) */}
+                    {expandedDebts.has(debt.id) && (
+                      <>
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div>
+                            <p className={`text-sm ${theme.textSecondary}`}>{t('balance')}</p>
+                            <p className={`font-bold text-red-600`}>
+                              {state.showBalances ? formatCurrency(debt.remainingBalance) : '•••'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className={`text-sm ${theme.textSecondary}`}>{t('paymentMin')}</p>
+                            <p className={`font-medium ${theme.text}`}>
+                              {state.showBalances ? formatCurrency(debt.minPayment) : '•••'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className={`text-sm ${theme.textSecondary}`}>{t('rate')}</p>
+                            <p className={`font-medium ${debt.rate > 15 ? 'text-red-600' : debt.rate > 10 ? 'text-yellow-600' : 'text-green-600'}`}>
+                              {debt.rate}%
+                            </p>
+                          </div>
+                          <div>
+                            <p className={`text-sm ${theme.textSecondary}`}>{t('remainingDuration')}</p>
+                            <p className={`font-medium ${monthsToPayOff > 24 ? 'text-red-600' : 'text-green-600'}`}>
+                              {monthsToPayOff} {t('months')}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {state.showBalances && (
+                          <div className={`mb-3 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
+                            <p className={`text-xs ${theme.textSecondary} mb-1`}>{t('projectionWithMinimumPayments')}</p>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className={theme.textSecondary}>{t('totalInterest')}</span>
+                                <span className="font-medium text-red-600 ml-2">{formatCurrency(totalInterest)}</span>
+                              </div>
+                              <div>
+                                <span className={theme.textSecondary}>{t('totalCost')}</span>
+                                <span className="font-medium ml-2">{formatCurrency(debt.remainingBalance + totalInterest)}</span>
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </div>
+                          </div>
+                        )}
+                      </>
                     )}
+                    
+                    {/* Actions et paiements (affichés seulement si développé) */}
+                    {expandedDebts.has(debt.id) && (
+                      <>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="success"
+                            className="flex-1"
+                            onClick={() => {
+                              actions.setEditingItem(debt);
+                              actions.toggleModal('payment', true);
+                            }}
+                          >
+                            <Icons.CreditCard className="h-4 w-4 mr-2" />
+                            {t('recordPayment')}
+                          </Button>
+                          {debt.remainingBalance > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                // Calculer un paiement optimal (10% du solde)
+                                const optimalPayment = Math.min(debt.remainingBalance, debt.remainingBalance * 0.1);
+                                actions.recordPayment(debt.id, optimalPayment);
+                              }}
+                              title={t('suggestedPayment')}
+                            >
+                              <Icons.Zap className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        
+                        {/* Paiements du mois sélectionné */}
+                        {(() => {
+                          const monthPayments = debt.paymentHistory?.filter(payment => 
+                            payment.date.startsWith(state.selectedMonth)
+                          ) || [];
+                          
+                          if (monthPayments.length > 0) {
+                            return (
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                <p className={`text-sm font-medium ${theme.text} mb-2`}>{t('paymentsThisMonth') || 'Paiements de ce mois'}</p>
+                                <div className="space-y-1">
+                                  {monthPayments.map((payment, index) => (
+                                    <div key={payment.id || index} className="flex justify-between items-center text-xs">
+                                      <span className={theme.textSecondary}>
+                                        {new Date(payment.date).toLocaleDateString('fr-FR')}
+                                      </span>
+                                      <span className={`font-medium text-green-600`}>
+                                        -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                        
+                        {/* Historique complet des paiements avec carrousel */}
+                        {debt.paymentHistory && debt.paymentHistory.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <p className={`text-sm font-medium ${theme.text} mb-2`}>{t('paymentHistory') || 'Historique complet'}</p>
+                            {(() => {
+                              return (
+                                <div className="relative">
+                                  {/* Zone de défilement avec hauteur fixe pour 3 paiements */}
+                                  <div 
+                                    className={`h-[72px] overflow-y-auto pr-2 ${theme.darkMode ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
+                                    style={{
+                                      scrollbarWidth: 'auto',
+                                      scrollbarColor: theme.darkMode ? '#6B7280' : '#9CA3AF'
+                                    }}
+                                  >
+                                    <div className="space-y-1">
+                                      {debt.paymentHistory.map((payment, index) => (
+                                        <div key={payment.id || index} className="flex justify-between items-center text-xs py-1">
+                                          <span className={theme.textSecondary}>
+                                            {new Date(payment.date).toLocaleDateString('fr-FR')}
+                                          </span>
+                                          <span className={`font-medium text-green-600`}>
+                                            -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* Bouton pour développer/replier les détails - en bas à gauche */}
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newExpanded = new Set(expandedDebts);
+                          if (newExpanded.has(debt.id)) {
+                            newExpanded.delete(debt.id);
+                          } else {
+                            newExpanded.add(debt.id);
+                          }
+                          setExpandedDebts(newExpanded);
+                        }}
+                        className="text-gray-500 hover:text-gray-700"
+                        title={expandedDebts.has(debt.id) ? t('hideDetails') : t('showDetails')}
+                      >
+                        <Icons.ChevronDown className={`h-4 w-4 transition-transform ${expandedDebts.has(debt.id) ? 'rotate-180' : ''}`} />
+                        <span className="ml-1 text-xs">{expandedDebts.has(debt.id) ? t('hideDetails') : t('showDetails')}</span>
+                      </Button>
+                    </div>
                   </div>
                 );
               })}

@@ -101,11 +101,101 @@ const useFinanceManager = () => {
     
     const totalSpent = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     const totalBudget = state.categories.reduce((sum, cat) => sum + cat.budget, 0);
-    const totalSavings = state.savingsGoals.reduce((sum, goal) => sum + goal.currentAmount, 0);
+    
+    // Calcul des économies filtrées par mois
+    const calculateSavingsForMonth = (monthStr) => {
+      return state.savingsGoals.map(goal => {
+        // Debug: Afficher toutes les dates des transactions
+        console.log('DEBUG Dates des transactions pour', goal.name, ':');
+        (goal.transactions || []).forEach(tx => {
+          console.log('  Transaction date:', tx.date, 'parsed:', new Date(tx.date));
+        });
+        
+        // Filtrer les transactions par mois
+        const monthTransactions = (goal.transactions || []).filter(transaction => {
+          const txMonth = transaction.date.slice(0, 7);
+          const matches = txMonth === monthStr;
+          console.log('DEBUG txMonth:', txMonth, 'monthStr:', monthStr, 'match:', matches, 'pour transaction:', transaction.date);
+          return matches;
+        });
+        
+        console.log('DEBUG calculateSavingsForMonth:', {
+          goal: goal.name,
+          monthStr,
+          allTransactions: goal.transactions,
+          monthTransactions
+        });
+        
+        // Calculer le montant ajouté ce mois
+        const monthAmount = monthTransactions.reduce((sum, transaction) => {
+          return transaction.type === 'add' ? sum + transaction.amount : sum - transaction.amount;
+        }, 0);
+        
+        // Calculer le montant cumulé jusqu'à ce mois (inclus)
+        const cumulativeTransactions = (goal.transactions || []).filter(transaction => 
+          transaction.date <= monthStr + '-31' // Jusqu'à la fin du mois
+        );
+        
+        const cumulativeAmount = cumulativeTransactions.reduce((sum, transaction) => {
+          return transaction.type === 'add' ? sum + transaction.amount : sum - transaction.amount;
+        }, 0);
+        
+        return {
+          ...goal,
+          monthAmount: Math.max(0, monthAmount), // Montant ajouté ce mois
+          cumulativeAmount: Math.max(0, cumulativeAmount), // Montant cumulé jusqu'à ce mois
+          monthProgress: (monthAmount / goal.targetAmount) * 100, // Progression ce mois
+          cumulativeProgress: (cumulativeAmount / goal.targetAmount) * 100 // Progression cumulative
+        };
+      });
+    };
+    
+    const savingsForSelectedMonth = calculateSavingsForMonth(state.selectedMonth);
+    const totalSavings = savingsForSelectedMonth.reduce((sum, goal) => sum + goal.cumulativeAmount, 0);
+    const totalSavingsThisMonth = savingsForSelectedMonth.reduce((sum, goal) => sum + goal.monthAmount, 0);
+    
+    // Calcul des dettes filtrées par mois
+    const calculateDebtsForMonth = (monthStr) => {
+      return state.debts.map(debt => {
+        // Filtrer les paiements par mois
+        const monthPayments = (debt.paymentHistory || []).filter(payment => 
+          payment.date.startsWith(monthStr)
+        );
+        
+        // Calculer le montant payé ce mois
+        const monthAmount = monthPayments.reduce((sum, payment) => sum + payment.amount, 0);
+        
+        // Calculer le montant cumulé payé jusqu'à ce mois (inclus)
+        const cumulativePayments = (debt.paymentHistory || []).filter(payment => 
+          payment.date <= monthStr + '-31' // Jusqu'à la fin du mois
+        );
+        
+        const cumulativeAmount = cumulativePayments.reduce((sum, payment) => sum + payment.amount, 0);
+        
+        // Calculer le solde restant (solde initial - paiements cumulés)
+        const initialBalance = debt.initialBalance || debt.balance + cumulativeAmount;
+        const remainingBalance = Math.max(0, initialBalance - cumulativeAmount);
+        
+        return {
+          ...debt,
+          monthAmount: monthAmount, // Montant payé ce mois
+          cumulativeAmount: cumulativeAmount, // Montant cumulé payé jusqu'à ce mois
+          remainingBalance: remainingBalance, // Solde restant
+          initialBalance: initialBalance, // Solde initial
+          monthProgress: (monthAmount / debt.minPayment) * 100, // Progression vs paiement minimum
+          cumulativeProgress: (cumulativeAmount / initialBalance) * 100 // Progression cumulative
+        };
+      });
+    };
+    
+    const debtsForSelectedMonth = calculateDebtsForMonth(state.selectedMonth);
+    const totalDebt = debtsForSelectedMonth.reduce((sum, debt) => sum + debt.remainingBalance, 0);
+    const totalDebtPaidThisMonth = debtsForSelectedMonth.reduce((sum, debt) => sum + debt.monthAmount, 0);
+    const totalDebtPaidCumulative = debtsForSelectedMonth.reduce((sum, debt) => sum + debt.cumulativeAmount, 0);
+    
     const totalRecurring = state.recurringExpenses
       .filter(exp => exp.active)
       .reduce((sum, exp) => sum + exp.amount, 0);
-    const totalDebt = state.debts.reduce((sum, debt) => sum + debt.balance, 0);
     
     const savingsRate = state.monthlyIncome > 0 
       ? ((state.monthlyIncome - totalSpent) / state.monthlyIncome) * 100 
@@ -132,11 +222,16 @@ const useFinanceManager = () => {
         .filter(e => e.date.startsWith(monthStr))
         .reduce((sum, e) => sum + e.amount, 0);
       
+      // Calculer les économies pour ce mois
+      const monthSavings = calculateSavingsForMonth(monthStr);
+      const totalMonthSavings = monthSavings.reduce((sum, goal) => sum + goal.cumulativeAmount, 0);
+      
       monthlyData.push({
         month: date.toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short' }),
         income: state.monthlyIncome,
         expenses: monthExpenses,
-        savings: state.monthlyIncome - monthExpenses
+        savings: state.monthlyIncome - monthExpenses,
+        cumulativeSavings: totalMonthSavings
       });
     }
 
@@ -145,8 +240,13 @@ const useFinanceManager = () => {
       totalSpent,
       totalBudget,
       totalSavings,
-      totalRecurring,
+      totalSavingsThisMonth,
+      savingsForSelectedMonth,
       totalDebt,
+      totalDebtPaidThisMonth,
+      totalDebtPaidCumulative,
+      debtsForSelectedMonth,
+      totalRecurring,
       savingsRate,
       pieChartData,
       monthlyData
@@ -232,6 +332,32 @@ const useFinanceManager = () => {
     const currency = getCurrentCurrency();
     return dateUtils.formatCurrency(amount, currency.code, state.language === 'fr' ? 'fr-FR' : 'en-US');
   }, [getCurrentCurrency, state.language]);
+
+  // Fonctions de navigation temporelle
+  const getMonthNavigation = useCallback(() => {
+    const currentDate = new Date(state.selectedMonth + '-01');
+    const previousMonth = new Date(currentDate);
+    previousMonth.setMonth(previousMonth.getMonth() - 1);
+    const nextMonth = new Date(currentDate);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    
+    return {
+      current: state.selectedMonth,
+      previous: previousMonth.toISOString().slice(0, 7),
+      next: nextMonth.toISOString().slice(0, 7),
+      isCurrentMonth: state.selectedMonth === new Date().toISOString().slice(0, 7),
+      isPastMonth: currentDate < new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      isFutureMonth: currentDate > new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+    };
+  }, [state.selectedMonth]);
+
+  const getMonthDisplayName = useCallback((monthStr) => {
+    const date = new Date(monthStr + '-01');
+    return date.toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', { 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  }, [state.language]);
 
   // Action creators
   const actions = {
@@ -428,6 +554,8 @@ const useFinanceManager = () => {
     },
 
     addSavingsTransaction: (goalId, transactionData) => {
+      console.log('addSavingsTransaction called with:', { goalId, transactionData });
+
       const rules = {
         amount: [
           { validator: validators.required, message: 'Le montant est requis' },
@@ -440,7 +568,7 @@ const useFinanceManager = () => {
       };
 
       const { isValid, errors } = validateForm(transactionData, rules);
-      
+      console.log('Validation result:', { isValid, errors, transactionData });
       if (!isValid) {
         Object.entries(errors).forEach(([field, message]) => setError(field, message));
         return false;
@@ -450,8 +578,11 @@ const useFinanceManager = () => {
         goalId,
         amount: sanitizers.currency(transactionData.amount),
         description: sanitizers.text(transactionData.description),
-        type: transactionData.type || 'add'
+        type: transactionData.type || 'add',
+        date: transactionData.date || new Date().toISOString().split('T')[0]
       };
+      
+      console.log('Sanitized data:', sanitizedData);
 
       dispatch({ type: ACTIONS.ADD_SAVINGS_TRANSACTION, payload: sanitizedData });
       showNotification(`Transaction ${sanitizedData.type === 'add' ? 'ajoutée' : 'retirée'} avec succès`);
@@ -806,7 +937,9 @@ const useFinanceManager = () => {
     setError,
     clearError,
     currencies,
-    setTranslation // Expose the new function
+    setTranslation, // Expose the new function
+    getMonthNavigation, // Expose the new function
+    getMonthDisplayName // Expose the new function
   };
 };
 
