@@ -110,6 +110,17 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
     return { progress, segments, filledSegments };
   };
 
+  // Fonction pour traduire les descriptions des transactions
+  const translateTransactionDescription = (description) => {
+    const translationMap = {
+      'Virement initial': t('initialTransfer'),
+      'Épargne mensuelle': t('monthlySavings'),
+      'Épargne initiale': t('initialSavings'),
+      'Bonus travail': t('workBonus')
+    };
+    return translationMap[description] || description;
+  };
+
   return (
     <div className="space-y-6">
       {/* Défis d'épargne */}
@@ -373,7 +384,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                           {goal.transactions.slice(-3).map((transaction, index) => (
                             <div key={transaction.id || index} className="flex justify-between text-xs">
                               <span className={theme.textSecondary}>
-                                {new Date(transaction.date).toLocaleDateString('fr-FR')} - {transaction.description}
+                                {new Date(transaction.date).toLocaleDateString('fr-FR')} - {translateTransactionDescription(transaction.description)}
                               </span>
                               <span className={`font-medium ${transaction.type === 'add' ? 'text-green-600' : 'text-red-600'}`}>
                                 {transaction.type === 'add' ? '+' : '-'}{state.showBalances ? formatCurrency(transaction.amount) : '•••'}

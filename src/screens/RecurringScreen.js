@@ -30,13 +30,13 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
       if (exp.amount > 20) {
         optimizations.push({
           expense: exp,
-          suggestion: `Annuler ${exp.description} économiserait ${formatCurrency(exp.amount * 12)} par an`,
+          suggestion: t('cancelExpenseSuggestion', { description: exp.description, amount: formatCurrency(exp.amount * 12) }),
           impact: 'high'
         });
       } else if (exp.amount > 10) {
         optimizations.push({
           expense: exp,
-          suggestion: `Réduire ${exp.description} de 50% économiserait ${formatCurrency(exp.amount * 6)} par an`,
+          suggestion: t('reduceExpenseSuggestion', { description: exp.description, amount: formatCurrency(exp.amount * 6) }),
           impact: 'medium'
         });
       }
@@ -49,7 +49,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
       optimizations: optimizations.slice(0, 3), // Top 3 suggestions
       percentageOfIncome: (totalMonthly / state.monthlyIncome) * 100
     };
-  }, [state.recurringExpenses, state.monthlyIncome, formatCurrency]);
+  }, [state.recurringExpenses, state.monthlyIncome, formatCurrency, t]);
 
   // Notifications d'échéance intelligentes
   const getUpcomingNotifications = useMemo(() => {
@@ -76,12 +76,12 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
 
   // Templates de dépenses récurrentes courantes
   const getRecurringTemplates = () => [
-    { description: 'Netflix', category: 'Loisirs', amount: 15.99, dayOfMonth: 15 },
-    { description: 'Spotify', category: 'Loisirs', amount: 9.99, dayOfMonth: 1 },
-    { description: 'Salle de sport', category: 'Santé', amount: 29.99, dayOfMonth: 1 },
-    { description: 'Assurance auto', category: 'Transport', amount: 45, dayOfMonth: 5 },
-    { description: 'Internet/Box', category: 'Logement', amount: 39.99, dayOfMonth: 15 },
-    { description: 'Téléphone', category: 'Logement', amount: 25, dayOfMonth: 20 },
+    { description: t('netflix'), category: t('leisure'), amount: 15.99, dayOfMonth: 15 },
+    { description: t('spotify'), category: t('leisure'), amount: 9.99, dayOfMonth: 1 },
+    { description: t('gym'), category: t('health'), amount: 29.99, dayOfMonth: 1 },
+    { description: t('carInsurance'), category: t('transport'), amount: 45, dayOfMonth: 5 },
+    { description: t('internetBox'), category: t('housing'), amount: 39.99, dayOfMonth: 15 },
+    { description: t('phone'), category: t('housing'), amount: 25, dayOfMonth: 20 },
   ];
 
   // Analyse des tendances de prélèvement
@@ -115,7 +115,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
         <div className={`${theme.card} rounded-xl border ${theme.border} p-4`}>
           <h3 className={`text-lg font-semibold ${theme.text} mb-3 flex items-center`}>
             <Icons.Clock className="h-5 w-5 mr-2 text-orange-500" />
-            Prochaines échéances
+            {t('upcomingDeadlines')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {notifications.map((notif, index) => (
@@ -131,7 +131,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
                     notif.urgency === 'medium' ? 'bg-yellow-200 text-yellow-800' :
                     'bg-blue-200 text-blue-800'
                   }`}>
-                    {notif.daysUntil === 0 ? 'Aujourd\'hui' : `${notif.daysUntil}j`}
+                    {notif.daysUntil === 0 ? t('today') : `${notif.daysUntil}${t('days')}`}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -148,23 +148,23 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
           <Icons.Calculator className="h-6 w-6 mr-2 text-green-600" />
-          Impact Financier Annuel
+          {t('annualFinancialImpact')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Résumé global */}
           <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
-            <h4 className={`font-semibold ${theme.text} mb-3`}>Impact Global</h4>
+            <h4 className={`font-semibold ${theme.text} mb-3`}>{t('globalImpact')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className={theme.textSecondary}>Mensuel:</span>
+                <span className={theme.textSecondary}>{t('monthly')}</span>
                 <span className={`font-bold text-red-600`}>{formatCurrency(analysis.totalMonthly)}</span>
               </div>
               <div className="flex justify-between">
-                <span className={theme.textSecondary}>Annuel:</span>
+                <span className={theme.textSecondary}>{t('annual')}</span>
                 <span className={`font-bold text-red-700`}>{formatCurrency(analysis.totalAnnual)}</span>
               </div>
               <div className="flex justify-between">
-                <span className={theme.textSecondary}>% du revenu:</span>
+                <span className={theme.textSecondary}>{t('percentageOfIncome')}</span>
                 <span className={`font-bold ${analysis.percentageOfIncome > 30 ? 'text-red-600' : analysis.percentageOfIncome > 20 ? 'text-yellow-600' : 'text-green-600'}`}>
                   {analysis.percentageOfIncome.toFixed(1)}%
                 </span>
@@ -174,12 +174,12 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
 
           {/* Répartition par catégorie */}
           <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
-            <h4 className={`font-semibold ${theme.text} mb-3`}>Par Catégorie</h4>
+            <h4 className={`font-semibold ${theme.text} mb-3`}>{t('byCategory')}</h4>
             <div className="space-y-2">
               {Object.entries(analysis.byCategory).map(([category, amount]) => (
                 <div key={category} className="flex justify-between">
                   <span className={theme.textSecondary}>{category}:</span>
-                  <span className={theme.text}>{formatCurrency(amount)}/mois</span>
+                  <span className={theme.text}>{formatCurrency(amount)}{t('perMonth')}</span>
                 </div>
               ))}
             </div>
@@ -187,18 +187,18 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
 
           {/* Répartition par période */}
           <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
-            <h4 className={`font-semibold ${theme.text} mb-3`}>Répartition Mensuelle</h4>
+            <h4 className={`font-semibold ${theme.text} mb-3`}>{t('monthlyDistribution')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className={theme.textSecondary}>Début (1-10):</span>
+                <span className={theme.textSecondary}>{t('startOfMonth')}</span>
                 <span className={theme.text}>{formatCurrency(trends.startOfMonth)}</span>
               </div>
               <div className="flex justify-between">
-                <span className={theme.textSecondary}>Milieu (11-20):</span>
+                <span className={theme.textSecondary}>{t('midMonth')}</span>
                 <span className={theme.text}>{formatCurrency(trends.midMonth)}</span>
               </div>
               <div className="flex justify-between">
-                <span className={theme.textSecondary}>Fin (21-31):</span>
+                <span className={theme.textSecondary}>{t('endOfMonth')}</span>
                 <span className={theme.text}>{formatCurrency(trends.endOfMonth)}</span>
               </div>
             </div>
@@ -211,7 +211,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
         <div className={`${theme.card} rounded-xl border ${theme.border} p-4`}>
           <h3 className={`text-lg font-semibold ${theme.text} mb-3 flex items-center`}>
             <Icons.Lightbulb className="h-5 w-5 mr-2 text-yellow-500" />
-            Suggestions d'Optimisation
+            {t('optimizationSuggestions')}
           </h3>
           <div className="space-y-3">
             {analysis.optimizations.map((opt, index) => (
@@ -224,7 +224,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
                   <span className={`text-xs px-2 py-1 rounded-full ${
                     opt.impact === 'high' ? 'bg-green-200 text-green-800' : 'bg-blue-200 text-blue-800'
                   }`}>
-                    Impact {opt.impact === 'high' ? 'élevé' : 'moyen'}
+                    {t('impact')} {opt.impact === 'high' ? t('highImpact') : t('mediumImpact')}
                   </span>
                 </div>
               </div>
@@ -236,22 +236,22 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
       {/* Section principale */}
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>Dépenses Récurrentes</h2>
+          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('recurringExpenses')}</h2>
           <div className="text-right">
             <p className={`text-2xl font-bold ${theme.text}`}>
               {state.showBalances ? formatCurrency(computedValues.totalRecurring) : '•••'}
             </p>
-            <p className={`text-sm ${theme.textSecondary}`}>Total mensuel</p>
+            <p className={`text-sm ${theme.textSecondary}`}>{t('monthlyTotal')}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Nouvelle dépense récurrente</h3>
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('newRecurringExpense')}</h3>
             
             {/* Templates rapides */}
             <div className="mb-4">
-              <p className={`text-sm ${theme.textSecondary} mb-2`}>Templates courants :</p>
+              <p className={`text-sm ${theme.textSecondary} mb-2`}>{t('commonTemplates')}</p>
               <div className="grid grid-cols-2 gap-2">
                 {templates.map((template, index) => (
                   <button
@@ -269,14 +269,30 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
-                if (actions.addRecurringExpense(state.newRecurring)) {
-                  actions.resetForm('newRecurring');
+                if (state.editingItem) {
+                  // Mode édition : mettre à jour la dépense existante
+                  const updatedExpense = {
+                    ...state.editingItem,
+                    description: state.newRecurring.description,
+                    category: state.newRecurring.category,
+                    amount: parseFloat(state.newRecurring.amount),
+                    dayOfMonth: parseInt(state.newRecurring.dayOfMonth)
+                  };
+                  if (actions.updateRecurringExpense(updatedExpense)) {
+                    actions.setEditingItem(null);
+                    actions.resetForm('newRecurring');
+                  }
+                } else {
+                  // Mode création : ajouter une nouvelle dépense
+                  if (actions.addRecurringExpense(state.newRecurring)) {
+                    actions.resetForm('newRecurring');
+                  }
                 }
               }}
               className="space-y-4"
             >
               <Input
-                label="Description"
+                label={t('description')}
                 type="text"
                 value={state.newRecurring.description}
                 onChange={(value) => actions.updateForm('newRecurring', { description: value })}
@@ -288,7 +304,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
               
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Catégorie <span className="text-red-500">*</span>
+                  {t('category')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={state.newRecurring.category}
@@ -298,7 +314,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
                   }`}
                   required
                 >
-                  <option value="">Sélectionner une catégorie</option>
+                  <option value="">{t('selectCategory')}</option>
                   {state.categories.map(cat => (
                     <option key={cat.id} value={cat.name}>{cat.name}</option>
                   ))}
@@ -309,7 +325,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
               </div>
               
               <Input
-                label="Montant"
+                label={t('amount')}
                 type="number"
                 step="0.01"
                 min="0"
@@ -320,7 +336,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
               />
               
               <Input
-                label="Jour du mois (1-31)"
+                label={t('dayOfMonth')}
                 type="number"
                 min="1"
                 max="31"
@@ -337,13 +353,27 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
                 disabled={state.loading}
                 loading={state.loading}
               >
-                Ajouter
+                {state.editingItem ? t('update') : t('add')}
               </Button>
+              
+              {state.editingItem && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    actions.setEditingItem(null);
+                    actions.resetForm('newRecurring');
+                  }}
+                >
+                  {t('cancel')}
+                </Button>
+              )}
             </form>
           </div>
 
           <div className="lg:col-span-2">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Vos dépenses récurrentes</h3>
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('yourRecurringExpenses')}</h3>
             <div className="space-y-3">
               {state.recurringExpenses.map(expense => {
                 const today = new Date();
@@ -369,17 +399,17 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
                         <span className={`px-2 py-1 text-xs rounded-full ${
                           daysUntilNext <= 7 ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
                         }`}>
-                          Prochaine: {daysUntilNext === 0 ? 'Aujourd\'hui' : `${daysUntilNext}j`}
+                          {t('next')} {daysUntilNext === 0 ? t('today') : `${daysUntilNext}${t('days')}`}
                         </span>
                       </div>
                     </div>
                     <div className="text-sm">
                       <p className={theme.textSecondary}>
-                        Prochaine occurrence: {nextOccurrence.toLocaleDateString('fr-FR')}
+                        {t('nextOccurrence')} {nextOccurrence.toLocaleDateString('fr-FR')}
                       </p>
                       {expense.lastProcessed && (
                         <p className={theme.textSecondary}>
-                          Dernière fois ajoutée: {new Date(expense.lastProcessed).toLocaleDateString('fr-FR')}
+                          {t('lastAdded')} {new Date(expense.lastProcessed).toLocaleDateString('fr-FR')}
                         </p>
                       )}
                     </div>
@@ -395,14 +425,30 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
                         {expense.active ? (
                           <div className="flex items-center space-x-1">
                             <Icons.Check className="h-3 w-3" />
-                            <span>Actif</span>
+                            <span>{t('active')}</span>
                           </div>
                         ) : (
                           <div className="flex items-center space-x-1">
                             <Icons.Pause className="h-3 w-3" />
-                            <span>Inactif</span>
+                            <span>{t('inactive')}</span>
                           </div>
                         )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          actions.setEditingItem(expense);
+                          actions.updateForm('newRecurring', {
+                            description: expense.description,
+                            category: expense.category,
+                            amount: expense.amount,
+                            dayOfMonth: expense.dayOfMonth
+                          });
+                        }}
+                        className="text-blue-500 hover:text-blue-700"
+                      >
+                        <Icons.Edit2 className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
@@ -420,8 +466,8 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
               {state.recurringExpenses.length === 0 && (
                 <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
                   <Icons.RefreshCw className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p>Aucune dépense récurrente configurée</p>
-                  <p className="text-xs mt-2">Utilisez les templates ou créez votre propre récurrence !</p>
+                  <p>{t('noRecurringExpenses')}</p>
+                  <p className="text-xs mt-2">{t('useTemplatesOrCreate')}</p>
                 </div>
               )}
             </div>

@@ -39,25 +39,25 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
     
     return {
       snowball: {
-        name: 'Boule de neige',
-        description: 'Rembourser les plus petites dettes en premier',
+        name: t('snowball'),
+        description: t('snowballDescription'),
         order: snowball,
         ...calculateStrategy(snowball),
-        pros: ['Motivation psychologique', 'Victoires rapides', 'Simplification'],
-        cons: ['Plus cher en intérêts', 'Plus long'],
+        pros: [t('psychologicalMotivation'), t('quickWins'), t('simplification')],
+        cons: [t('moreExpensiveInterest'), t('longer')],
         icon: Icons.Snowflake
       },
       avalanche: {
-        name: 'Avalanche',
-        description: 'Rembourser les taux les plus élevés en premier',
+        name: t('avalanche'),
+        description: t('avalancheDescription'),
         order: avalanche,
         ...calculateStrategy(avalanche),
-        pros: ['Économise le plus d\'argent', 'Plus rapide', 'Mathématiquement optimal'],
-        cons: ['Moins motivant', 'Résultats plus lents'],
+        pros: [t('savesMostMoney'), t('faster'), t('mathematicallyOptimal')],
+        cons: [t('lessMotivating'), t('slowerResults')],
         icon: Icons.Mountain
       }
     };
-  }, [state.debts, simulationAmount]);
+  }, [state.debts, simulationAmount, t]);
 
   // Simulateur avancé de remboursement
   const getAdvancedSimulation = useMemo(() => {
@@ -136,8 +136,8 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
     if (healthScore.debtToIncomeRatio > 36) {
       advice.push({
         type: 'critical',
-        title: 'Ratio dette/revenu critique',
-        message: 'Votre ratio dette/revenu dépasse 36%. Considérez une consolidation ou un conseil financier.',
+        title: t('criticalDebtToIncomeRatio'),
+        message: t('criticalRatioMessage'),
         icon: Icons.AlertTriangle
       });
     }
@@ -146,8 +146,8 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
     if (highRateDebts.length > 0) {
       advice.push({
         type: 'warning',
-        title: 'Taux d\'intérêt élevés détectés',
-        message: `${highRateDebts.length} dette(s) avec des taux supérieurs à 15%. Priorisez leur remboursement.`,
+        title: t('highInterestRatesDetected'),
+        message: t('highRateMessage', { count: highRateDebts.length }),
         icon: Icons.TrendingUp
       });
     }
@@ -156,13 +156,13 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
     const bestStrategy = strategies.avalanche.totalInterest < strategies.snowball.totalInterest ? 'avalanche' : 'snowball';
     advice.push({
       type: 'info',
-      title: 'Stratégie recommandée',
-      message: `La stratégie "${strategies[bestStrategy].name}" vous ferait économiser le plus d'argent.`,
+      title: t('recommendedStrategy'),
+      message: t('strategyMessage', { strategy: strategies[bestStrategy].name }),
       icon: Icons.Lightbulb
     });
     
     return advice;
-  }, [state.debts, getDebtHealthScore, getRepaymentStrategies]);
+  }, [state.debts, getDebtHealthScore, getRepaymentStrategies, t]);
 
   const healthScore = getDebtHealthScore;
   const strategies = getRepaymentStrategies;
@@ -175,7 +175,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
           <Icons.Heart className="h-6 w-6 mr-2 text-red-500" />
-          Score de Santé des Dettes
+          {t('debtHealthScore')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex items-center justify-center">
@@ -195,38 +195,38 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
           </div>
           <div className="space-y-3">
             <div>
-              <span className={theme.textSecondary}>Niveau:</span>
+              <span className={theme.textSecondary}>{t('level')}</span>
               <div className={`font-bold text-${healthScore.color}-600 capitalize`}>{healthScore.level}</div>
             </div>
             <div>
-              <span className={theme.textSecondary}>Ratio dette/revenu:</span>
+              <span className={theme.textSecondary}>{t('debtToIncomeRatio')}</span>
               <div className={`font-bold ${healthScore.debtToIncomeRatio > 36 ? 'text-red-600' : 'text-green-600'}`}>
                 {healthScore.debtToIncomeRatio.toFixed(1)}%
               </div>
             </div>
             <div>
-              <span className={theme.textSecondary}>Nombre de dettes:</span>
+              <span className={theme.textSecondary}>{t('numberOfDebts')}</span>
               <div className={theme.text}>{state.debts.length}</div>
             </div>
           </div>
           <div className="space-y-2">
-            <h4 className={`font-semibold ${theme.text}`}>Recommandations:</h4>
+            <h4 className={`font-semibold ${theme.text}`}>{t('recommendations')}</h4>
             <ul className="text-sm space-y-1">
               {healthScore.score < 60 && (
                 <li className="flex items-center space-x-2">
                   <Icons.AlertCircle className="h-3 w-3 text-red-500" />
-                  <span>Consolidation recommandée</span>
+                  <span>{t('consolidationRecommended')}</span>
                 </li>
               )}
               {healthScore.debtToIncomeRatio > 20 && (
                 <li className="flex items-center space-x-2">
                   <Icons.TrendingDown className="h-3 w-3 text-orange-500" />
-                  <span>Réduire le ratio dette/revenu</span>
+                  <span>{t('reduceDebtToIncomeRatio')}</span>
                 </li>
               )}
               <li className="flex items-center space-x-2">
                 <Icons.Target className="h-3 w-3 text-blue-500" />
-                <span>Objectif: ratio &lt; 20%</span>
+                <span>{t('targetRatio')}</span>
               </li>
             </ul>
           </div>
@@ -238,7 +238,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
         <div className={`${theme.card} rounded-xl border ${theme.border} p-4`}>
           <h3 className={`text-lg font-semibold ${theme.text} mb-3 flex items-center`}>
             <Icons.MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
-            Conseils Personnalisés
+            {t('personalizedAdvice')}
           </h3>
           <div className="space-y-3">
             {advice.map((tip, index) => {
@@ -270,15 +270,15 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
           <Icons.Target className="h-6 w-6 mr-2 text-purple-600" />
-          Stratégies de Remboursement
+          {t('repaymentStrategies')}
         </h3>
         
         {/* Simulateur de paiement supplémentaire */}
         <div className={`mb-6 p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
-          <h4 className={`font-semibold ${theme.text} mb-3`}>Simulateur de paiement supplémentaire</h4>
+          <h4 className={`font-semibold ${theme.text} mb-3`}>{t('paymentSimulator')}</h4>
           <div className="flex items-center space-x-4">
             <Input
-              label="Montant supplémentaire mensuel"
+              label={t('additionalMonthlyAmount')}
               type="number"
               step="10"
               min="0"
@@ -321,25 +321,25 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                     size="sm"
                     onClick={() => setSelectedStrategy(key)}
                   >
-                    {selectedStrategy === key ? 'Sélectionné' : 'Choisir'}
+                    {selectedStrategy === key ? t('selected') : t('choose')}
                   </Button>
                 </div>
                 <p className={`text-sm ${theme.textSecondary} mb-4`}>{strategy.description}</p>
                 
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Temps total:</span>
-                    <span className={theme.text}>{strategy.totalTime} mois</span>
+                    <span className={theme.textSecondary}>{t('totalTime')}</span>
+                    <span className={theme.text}>{strategy.totalTime} {t('months')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className={theme.textSecondary}>Intérêts totaux:</span>
+                    <span className={theme.textSecondary}>{t('totalInterest')}</span>
                     <span className={theme.text}>{formatCurrency(strategy.totalInterest)}</span>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <h5 className={`font-medium ${theme.text} mb-1`}>Avantages:</h5>
+                    <h5 className={`font-medium ${theme.text} mb-1`}>{t('advantages')}</h5>
                     <ul className="space-y-1">
                       {strategy.pros.map((pro, index) => (
                         <li key={index} className="flex items-center space-x-1">
@@ -350,7 +350,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                     </ul>
                   </div>
                   <div>
-                    <h5 className={`font-medium ${theme.text} mb-1`}>Inconvénients:</h5>
+                    <h5 className={`font-medium ${theme.text} mb-1`}>{t('disadvantages')}</h5>
                     <ul className="space-y-1">
                       {strategy.cons.map((con, index) => (
                         <li key={index} className="flex items-center space-x-1">
@@ -372,7 +372,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
         <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
           <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
             <Icons.Calculator className="h-6 w-6 mr-2 text-green-600" />
-            Simulation: +{formatCurrency(simulationAmount)}/mois
+            {t('simulation', { amount: formatCurrency(simulationAmount) })}
           </h3>
           <div className="space-y-4">
             {simulation.map(debt => (
@@ -380,19 +380,19 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                 <h4 className={`font-semibold ${theme.text} mb-3`}>{debt.name}</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <span className={theme.textSecondary}>Temps gagné:</span>
-                    <div className={`font-bold text-green-600`}>{debt.timeSaved} mois</div>
+                    <span className={theme.textSecondary}>{t('timeSaved')}</span>
+                    <div className={`font-bold text-green-600`}>{debt.timeSaved} {t('months')}</div>
                   </div>
                   <div>
-                    <span className={theme.textSecondary}>Intérêts économisés:</span>
+                    <span className={theme.textSecondary}>{t('interestSaved')}</span>
                     <div className={`font-bold text-green-600`}>{formatCurrency(debt.interestSaved)}</div>
                   </div>
                   <div>
-                    <span className={theme.textSecondary}>Nouveau délai:</span>
-                    <div className={theme.text}>{debt.enhancedMonths} mois</div>
+                    <span className={theme.textSecondary}>{t('newDeadline')}</span>
+                    <div className={theme.text}>{debt.enhancedMonths} {t('months')}</div>
                   </div>
                   <div>
-                    <span className={theme.textSecondary}>Nouveaux intérêts:</span>
+                    <span className={theme.textSecondary}>{t('newInterest')}</span>
                     <div className={theme.text}>{formatCurrency(debt.enhancedInterest)}</div>
                   </div>
                 </div>
@@ -405,18 +405,18 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
       {/* Section principale */}
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>Gestion des Dettes</h2>
+          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('debtManagement')}</h2>
           <div className="text-right">
             <p className={`text-2xl font-bold text-red-600`}>
               {state.showBalances ? formatCurrency(computedValues.totalDebt) : '•••'}
             </p>
-            <p className={`text-sm ${theme.textSecondary}`}>Total des dettes</p>
+            <p className={`text-sm ${theme.textSecondary}`}>{t('totalDebts')}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Nouvelle dette</h3>
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('newDebt')}</h3>
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
@@ -427,7 +427,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
               className="space-y-4"
             >
               <Input
-                label="Nom de la dette"
+                label={t('debtName')}
                 type="text"
                 value={state.newDebt.name}
                 onChange={(value) => actions.updateForm('newDebt', { name: value })}
@@ -438,7 +438,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
               />
               
               <Input
-                label="Solde actuel"
+                label={t('currentBalance')}
                 type="number"
                 step="0.01"
                 min="0"
@@ -449,7 +449,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
               />
               
               <Input
-                label="Paiement minimum"
+                label={t('minimumPayment')}
                 type="number"
                 step="0.01"
                 min="0"
@@ -460,7 +460,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
               />
               
               <Input
-                label="Taux d'intérêt (%)"
+                label={t('interestRate')}
                 type="number"
                 step="0.1"
                 min="0"
@@ -478,13 +478,13 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                 disabled={state.loading}
                 loading={state.loading}
               >
-                Ajouter la dette
+                {t('addDebt')}
               </Button>
             </form>
           </div>
 
           <div className="lg:col-span-2">
-            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Vos dettes avec analyse avancée</h3>
+            <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('yourDebtsWithAnalysis')}</h3>
             <div className="space-y-4">
               {state.debts.map(debt => {
                 const monthsToPayOff = Math.ceil(debt.balance / debt.minPayment);
@@ -498,7 +498,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                         <h4 className={`font-semibold ${theme.text}`}>{debt.name}</h4>
                         {debt.rate > 15 && (
                           <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
-                            Taux élevé
+                            {t('highRate')}
                           </span>
                         )}
                       </div>
@@ -516,7 +516,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                     {progress > 0 && (
                       <div className="mb-3">
                         <div className="flex justify-between text-sm mb-1">
-                          <span className={theme.textSecondary}>Progression du remboursement</span>
+                          <span className={theme.textSecondary}>{t('repaymentProgress')}</span>
                           <span className={`font-medium text-green-600`}>{progress.toFixed(1)}%</span>
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -530,41 +530,41 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                     
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>Solde</p>
+                        <p className={`text-sm ${theme.textSecondary}`}>{t('balance')}</p>
                         <p className={`font-bold text-red-600`}>
                           {state.showBalances ? formatCurrency(debt.balance) : '•••'}
                         </p>
                       </div>
                       <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>Paiement min.</p>
+                        <p className={`text-sm ${theme.textSecondary}`}>{t('paymentMin')}</p>
                         <p className={`font-medium ${theme.text}`}>
                           {state.showBalances ? formatCurrency(debt.minPayment) : '•••'}
                         </p>
                       </div>
                       <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>Taux</p>
+                        <p className={`text-sm ${theme.textSecondary}`}>{t('rate')}</p>
                         <p className={`font-medium ${debt.rate > 15 ? 'text-red-600' : debt.rate > 10 ? 'text-yellow-600' : 'text-green-600'}`}>
                           {debt.rate}%
                         </p>
                       </div>
                       <div>
-                        <p className={`text-sm ${theme.textSecondary}`}>Durée restante</p>
+                        <p className={`text-sm ${theme.textSecondary}`}>{t('remainingDuration')}</p>
                         <p className={`font-medium ${monthsToPayOff > 24 ? 'text-red-600' : 'text-green-600'}`}>
-                          {monthsToPayOff} mois
+                          {monthsToPayOff} {t('months')}
                         </p>
                       </div>
                     </div>
                     
                     {state.showBalances && (
                       <div className={`mb-3 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                        <p className={`text-xs ${theme.textSecondary} mb-1`}>Projection avec paiements minimums:</p>
+                        <p className={`text-xs ${theme.textSecondary} mb-1`}>{t('projectionWithMinimumPayments')}</p>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
-                            <span className={theme.textSecondary}>Intérêts totaux:</span>
+                            <span className={theme.textSecondary}>{t('totalInterest')}</span>
                             <span className="font-medium text-red-600 ml-2">{formatCurrency(totalInterest)}</span>
                           </div>
                           <div>
-                            <span className={theme.textSecondary}>Coût total:</span>
+                            <span className={theme.textSecondary}>{t('totalCost')}</span>
                             <span className="font-medium ml-2">{formatCurrency(debt.balance + totalInterest)}</span>
                           </div>
                         </div>
@@ -581,7 +581,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                         }}
                       >
                         <Icons.CreditCard className="h-4 w-4 mr-2" />
-                        Enregistrer un paiement
+                        {t('recordPayment')}
                       </Button>
                       {debt.balance > 0 && (
                         <Button
@@ -592,7 +592,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                             const optimalPayment = Math.min(debt.balance, debt.balance * 0.1);
                             actions.recordPayment(debt.id, optimalPayment);
                           }}
-                          title="Paiement suggéré (10% du solde)"
+                          title={t('suggestedPayment')}
                         >
                           <Icons.Zap className="h-4 w-4" />
                         </Button>
@@ -601,7 +601,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                     
                     {debt.paymentHistory && debt.paymentHistory.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <p className={`text-sm font-medium ${theme.text} mb-2`}>Historique récent:</p>
+                        <p className={`text-sm font-medium ${theme.text} mb-2`}>{t('recentHistory')}</p>
                         <div className="space-y-1">
                           {debt.paymentHistory.slice(-3).map((payment, index) => (
                             <div key={payment.id || index} className="flex justify-between text-xs">
@@ -623,9 +623,9 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
               {state.debts.length === 0 && (
                 <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
                   <Icons.CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500" />
-                  <p className="text-lg font-medium text-green-600">Félicitations !</p>
-                  <p>Aucune dette enregistrée 🎉</p>
-                  <p className="text-xs mt-2">Maintenez cette excellente situation financière !</p>
+                  <p className="text-lg font-medium text-green-600">{t('congratulations')}</p>
+                  <p>{t('noDebtsRecorded')}</p>
+                  <p className="text-xs mt-2">{t('maintainExcellentSituation')}</p>
                 </div>
               )}
             </div>

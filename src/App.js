@@ -109,6 +109,13 @@ const App = () => {
     return translations[state.language]?.[key] || translations.fr[key] || key;
   }, [state.language]);
 
+  // Passer t à financeManager après sa création
+  React.useEffect(() => {
+    if (financeManager.setTranslation) {
+      financeManager.setTranslation(t);
+    }
+  }, [t, financeManager]);
+
   // Gestion du mode sombre
   useEffect(() => {
     if (state.darkMode) {

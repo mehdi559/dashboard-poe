@@ -1,4 +1,5 @@
-import { useReducer, useRef, useMemo, useEffect, useCallback } from 'react';
+import React, { useReducer, useRef, useCallback, useMemo, useState } from 'react';
+import { useEffect } from 'react';
 import { financeReducer, ACTIONS, initialState } from '../../../store/financeReducer';
 import { validators } from '../../../utils/validators';
 import { sanitizers } from '../../../utils/sanitizers';
@@ -9,6 +10,12 @@ import { dataUtils } from '../../../utils/dataUtils';
 const useFinanceManager = () => {
   const [state, dispatch] = useReducer(financeReducer, initialState);
   const notificationTimeouts = useRef(new Map());
+  const [t, setT] = useState((key) => key); // Fonction par défaut qui retourne la clé
+
+  // Fonction pour définir la traduction
+  const setTranslation = useCallback((translationFunction) => {
+    setT(() => translationFunction);
+  }, []);
 
   // Currencies data
   const currencies = useMemo(() => [
@@ -556,23 +563,61 @@ const useFinanceManager = () => {
       showNotification('Statut mis à jour');
     },
 
+    updateRecurringExpense: (updatedExpense) => {
+      const rules = {
+        description: [
+          { validator: validators.required, message: t('descriptionRequired') },
+          { validator: validators.minLength(2), message: t('descriptionMinLength') }
+        ],
+        category: [
+          { validator: validators.required, message: t('categoryRequired') }
+        ],
+        amount: [
+          { validator: validators.required, message: t('amountRequired') },
+          { validator: validators.positiveNumber, message: t('amountPositive') }
+        ],
+        dayOfMonth: [
+          { validator: validators.required, message: t('dayOfMonthRequired') },
+          { validator: validators.range(1, 31), message: t('dayOfMonthRange') }
+        ]
+      };
+
+      const sanitizedData = {
+        id: updatedExpense.id,
+        description: sanitizers.text(updatedExpense.description),
+        category: sanitizers.text(updatedExpense.category),
+        amount: sanitizers.currency(updatedExpense.amount),
+        dayOfMonth: sanitizers.number(updatedExpense.dayOfMonth),
+        active: updatedExpense.active,
+        lastProcessed: updatedExpense.lastProcessed
+      };
+
+      if (!validateForm(sanitizedData, rules)) {
+        return false;
+      }
+
+      dispatch({ type: ACTIONS.UPDATE_RECURRING, payload: sanitizedData });
+      showNotification(t('recurringExpenseUpdated'));
+      return true;
+    },
+
     addDebt: (debtData) => {
       const rules = {
         name: [
-          { validator: validators.required, message: 'Le nom est requis' },
-          { validator: validators.minLength(2), message: 'Le nom doit faire au moins 2 caractères' }
+          { validator: validators.required, message: t('debtNameRequired') },
+          { validator: validators.minLength(2), message: t('debtNameRequired') }
         ],
         balance: [
-          { validator: validators.required, message: 'Le solde est requis' },
-          { validator: validators.positiveNumber, message: 'Le solde doit être positif' }
+          { validator: validators.required, message: t('balanceRequired') },
+          { validator: validators.positiveNumber, message: t('balanceMustBePositive') }
         ],
         minPayment: [
-          { validator: validators.required, message: 'Le paiement minimum est requis' },
-          { validator: validators.positiveNumber, message: 'Le paiement minimum doit être positif' }
+          { validator: validators.required, message: t('minPaymentRequired') },
+          { validator: validators.positiveNumber, message: t('minPaymentMustBePositive') }
         ],
         rate: [
-          { validator: validators.required, message: 'Le taux est requis' },
-          { validator: validators.range(0, 100), message: 'Le taux doit être entre 0 et 100' }
+          { validator: validators.required, message: t('rateRequired') },
+          { validator: validators.range(0, 100), message: t('rateMustBeValid') }
         ]
       };
 
@@ -591,20 +636,20 @@ const useFinanceManager = () => {
       };
 
       dispatch({ type: ACTIONS.ADD_DEBT, payload: sanitizedData });
-      showNotification('Dette ajoutée');
+      showNotification(t('debtAdded'));
       return true;
     },
 
     deleteDebt: (id) => {
-      if (window.confirm('Êtes-vous sûr de vouloir supprimer cette dette ?')) {
+      if (window.confirm(t('confirmDeleteDebt'))) {
         dispatch({ type: ACTIONS.DELETE_DEBT, payload: id });
-        showNotification('Dette supprimée');
+        showNotification(t('debtDeleted'));
       }
     },
 
     recordPayment: (debtId, amount) => {
       if (!validators.positiveNumber(amount)) {
-        showNotification('Montant invalide', 'error');
+        showNotification(t('invalidAmount'), 'error');
         return false;
       }
 
@@ -612,12 +657,12 @@ const useFinanceManager = () => {
       const paymentAmount = sanitizers.currency(amount);
 
       if (paymentAmount > debt.balance) {
-        showNotification('Le paiement ne peut pas dépasser le solde', 'error');
+        showNotification(t('paymentCannotExceedBalance'), 'error');
         return false;
       }
 
       dispatch({ type: ACTIONS.RECORD_PAYMENT, payload: { debtId, amount: paymentAmount } });
-      showNotification(`Paiement de ${formatCurrency(paymentAmount)} enregistré`);
+      showNotification(t('paymentRecorded'));
       return true;
     },
 
@@ -695,7 +740,8 @@ const useFinanceManager = () => {
     showNotification,
     setError,
     clearError,
-    currencies
+    currencies,
+    setTranslation // Expose the new function
   };
 };
 

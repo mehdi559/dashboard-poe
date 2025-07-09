@@ -8,7 +8,8 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
   const [selectedDay, setSelectedDay] = useState(null);
   
   const daysInMonth = new Date(state.selectedYear, new Date(state.selectedMonth + '-01').getMonth() + 1, 0).getDate();
-  const firstDay = new Date(state.selectedMonth + '-01').getDay();
+  // Ajuster pour commencer par lundi (1) au lieu de dimanche (0)
+  const firstDay = (new Date(state.selectedMonth + '-01').getDay() + 6) % 7;
   const calendarDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   const getDayExpenses = useCallback((day) => {
@@ -75,7 +76,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
       if (today > 25) {
         reminders.push({
           type: 'warning',
-          message: 'Fin de mois approche - Vérifiez vos dernières dépenses !',
+          message: t('endOfMonthWarning'),
           icon: Icons.AlertTriangle
         });
       }
@@ -85,7 +86,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
       if (dayOfWeek === 5) { // Vendredi
         reminders.push({
           type: 'info',
-          message: 'Weekend approche - Attention aux dépenses loisirs !',
+          message: t('weekendWarning'),
           icon: Icons.Calendar
         });
       }
@@ -95,7 +96,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
         if (recurring.active && Math.abs(recurring.dayOfMonth - today) <= 2) {
           reminders.push({
             type: 'info',
-            message: `${recurring.description} prévu le ${recurring.dayOfMonth}`,
+            message: t('recurringPlannedFor', { description: recurring.description, day: recurring.dayOfMonth }),
             icon: Icons.RefreshCw
           });
         }
@@ -103,7 +104,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
     }
     
     return reminders;
-  }, [state.selectedMonth, state.recurringExpenses]);
+  }, [state.selectedMonth, state.recurringExpenses, t]);
 
   // Statistiques avancées du mois
   const getAdvancedStats = useMemo(() => {
@@ -158,7 +159,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
         <div className={`${theme.card} rounded-xl border ${theme.border} p-4`}>
           <h3 className={`text-lg font-semibold ${theme.text} mb-3 flex items-center`}>
             <Icons.Bell className="h-5 w-5 mr-2 text-blue-600" />
-            Rappels Intelligents
+            {t('smartReminders')}
           </h3>
           <div className="space-y-2">
             {getSmartReminders.map((reminder, index) => {
@@ -182,7 +183,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
       {/* Section principale du calendrier */}
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>Calendrier Financier Intelligent</h2>
+          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('intelligentFinancialCalendar')}</h2>
           <div className="flex items-center space-x-2">
             <select
               value={state.selectedMonth}
@@ -212,7 +213,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
         
         {/* En-têtes des jours */}
         <div className="grid grid-cols-7 gap-1 mb-4">
-          {['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'].map(day => (
+          {[t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat'), t('sun')].map(day => (
             <div key={day} className={`p-2 text-center font-semibold ${theme.textSecondary}`}>
               {day}
             </div>
@@ -264,7 +265,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
                       {state.showBalances ? formatCurrency(totalAmount) : '•••'}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {dayExpenses.length} dép.
+                      {dayExpenses.length} {t('expenses')}
                     </div>
                   </>
                 )}
@@ -313,18 +314,18 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
                         ))}
                         <div className="border-t pt-1 mt-1">
                           <div className="flex justify-between text-xs font-semibold">
-                            <span>Total:</span>
+                            <span>{t('total')}</span>
                             <span>{formatCurrency(totalAmount)}</span>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <p className={`text-xs ${theme.textSecondary}`}>Aucune dépense</p>
+                      <p className={`text-xs ${theme.textSecondary}`}>{t('noExpenses')}</p>
                     )}
                     {predictedRecurring && (
                       <div className="mt-2 pt-2 border-t">
                         <p className="text-xs text-orange-600">
-                          Prévu: {predictedRecurring.description} ({formatCurrency(predictedRecurring.amount)})
+                          {t('planned')} {predictedRecurring.description} ({formatCurrency(predictedRecurring.amount)})
                         </p>
                       </div>
                     )}
@@ -340,21 +341,21 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
           <div className={`p-4 rounded-lg ${theme.card} border ${theme.border}`}>
             <h4 className={`font-semibold ${theme.text} mb-3 flex items-center`}>
               <Icons.BarChart3 className="h-4 w-4 mr-2 text-blue-600" />
-              Activité mensuelle
+              {t('monthlyActivity')}
             </h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className={theme.textSecondary}>Jours avec dépenses:</span>
+                <span className={theme.textSecondary}>{t('daysWithExpenses')}</span>
                 <span className={theme.text}>{stats.activeDays} / {stats.totalDays}</span>
               </div>
               <div className="flex justify-between">
-                <span className={theme.textSecondary}>Taux d'activité:</span>
+                <span className={theme.textSecondary}>{t('activityRate')}</span>
                 <span className={`font-medium ${stats.activityRate > 50 ? 'text-red-600' : 'text-green-600'}`}>
                   {stats.activityRate.toFixed(1)}%
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className={theme.textSecondary}>Moy. par jour actif:</span>
+                <span className={theme.textSecondary}>{t('averagePerActiveDay')}</span>
                 <span className={theme.text}>
                   {formatCurrency(stats.averagePerActiveDay)}
                 </span>
@@ -365,12 +366,12 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
           <div className={`p-4 rounded-lg ${theme.card} border ${theme.border}`}>
             <h4 className={`font-semibold ${theme.text} mb-3 flex items-center`}>
               <Icons.TrendingUp className="h-4 w-4 mr-2 text-green-600" />
-              Extrêmes du mois
+              {t('monthlyExtremes')}
             </h4>
             <div className="space-y-2 text-sm">
               {stats.mostExpensiveDay && (
                 <div>
-                  <span className={theme.textSecondary}>Jour le plus cher:</span>
+                  <span className={theme.textSecondary}>{t('mostExpensiveDay')}</span>
                   <div className="text-red-600 font-medium">
                     {stats.mostExpensiveDay.day} → {formatCurrency(stats.mostExpensiveDay.amount)}
                   </div>
@@ -378,7 +379,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
               )}
               {stats.leastExpensiveDay && (
                 <div>
-                  <span className={theme.textSecondary}>Jour le moins cher:</span>
+                  <span className={theme.textSecondary}>{t('leastExpensiveDay')}</span>
                   <div className="text-green-600 font-medium">
                     {stats.leastExpensiveDay.day} → {formatCurrency(stats.leastExpensiveDay.amount)}
                   </div>
@@ -390,12 +391,12 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
           <div className={`p-4 rounded-lg ${theme.card} border ${theme.border}`}>
             <h4 className={`font-semibold ${theme.text} mb-3 flex items-center`}>
               <Icons.Calendar className="h-4 w-4 mr-2 text-purple-600" />
-              Analyse par semaine
+              {t('weeklyAnalysis')}
             </h4>
             <div className="space-y-2">
               {stats.weeklyData.map(week => (
                 <div key={week.week} className="flex justify-between text-sm">
-                  <span className={theme.textSecondary}>Semaine {week.week}:</span>
+                  <span className={theme.textSecondary}>{t('week', { week: week.week })}</span>
                   <span className={theme.text}>{formatCurrency(week.total)}</span>
                 </div>
               ))}
@@ -406,7 +407,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
         {/* Légende */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className={`p-4 rounded-lg ${theme.card} border ${theme.border}`}>
-            <h4 className={`font-semibold ${theme.text} mb-2`}>Légende des catégories</h4>
+            <h4 className={`font-semibold ${theme.text} mb-2`}>{t('categoryLegend')}</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
               {state.categories.map(category => (
                 <div key={category.id} className="flex items-center space-x-2">
@@ -421,23 +422,23 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
           </div>
 
           <div className={`p-4 rounded-lg ${theme.card} border ${theme.border}`}>
-            <h4 className={`font-semibold ${theme.text} mb-2`}>Codes couleur</h4>
+            <h4 className={`font-semibold ${theme.text} mb-2`}>{t('colorCodes')}</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-red-50 border border-red-200 rounded"></div>
-                <span className={theme.text}>Jours avec dépenses</span>
+                <span className={theme.text}>{t('daysWithExpensesLabel')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-yellow-50 border border-yellow-200 rounded"></div>
-                <span className={theme.text}>Dépenses récurrentes prévues</span>
+                <span className={theme.text}>{t('recurringExpensesPlanned')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Icons.AlertTriangle className="h-3 w-3 text-orange-500" />
-                <span className={theme.text}>Zone de danger (dépenses élevées)</span>
+                <span className={theme.text}>{t('dangerZone')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Icons.Star className="h-3 w-3 text-blue-600" />
-                <span className={theme.text}>Aujourd'hui</span>
+                <span className={theme.text}>{t('today')}</span>
               </div>
             </div>
           </div>

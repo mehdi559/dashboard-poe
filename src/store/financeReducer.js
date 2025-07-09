@@ -122,6 +122,7 @@ export const ACTIONS = {
   ADD_RECURRING: 'ADD_RECURRING',
   DELETE_RECURRING: 'DELETE_RECURRING',
   TOGGLE_RECURRING: 'TOGGLE_RECURRING',
+  UPDATE_RECURRING: 'UPDATE_RECURRING',
   ADD_RECURRING_WITH_EXPENSE: 'ADD_RECURRING_WITH_EXPENSE',
   PROCESS_RECURRING_EXPENSES: 'PROCESS_RECURRING_EXPENSES',
   ADD_DEBT: 'ADD_DEBT',
@@ -253,6 +254,13 @@ export const financeReducer = (state, action) => {
       return {
         ...state,
         recurringExpenses: [...state.recurringExpenses, { ...action.payload, id: Date.now(), active: true }]
+      };
+    case ACTIONS.UPDATE_RECURRING:
+      return {
+        ...state,
+        recurringExpenses: state.recurringExpenses.map(exp =>
+          exp.id === action.payload.id ? action.payload : exp
+        )
       };
     case ACTIONS.ADD_RECURRING_WITH_EXPENSE:
       const { recurringData, expenseData } = action.payload;
