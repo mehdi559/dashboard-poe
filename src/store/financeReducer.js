@@ -307,7 +307,8 @@ export const financeReducer = (state, action) => {
             date: targetDate.toISOString().split('T')[0],
             category: recurring.category,
             amount: recurring.amount,
-            description: `${recurring.description} (récurrente)`
+            description: `${recurring.description} (récurrente)`,
+            linkedDebtId: recurring.linkedDebtId // Préserver le lien avec la dette
           });
           
           return {
@@ -346,9 +347,17 @@ export const financeReducer = (state, action) => {
       const wasAutoDebitActive = updatedDebt?.autoDebit;
       const isAutoDebitActive = action.payload.autoDebit;
       
-      // Si l'auto-débit est activé, créer une dépense récurrente
+      // Si l'auto-débit est activé, créer une dépense récurrente ET une dépense normale immédiate
       if (isAutoDebitActive && !wasAutoDebitActive) {
         const debt = state.debts.find(d => d.id === action.payload.id);
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        const paymentDate = new Date(currentYear, currentMonth, 15);
+        
+        // Si le 15 du mois est déjà passé, utiliser la date d'aujourd'hui
+        const expenseDate = paymentDate <= today ? today : paymentDate;
+        
         const recurringExpense = {
           id: Date.now(),
           description: `Paiement automatique - ${debt.name}`,
@@ -356,6 +365,16 @@ export const financeReducer = (state, action) => {
           amount: debt.minPayment,
           dayOfMonth: 15, // Paiement le 15 de chaque mois
           active: true,
+          linkedDebtId: debt.id,
+          lastProcessed: expenseDate.toISOString().split('T')[0]
+        };
+        
+        const immediateExpense = {
+          id: Date.now() + 1,
+          date: expenseDate.toISOString().split('T')[0],
+          category: 'debt',
+          amount: debt.minPayment,
+          description: `Paiement automatique - ${debt.name} (récurrente)`,
           linkedDebtId: debt.id
         };
         
@@ -364,11 +383,12 @@ export const financeReducer = (state, action) => {
           debts: state.debts.map(debt =>
             debt.id === action.payload.id ? { ...debt, ...action.payload } : debt
           ),
-          recurringExpenses: [...state.recurringExpenses, recurringExpense]
+          recurringExpenses: [...state.recurringExpenses, recurringExpense],
+          expenses: [...state.expenses, immediateExpense]
         };
       }
       
-      // Si l'auto-débit est désactivé, supprimer la dépense récurrente
+      // Si l'auto-débit est désactivé, supprimer la dépense récurrente ET les dépenses normales liées
       if (!isAutoDebitActive && wasAutoDebitActive) {
         return {
           ...state,
@@ -376,6 +396,9 @@ export const financeReducer = (state, action) => {
             debt.id === action.payload.id ? { ...debt, ...action.payload } : debt
           ),
           recurringExpenses: state.recurringExpenses.filter(exp => 
+            !exp.linkedDebtId || exp.linkedDebtId !== action.payload.id
+          ),
+          expenses: state.expenses.filter(exp => 
             !exp.linkedDebtId || exp.linkedDebtId !== action.payload.id
           )
         };
@@ -394,8 +417,11 @@ export const financeReducer = (state, action) => {
       return {
         ...state,
         debts: state.debts.filter(debt => debt.id !== action.payload),
-        // Supprimer aussi la dépense récurrente liée si elle existe
+        // Supprimer aussi la dépense récurrente et les dépenses normales liées si elles existent
         recurringExpenses: state.recurringExpenses.filter(exp => 
+          !exp.linkedDebtId || exp.linkedDebtId !== action.payload
+        ),
+        expenses: state.expenses.filter(exp => 
           !exp.linkedDebtId || exp.linkedDebtId !== action.payload
         )
       };
@@ -404,7 +430,15 @@ export const financeReducer = (state, action) => {
       const newAutoDebitState = !debt.autoDebit;
       
       if (newAutoDebitState) {
-        // Activer l'auto-débit - créer une dépense récurrente
+        // Activer l'auto-débit - créer une dépense récurrente ET une dépense normale immédiate
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        const paymentDate = new Date(currentYear, currentMonth, 15);
+        
+        // Si le 15 du mois est déjà passé, utiliser la date d'aujourd'hui
+        const expenseDate = paymentDate <= today ? today : paymentDate;
+        
         const recurringExpense = {
           id: Date.now(),
           description: `Paiement automatique - ${debt.name}`,
@@ -412,6 +446,16 @@ export const financeReducer = (state, action) => {
           amount: debt.minPayment,
           dayOfMonth: 15, // Paiement le 15 de chaque mois
           active: true,
+          linkedDebtId: debt.id,
+          lastProcessed: expenseDate.toISOString().split('T')[0]
+        };
+        
+        const immediateExpense = {
+          id: Date.now() + 1,
+          date: expenseDate.toISOString().split('T')[0],
+          category: 'debt',
+          amount: debt.minPayment,
+          description: `Paiement automatique - ${debt.name} (récurrente)`,
           linkedDebtId: debt.id
         };
         
@@ -420,16 +464,20 @@ export const financeReducer = (state, action) => {
           debts: state.debts.map(d =>
             d.id === action.payload ? { ...d, autoDebit: true } : d
           ),
-          recurringExpenses: [...state.recurringExpenses, recurringExpense]
+          recurringExpenses: [...state.recurringExpenses, recurringExpense],
+          expenses: [...state.expenses, immediateExpense]
         };
       } else {
-        // Désactiver l'auto-débit - supprimer la dépense récurrente
+        // Désactiver l'auto-débit - supprimer la dépense récurrente ET les dépenses normales liées
         return {
           ...state,
           debts: state.debts.map(d =>
             d.id === action.payload ? { ...d, autoDebit: false } : d
           ),
           recurringExpenses: state.recurringExpenses.filter(exp => 
+            !exp.linkedDebtId || exp.linkedDebtId !== action.payload
+          ),
+          expenses: state.expenses.filter(exp => 
             !exp.linkedDebtId || exp.linkedDebtId !== action.payload
           )
         };
