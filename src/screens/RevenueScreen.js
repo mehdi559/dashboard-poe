@@ -4,24 +4,48 @@ import * as Icons from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 
+// Déclaration de WidgetCard avec la prop theme
+const WidgetCard = memo(({ title, icon: Icon, children, color = 'blue', className = '', theme }) => (
+  <div className={`${theme.card} rounded-xl border ${theme.border} overflow-hidden ${className}`}>
+    <div className={`p-4 bg-gradient-to-r from-${color}-500/10 to-${color}-600/10 border-b ${theme.border}`}>
+      <div className="flex items-center space-x-3">
+        <Icon className={`h-5 w-5 text-${color}-600`} />
+        <h3 className={`font-semibold ${theme.text}`}>{title}</h3>
+      </div>
+    </div>
+    <div className="p-4">{children}</div>
+  </div>
+));
+
 const RevenueScreen = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
   const [activeTab, setActiveTab] = useState('overview');
   const [editingRevenueId, setEditingRevenueId] = useState(null);
+  const [editRevenueForm, setEditRevenueForm] = useState(null);
 
-  // Calculer le solde actuel basé sur les revenus et dépenses
+  // Synchroniser le formulaire d'édition avec la source sélectionnée
+  React.useEffect(() => {
+    if (editingRevenueId) {
+      const rev = state.revenues.find(r => r.id === editingRevenueId);
+      if (rev) setEditRevenueForm({ ...rev });
+    } else {
+      setEditRevenueForm(null);
+    }
+  }, [editingRevenueId, state.revenues]);
+
+  // Calculer le solde actuel basé sur les revenus, dépenses ET solde initial
   const getCurrentBalance = useMemo(() => {
     const totalRevenue = state.revenues?.reduce((sum, rev) => sum + rev.amount, 0) || state.monthlyIncome;
     const totalExpenses = computedValues.totalSpent;
     const totalRecurring = computedValues.totalRecurring || 0;
-    
+    const initialBalance = state.initialBalance || 0;
     return {
-      current: totalRevenue - totalExpenses - totalRecurring,
+      current: initialBalance + totalRevenue - totalExpenses - totalRecurring,
       totalRevenue,
-      projectedEndMonth: totalRevenue - (totalExpenses * 1.2), // Estimation fin de mois
+      projectedEndMonth: initialBalance + totalRevenue - (totalExpenses * 1.2) - totalRecurring,
       savingsThisMonth: totalRevenue - totalExpenses
     };
-  }, [state.revenues, state.monthlyIncome, computedValues.totalSpent, computedValues.totalRecurring]);
+  }, [state.revenues, state.monthlyIncome, computedValues.totalSpent, computedValues.totalRecurring, state.initialBalance]);
 
   // Analyse de stabilité des revenus
   const getRevenueStability = useMemo(() => {
@@ -149,18 +173,6 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
   const allocation = getAutomaticAllocation;
   const defaultSources = getDefaultRevenueSources();
 
-  const WidgetCard = memo(({ title, icon: Icon, children, color = 'blue', className = '' }) => (
-    <div className={`${theme.card} rounded-xl border ${theme.border} overflow-hidden ${className}`}>
-      <div className={`p-4 bg-gradient-to-r from-${color}-500/10 to-${color}-600/10 border-b ${theme.border}`}>
-        <div className="flex items-center space-x-3">
-          <Icon className={`h-5 w-5 text-${color}-600`} />
-          <h3 className={`font-semibold ${theme.text}`}>{title}</h3>
-        </div>
-      </div>
-      <div className="p-4">{children}</div>
-    </div>
-  ));
-
   return (
     <div className={`min-h-screen ${theme.bg} transition-colors duration-500`}>
       <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-10 backdrop-blur-lg bg-opacity-90`}>
@@ -212,57 +224,65 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
           <div className="space-y-6">
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-green-600 rounded-xl p-4 text-white">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{t('totalRevenue')}</span>
-                  <Icons.TrendingUp className="h-5 w-5 opacity-80" />
+              <WidgetCard title={t('totalRevenue')} icon={Icons.TrendingUp} color="green" theme={theme}>
+                <div className="bg-green-600 rounded-xl p-4 text-white">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">{t('totalRevenue')}</span>
+                    <Icons.TrendingUp className="h-5 w-5 opacity-80" />
+                  </div>
+                  <div className="text-2xl font-bold">
+                    {state.showBalances ? formatCurrency(balance.totalRevenue) : '•••'}
+                  </div>
+                  <div className="text-xs opacity-75">{t('thisMonth')}</div>
                 </div>
-                <div className="text-2xl font-bold">
-                  {state.showBalances ? formatCurrency(balance.totalRevenue) : '•••'}
-                </div>
-                <div className="text-xs opacity-75">{t('thisMonth')}</div>
-              </div>
+              </WidgetCard>
 
-              <div className="bg-blue-600 rounded-xl p-4 text-white">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{t('currentBalance')}</span>
-                  <Icons.Wallet className="h-5 w-5 opacity-80" />
+              <WidgetCard title={t('currentBalance')} icon={Icons.Wallet} color="blue" theme={theme}>
+                <div className="bg-blue-600 rounded-xl p-4 text-white">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">{t('currentBalance')}</span>
+                    <Icons.Wallet className="h-5 w-5 opacity-80" />
+                  </div>
+                  <div className="text-2xl font-bold">
+                    {state.showBalances ? formatCurrency(balance.current) : '•••'}
+                  </div>
+                  <div className="text-xs opacity-75">{t('available')}</div>
                 </div>
-                <div className="text-2xl font-bold">
-                  {state.showBalances ? formatCurrency(balance.current) : '•••'}
-                </div>
-                <div className="text-xs opacity-75">{t('available')}</div>
-              </div>
+              </WidgetCard>
 
-              <div className="bg-purple-600 rounded-xl p-4 text-white">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{t('monthlySavings')}</span>
-                  <Icons.PiggyBank className="h-5 w-5 opacity-80" />
+              <WidgetCard title={t('monthlySavings')} icon={Icons.PiggyBank} color="purple" theme={theme}>
+                <div className="bg-purple-600 rounded-xl p-4 text-white">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">{t('monthlySavings')}</span>
+                    <Icons.PiggyBank className="h-5 w-5 opacity-80" />
+                  </div>
+                  <div className="text-2xl font-bold">
+                    {state.showBalances ? formatCurrency(balance.savingsThisMonth) : '•••'}
+                  </div>
+                  <div className="text-xs opacity-75">
+                    {((balance.savingsThisMonth / balance.totalRevenue) * 100).toFixed(1)}%
+                  </div>
                 </div>
-                <div className="text-2xl font-bold">
-                  {state.showBalances ? formatCurrency(balance.savingsThisMonth) : '•••'}
-                </div>
-                <div className="text-xs opacity-75">
-                  {((balance.savingsThisMonth / balance.totalRevenue) * 100).toFixed(1)}%
-                </div>
-              </div>
+              </WidgetCard>
 
-              <div className="bg-orange-600 rounded-xl p-4 text-white">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{t('stabilityScore')}</span>
-                  <Icons.Shield className="h-5 w-5 opacity-80" />
+              <WidgetCard title={t('stabilityScore')} icon={Icons.Shield} color="orange" theme={theme}>
+                <div className="bg-orange-600 rounded-xl p-4 text-white">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">{t('stabilityScore')}</span>
+                    <Icons.Shield className="h-5 w-5 opacity-80" />
+                  </div>
+                  <div className="text-2xl font-bold">{stability.stabilityScore}%</div>
+                  <div className="text-xs opacity-75">
+                    {stability.level === 'high' ? t('high') : 
+                     stability.level === 'medium' ? t('medium') : t('low')}
+                  </div>
                 </div>
-                <div className="text-2xl font-bold">{stability.stabilityScore}%</div>
-                <div className="text-xs opacity-75">
-                  {stability.level === 'high' ? t('high') : 
-                   stability.level === 'medium' ? t('medium') : t('low')}
-                </div>
-              </div>
+              </WidgetCard>
             </div>
 
             {/* Graphiques principaux */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <WidgetCard title={t('revenueEvolution')} icon={Icons.TrendingUp} color="green">
+              <WidgetCard title={t('revenueEvolution')} icon={Icons.TrendingUp} color="green" theme={theme}>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={evolution}>
@@ -277,7 +297,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                 </div>
               </WidgetCard>
 
-              <WidgetCard title={t('revenueStability')} icon={Icons.Shield} color="blue">
+              <WidgetCard title={t('revenueStability')} icon={Icons.Shield} color="blue" theme={theme}>
                 <div className="space-y-4">
                   <div className="flex items-center justify-center">
                     <div className="relative w-24 h-24">
@@ -310,7 +330,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
             </div>
 
             {/* Allocation automatique */}
-            <WidgetCard title={t('automaticAllocation')} icon={Icons.Shuffle} color="purple">
+            <WidgetCard title={t('automaticAllocation')} icon={Icons.Shuffle} color="purple" theme={theme}>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {Object.entries(allocation).map(([key, item]) => (
                   <div key={key} className={`p-3 rounded-lg ${theme.bg} border ${theme.border} text-center`}>
@@ -328,9 +348,30 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
 
         {activeTab === 'sources' && (
           <div className="space-y-6">
+            {/* Champ solde de départ */}
+            <WidgetCard title={t('initialBalance') || 'Solde de départ'} icon={Icons.Wallet} color="blue" theme={theme}>
+              <div className="flex flex-col items-center space-y-2">
+                <div className="text-3xl font-bold">
+                  {state.showBalances ? formatCurrency(state.initialBalance || 0) : '•••'}
+                </div>
+                <div className="flex items-center space-x-2 mt-2">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={state.initialBalance || ''}
+                    onChange={v => actions.setInitialBalance(v)}
+                    className="w-32"
+                  />
+                  <Button size="sm" onClick={actions.confirmInitialBalance}>
+                    {t('save') || 'Valider'}
+                  </Button>
+                </div>
+              </div>
+            </WidgetCard>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
-                <WidgetCard title={t('addRevenueSource')} icon={Icons.Plus} color="green">
+                <WidgetCard title={t('addRevenueSource')} icon={Icons.Plus} color="green" theme={theme}>
                   <form 
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -371,6 +412,25 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                         <option value="variable">{t('variable')}</option>
                       </select>
                     </div>
+
+                    {/* Champ jour du mois, visible uniquement si type = 'fixed' */}
+                    {state.newRevenue?.type === 'fixed' && (
+                      <div className="space-y-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('incomeDayOfMonth') || 'Jour d\'entrée d\'argent'}
+                        </label>
+                        <select
+                          value={state.newRevenue?.dayOfMonth || '1'}
+                          onChange={e => actions.updateForm('newRevenue', { dayOfMonth: e.target.value })}
+                          className={`w-full px-3 py-2 text-base border rounded-lg ${theme.input}`}
+                        >
+                          {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
+                            <option key={day} value={day}>{day}</option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500">{t('chooseDayOfMonthForFixedIncome') || 'Le jour du mois où ce revenu est reçu (ex : 1 pour le 1er du mois)'}</p>
+                      </div>
+                    )}
                     
                     <div className="space-y-1">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -400,7 +460,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                 </WidgetCard>
 
                 {/* Templates rapides */}
-                <WidgetCard title={t('quickTemplates')} icon={Icons.Zap} color="blue" className="mt-4">
+                <WidgetCard title={t('quickTemplates')} icon={Icons.Zap} color="blue" className="mt-4" theme={theme}>
                   <div className="space-y-2">
                     {defaultSources.map((source, index) => (
                       <button
@@ -428,7 +488,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
               </div>
 
               <div className="lg:col-span-2">
-                <WidgetCard title={t('currentRevenueSources')} icon={Icons.List} color="green">
+                <WidgetCard title={t('currentRevenueSources')} icon={Icons.List} color="green" theme={theme}>
                   <div className="space-y-3">
                     {(state.revenues || []).length === 0 ? (
                       <div className="text-center py-8">
@@ -495,7 +555,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
         {activeTab === 'balance' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <WidgetCard title={t('currentBalance')} icon={Icons.Wallet} color="blue">
+              <WidgetCard title={t('currentBalance')} icon={Icons.Wallet} color="blue" theme={theme}>
                 <div className="text-center">
                   <div className={`text-3xl font-bold mb-2 ${balance.current >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {state.showBalances ? formatCurrency(balance.current) : '•••'}
@@ -519,7 +579,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                 </div>
               </WidgetCard>
 
-              <WidgetCard title={t('projectedEndMonth')} icon={Icons.TrendingUp} color="purple">
+              <WidgetCard title={t('projectedEndMonth')} icon={Icons.TrendingUp} color="purple" theme={theme}>
                 <div className="text-center">
                   <div className={`text-3xl font-bold mb-2 ${balance.projectedEndMonth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {state.showBalances ? formatCurrency(balance.projectedEndMonth) : '•••'}
@@ -538,7 +598,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                 </div>
               </WidgetCard>
 
-              <WidgetCard title={t('cashFlow')} icon={Icons.ArrowUpDown} color="indigo">
+              <WidgetCard title={t('cashFlow')} icon={Icons.ArrowUpDown} color="indigo" theme={theme}>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className={`text-sm ${theme.textSecondary}`}>{t('monthlyInflow')}:</span>
@@ -561,7 +621,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
             </div>
 
             {/* Historique des soldes */}
-            <WidgetCard title={t('balanceHistory')} icon={Icons.History} color="blue">
+            <WidgetCard title={t('balanceHistory')} icon={Icons.History} color="blue" theme={theme}>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={evolution}>
@@ -579,7 +639,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
 
         {activeTab === 'savings' && (
           <div className="space-y-6">
-            <WidgetCard title={t('automaticSavingsAllocation')} icon={Icons.PiggyBank} color="green">
+            <WidgetCard title={t('automaticSavingsAllocation')} icon={Icons.PiggyBank} color="green" theme={theme}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <h4 className={`font-semibold ${theme.text} mb-4`}>{t('recommendedAllocation')}</h4>
@@ -650,7 +710,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
             </WidgetCard>
 
             {/* Progression des objectifs d'épargne liés */}
-            <WidgetCard title={t('savingsGoalsProgress')} icon={Icons.Target} color="purple">
+            <WidgetCard title={t('savingsGoalsProgress')} icon={Icons.Target} color="purple" theme={theme}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {state.savingsGoals?.slice(0, 3).map(goal => {
                   const progress = (goal.currentAmount / goal.targetAmount) * 100;
@@ -689,7 +749,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
         {activeTab === 'analysis' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <WidgetCard title={t('revenueAnalysis')} icon={Icons.BarChart3} color="blue">
+              <WidgetCard title={t('revenueAnalysis')} icon={Icons.BarChart3} color="blue" theme={theme}>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
@@ -723,7 +783,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                 </div>
               </WidgetCard>
 
-              <WidgetCard title={t('financialHealthIndicators')} icon={Icons.Activity} color="green">
+              <WidgetCard title={t('financialHealthIndicators')} icon={Icons.Activity} color="green" theme={theme}>
                 <div className="space-y-3">
                   {[
                     { label: t('incomeStability'), value: stability.stabilityScore, max: 100, color: 'green' },
@@ -750,7 +810,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
               </WidgetCard>
             </div>
 
-            <WidgetCard title={t('revenueProjections')} icon={Icons.TrendingUp} color="purple">
+            <WidgetCard title={t('revenueProjections')} icon={Icons.TrendingUp} color="purple" theme={theme}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <h4 className={`font-semibold ${theme.text} mb-4`}>{t('next12Months')}</h4>
@@ -814,7 +874,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
         {activeTab === 'tools' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <WidgetCard title={t('taxCalculator')} icon={Icons.Calculator} color="orange">
+              <WidgetCard title={t('taxCalculator')} icon={Icons.Calculator} color="orange" theme={theme}>
                 <div className="space-y-4">
                   <Input
                     label={t('annualGrossIncome')}
@@ -852,7 +912,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                 </div>
               </WidgetCard>
 
-              <WidgetCard title={t('netGrossConverter')} icon={Icons.ArrowLeftRight} color="blue">
+              <WidgetCard title={t('netGrossConverter')} icon={Icons.ArrowLeftRight} color="blue" theme={theme}>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <Input
@@ -887,7 +947,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                 </div>
               </WidgetCard>
 
-              <WidgetCard title={t('savingsSimulator')} icon={Icons.TrendingUp} color="green">
+              <WidgetCard title={t('savingsSimulator')} icon={Icons.TrendingUp} color="green" theme={theme}>
                 <div className="space-y-4">
                   <Input
                     label={t('monthlySavings')}
@@ -944,7 +1004,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                 </div>
               </WidgetCard>
 
-              <WidgetCard title={t('financialRatios')} icon={Icons.BarChart} color="purple">
+              <WidgetCard title={t('financialRatios')} icon={Icons.BarChart} color="purple" theme={theme}>
                 <div className="space-y-3">
                   {[
                     { 
@@ -999,6 +1059,100 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
           </div>
         )}
       </div>
+      {/* Formulaire d'édition de revenu */}
+      {editingRevenueId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className={`w-full max-w-md p-6 rounded-xl shadow-lg ${theme.card} border ${theme.border}`}>
+            <h3 className={`text-lg font-semibold mb-4 ${theme.text}`}>{t('edit')} {t('revenueSource') || t('sourceName')}</h3>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                const rev = state.revenues.find(r => r.id === editingRevenueId);
+                if (actions.updateRevenue && rev) {
+                  actions.updateRevenue(editingRevenueId, editRevenueForm);
+                  setEditingRevenueId(null);
+                }
+              }}
+              className="space-y-4"
+            >
+              <Input
+                label={t('sourceName')}
+                type="text"
+                value={editRevenueForm?.name || ''}
+                onChange={value => setEditRevenueForm(f => ({ ...f, name: value }))}
+                required
+              />
+              <Input
+                label={t('amount')}
+                type="number"
+                step="0.01"
+                min="0"
+                value={editRevenueForm?.amount || ''}
+                onChange={value => setEditRevenueForm(f => ({ ...f, amount: value }))}
+                required
+              />
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('revenueType')}
+                </label>
+                <select
+                  value={editRevenueForm?.type || 'fixed'}
+                  onChange={e => setEditRevenueForm(f => ({ ...f, type: e.target.value }))}
+                  className={`w-full px-3 py-2 text-base border rounded-lg ${theme.input}`}
+                >
+                  <option value="fixed">{t('fixed')}</option>
+                  <option value="variable">{t('variable')}</option>
+                </select>
+              </div>
+              {/* Champ jour du mois, visible uniquement si type = 'fixed' */}
+              {editRevenueForm?.type === 'fixed' && (
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('incomeDayOfMonth') || 'Jour d\'entrée d\'argent'}
+                  </label>
+                  <select
+                    value={editRevenueForm?.dayOfMonth || '1'}
+                    onChange={e => setEditRevenueForm(f => ({ ...f, dayOfMonth: e.target.value }))}
+                    className={`w-full px-3 py-2 text-base border rounded-lg ${theme.input}`}
+                  >
+                    {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
+                      <option key={day} value={day}>{day}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500">{t('chooseDayOfMonthForFixedIncome') || 'Le jour du mois où ce revenu est reçu (ex : 1 pour le 1er du mois)'}</p>
+                </div>
+              )}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('frequency')}
+                </label>
+                <select
+                  value={editRevenueForm?.frequency || 'monthly'}
+                  onChange={e => setEditRevenueForm(f => ({ ...f, frequency: e.target.value }))}
+                  className={`w-full px-3 py-2 text-base border rounded-lg ${theme.input}`}
+                >
+                  <option value="weekly">{t('weekly')}</option>
+                  <option value="biweekly">{t('biweekly')}</option>
+                  <option value="monthly">{t('monthly')}</option>
+                  <option value="quarterly">{t('quarterly')}</option>
+                  <option value="annually">{t('annually')}</option>
+                  <option value="irregular">{t('irregular')}</option>
+                </select>
+              </div>
+              <Input
+                label={t('description')}
+                type="text"
+                value={editRevenueForm?.description || ''}
+                onChange={value => setEditRevenueForm(f => ({ ...f, description: value }))}
+              />
+              <div className="flex space-x-2 pt-4">
+                <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">{t('save')}</Button>
+                <Button variant="outline" onClick={() => setEditingRevenueId(null)} className="flex-1">{t('cancel')}</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

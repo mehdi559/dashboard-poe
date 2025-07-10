@@ -872,6 +872,8 @@ const translations = {
     revenueStatusUpdated: 'Statut de la source de revenu mis à jour',
     revenueTransactionAdded: 'Transaction de revenu ajoutée avec succès',
     monthlyIncomeUpdated: 'Revenu mensuel mis à jour',
+    includingInitialBalance: 'Inclut le solde de départ',
+    withoutInitialBalance: 'Solde du mois sans solde initial',
   },
   en: {
     // Navigation
@@ -1680,6 +1682,8 @@ const translations = {
     revenueStatusUpdated: 'Revenue source status updated',
     revenueTransactionAdded: 'Revenue transaction added successfully',
     monthlyIncomeUpdated: 'Monthly income updated',
+    includingInitialBalance: 'Including initial balance',
+    withoutInitialBalance: 'Month balance without initial balance',
   },
   es: {
     title: 'Gestor Financiero Personal',
@@ -2475,6 +2479,8 @@ const translations = {
     revenueStatusUpdated: 'Estado de la fuente de ingreso actualizado',
     revenueTransactionAdded: 'Transacción de ingreso añadida exitosamente',
     monthlyIncomeUpdated: 'Ingreso mensual actualizado',
+    includingInitialBalance: 'Incluye el saldo inicial',
+    withoutInitialBalance: 'Saldo del mes sin saldo inicial',
   }
 };
 

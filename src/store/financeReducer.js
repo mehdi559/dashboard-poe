@@ -124,7 +124,8 @@ export const initialState = {
   newDebt: { name: '', balance: '', minPayment: '', rate: '', autoDebit: false },
   editDebt: { name: '', balance: '', minPayment: '', rate: '', autoDebit: false },
   paymentAmount: '',
-  savingTransaction: { amount: '', description: '', type: 'add', date: new Date().toISOString().split('T')[0] }
+  savingTransaction: { amount: '', description: '', type: 'add', date: new Date().toISOString().split('T')[0] },
+  newRevenue: { name: '', amount: '', type: 'fixed', frequency: 'monthly', description: '' }
 };
 
 export const ACTIONS = {
@@ -184,7 +185,10 @@ export const ACTIONS = {
   DELETE_REVENUE: 'DELETE_REVENUE',
   TOGGLE_REVENUE_ACTIVE: 'TOGGLE_REVENUE_ACTIVE',
   ADD_REVENUE_TRANSACTION: 'ADD_REVENUE_TRANSACTION',
-  UPDATE_MONTHLY_INCOME: 'UPDATE_MONTHLY_INCOME'
+  UPDATE_MONTHLY_INCOME: 'UPDATE_MONTHLY_INCOME',
+  // Ajout : Action pour automatiser les revenus fixes
+  PROCESS_RECURRING_REVENUES: 'PROCESS_RECURRING_REVENUES',
+  SET_INITIAL_BALANCE: 'SET_INITIAL_BALANCE'
 };
 
 export const financeReducer = (state, action) => {
@@ -734,6 +738,58 @@ export const financeReducer = (state, action) => {
       };
     case ACTIONS.UPDATE_MONTHLY_INCOME:
       return { ...state, monthlyIncome: action.payload };
+    // Ajout : Traitement automatique des revenus fixes mensuels
+    case ACTIONS.PROCESS_RECURRING_REVENUES: {
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      const newRevenues = [];
+      const updatedRevenues = state.revenues.map(revenue => {
+        if (!revenue.active || revenue.type !== 'fixed' || revenue.frequency !== 'monthly') return revenue;
+        // Déterminer le jour d'entrée d'argent
+        let dayOfMonth = 1;
+        if (revenue.dayOfMonth) {
+          dayOfMonth = parseInt(revenue.dayOfMonth);
+        } else if (revenue.startDate) {
+          dayOfMonth = new Date(revenue.startDate).getDate();
+        }
+        const targetDate = new Date(currentYear, currentMonth, dayOfMonth);
+        const lastProcessed = revenue.lastProcessed ? new Date(revenue.lastProcessed) : null;
+        // Vérifier si on doit traiter ce revenu ce mois-ci
+        const shouldProcess = !lastProcessed ||
+          (targetDate.getMonth() !== lastProcessed.getMonth() ||
+           targetDate.getFullYear() !== lastProcessed.getFullYear());
+        if (shouldProcess && targetDate <= today) {
+          newRevenues.push({
+            id: Date.now() + Math.random(),
+            date: targetDate.toISOString().split('T')[0],
+            amount: revenue.amount,
+            description: `${revenue.name} (fixe mensuel)`
+          });
+          return {
+            ...revenue,
+            lastProcessed: targetDate.toISOString().split('T')[0],
+            transactions: [
+              ...(revenue.transactions || []),
+              {
+                id: Date.now() + Math.random(),
+                date: targetDate.toISOString().split('T')[0],
+                amount: revenue.amount,
+                description: `${revenue.name} (fixe mensuel)`
+              }
+            ]
+          };
+        }
+        return revenue;
+      });
+      return {
+        ...state,
+        revenues: updatedRevenues,
+        // Pas d'ajout direct à expenses, mais les transactions sont ajoutées au revenu
+      };
+    }
+    case ACTIONS.SET_INITIAL_BALANCE:
+      return { ...state, initialBalance: action.payload };
     default:
       return state;
   }

@@ -106,27 +106,6 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
 
         {/* Section droite - Contrôles élégants */}
         <div className="flex items-center space-x-4">
-          {/* Affichage du revenu mensuel */}
-          <div className="hidden lg:flex items-center space-x-4 px-6 py-3 bg-gradient-to-r from-emerald-900/30 to-green-900/30 backdrop-blur-sm rounded-2xl border border-emerald-500/20 shadow-lg group hover:shadow-emerald-500/25 transition-all duration-300">
-            <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Icons.TrendingUp className="h-5 w-5 text-white" />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition-opacity"></div>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-emerald-400 uppercase tracking-wider">
-                {t('monthlyIncome')}
-              </p>
-              <button
-                onClick={() => actions.toggleModal('income', true)}
-                className="text-lg font-bold text-white hover:text-emerald-300 transition-colors group-hover:scale-105 transform duration-200"
-              >
-                {state.showBalances ? `${state.monthlyIncome}€` : '•••€'}
-              </button>
-            </div>
-          </div>
-
           {/* Affichage des montants */}
           <button
             onClick={() => actions.setShowBalances(!state.showBalances)}

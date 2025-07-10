@@ -13,11 +13,13 @@ import {
   InteractiveWidgets,
   SavingsProgressWidget
 } from '../components/dashboard/DashboardWidgets';
+import Input from '../components/ui/Input';
 
 // Dashboard Screen
 const DashboardScreen = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
   const [dashboardTab, setDashboardTab] = useState('today');
+  const [showWithInitial, setShowWithInitial] = useState(true);
 
   const WidgetCard = memo(({ title, icon: Icon, children, color = 'blue', className = '' }) => (
     <div className={`${theme.card} rounded-xl border ${theme.border} overflow-hidden ${className}`}>
@@ -43,10 +45,54 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
     computedValues.savingsRate < 20 ? t('tryToSave20Percent') : t('goodSavingsRate')
   ], [computedValues, t, state.language]);
 
-  const predictEndOfMonth = useCallback(() => ({
-    projectedEndBalance: state.monthlyIncome - computedValues.totalSpent - (computedValues.totalSpent * 0.3),
-    confidence: 85
-  }), [state.monthlyIncome, computedValues.totalSpent]);
+  // Calcul du solde réel avec solde initial
+  const totalRevenue = (state.revenues || []).reduce((sum, rev) => sum + rev.amount, 0);
+  const totalExpenses = computedValues.totalSpent;
+  const initialBalance = state.initialBalance || 0;
+  const realBalance = initialBalance + totalRevenue - totalExpenses;
+
+  // Calcul dynamique du pourcentage de confiance pour la prédiction de fin de mois
+  const predictEndOfMonth = useCallback(() => {
+    // Récupérer les 6 derniers mois de données
+    const now = new Date();
+    const months = [];
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthStr = d.toISOString().slice(0, 7);
+      months.unshift(monthStr);
+    }
+    // Revenus et dépenses par mois
+    const monthlyRevenues = months.map(month =>
+      (state.revenues || []).reduce((sum, rev) => sum + (rev.history ? (rev.history[month] || 0) : 0), 0)
+    );
+    const monthlyExpenses = months.map(month =>
+      (state.expenses || []).filter(e => e.date.startsWith(month)).reduce((sum, e) => sum + e.amount, 0)
+    );
+    // Si pas d'historique, fallback sur totalRevenue/totalSpent
+    const totalRevenue = (state.revenues || []).reduce((sum, rev) => sum + rev.amount, 0);
+    const totalExpenses = computedValues.totalSpent;
+    // Calcul des variations
+    const last3Rev = monthlyRevenues.slice(-3);
+    const last3Exp = monthlyExpenses.slice(-3);
+    const avgRev = last3Rev.reduce((a, b) => a + b, 0) / (last3Rev.length || 1);
+    const avgExp = last3Exp.reduce((a, b) => a + b, 0) / (last3Exp.length || 1);
+    const revVar = avgRev > 0 ? Math.max(...last3Rev) / Math.min(...last3Rev) - 1 : 0;
+    const expVar = avgExp > 0 ? Math.max(...last3Exp) / Math.min(...last3Exp) - 1 : 0;
+    // Dépense exceptionnelle ce mois ?
+    const bigExpense = (state.expenses || []).some(e => e.date.startsWith(state.selectedMonth) && e.amount > 0.3 * totalRevenue);
+    // Calcul confiance
+    let confidence = 60;
+    if (revVar < 0.1) confidence += 10;
+    if (expVar < 0.15) confidence += 10;
+    if (months.length > 4) confidence += 10;
+    if (bigExpense) confidence -= 10;
+    confidence = Math.max(40, Math.min(95, confidence));
+    // Prédiction
+    return {
+      projectedEndBalance: totalRevenue - totalExpenses - (totalExpenses * 0.3),
+      confidence
+    };
+  }, [state, computedValues.totalSpent, state.selectedMonth]);
 
   const calculateFinancialHealthScore = useCallback(() => {
     const savingsRate = computedValues.savingsRate / 100;
@@ -156,6 +202,7 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                 t={t}
               />
             </div>
+            {/* Suppression de la carte solde du compte ici */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <WidgetCard title={t('financialHealthScore')} icon={Icons.Heart} color="green">
                 <div className="space-y-3">
@@ -182,14 +229,33 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
               <WidgetCard title={t('endOfMonthPredictions')} icon={Icons.TrendingUp} color="purple">
                 <div className="space-y-3">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <input
+                      type="checkbox"
+                      id="showWithInitial"
+                      checked={showWithInitial}
+                      onChange={e => setShowWithInitial(e.target.checked)}
+                      className="form-checkbox h-4 w-4 text-purple-600"
+                    />
+                    <label htmlFor="showWithInitial" className="text-sm text-purple-700 dark:text-purple-300 cursor-pointer">
+                      {t('includingInitialBalance')}
+                    </label>
+                  </div>
                   <div className={`text-2xl font-bold ${theme.text}`}>
-                    {state.showBalances ? formatCurrency(predictions.projectedEndBalance) : '•••'}
+                    {state.showBalances
+                      ? showWithInitial
+                        ? formatCurrency((state.initialBalance || 0) + predictions.projectedEndBalance)
+                        : formatCurrency(predictions.projectedEndBalance)
+                      : '•••'}
                   </div>
                   <p className={`text-sm ${theme.textSecondary}`}>{t('projectedBalance')}</p>
+                  <div className={`text-xs text-blue-700 dark:text-blue-300`}>
+                    {showWithInitial
+                      ? `${t('includingInitialBalance')}: ${state.showBalances ? formatCurrency(state.initialBalance || 0) : '•••'}`
+                      : t('withoutInitialBalance') || 'Solde du mois sans solde initial'}
+                  </div>
                   <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                    <p className={`text-xs ${theme.textSecondary}`}>
-                      {t('confidence')}: {predictions.confidence}%
-                    </p>
+                    <p className={`text-xs ${theme.textSecondary}`}>{t('confidence')}: {predictions.confidence}%</p>
                   </div>
                 </div>
               </WidgetCard>

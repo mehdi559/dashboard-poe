@@ -49,7 +49,8 @@ const useFinanceManager = () => {
       revenues: state.revenues,
       darkMode: state.darkMode,
       language: state.language,
-      showBalances: state.showBalances
+      showBalances: state.showBalances,
+      initialBalance: state.initialBalance
     };
     storage.set('financeData', dataToSave);
   }, [state]);
@@ -198,8 +199,11 @@ const useFinanceManager = () => {
       .filter(exp => exp.active)
       .reduce((sum, exp) => sum + exp.amount, 0);
     
-    const savingsRate = state.monthlyIncome > 0 
-      ? ((state.monthlyIncome - totalSpent) / state.monthlyIncome) * 100 
+    // Calcul du revenu total uniquement à partir des sources renseignées par l'utilisateur
+    const totalRevenue = (state.revenues || []).reduce((sum, rev) => sum + rev.amount, 0);
+
+    const savingsRate = totalRevenue > 0 
+      ? ((totalRevenue - totalSpent) / totalRevenue) * 100 
       : 0;
 
     // Données pour graphiques
@@ -227,11 +231,12 @@ const useFinanceManager = () => {
       const monthSavings = calculateSavingsForMonth(monthStr);
       const totalMonthSavings = monthSavings.reduce((sum, goal) => sum + goal.cumulativeAmount, 0);
       
+      // Utiliser totalRevenue pour le mois courant, sinon 0
       monthlyData.push({
         month: date.toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short' }),
-        income: state.monthlyIncome,
+        income: totalRevenue,
         expenses: monthExpenses,
-        savings: state.monthlyIncome - monthExpenses,
+        savings: totalRevenue - monthExpenses,
         cumulativeSavings: totalMonthSavings
       });
     }
@@ -253,7 +258,7 @@ const useFinanceManager = () => {
       monthlyData
     };
   }, [state.expenses, state.selectedMonth, state.categories, state.savingsGoals, 
-      state.recurringExpenses, state.debts, state.monthlyIncome, state.language]);
+      state.recurringExpenses, state.debts, state.revenues, state.monthlyIncome, state.language]);
 
   // Filtered and sorted data
   const filteredAndSortedExpenses = useMemo(() => {
@@ -1010,7 +1015,8 @@ const useFinanceManager = () => {
         recurringExpenses: state.recurringExpenses,
         debts: state.debts,
         monthlyIncome: state.monthlyIncome,
-        selectedCurrency: state.selectedCurrency
+        selectedCurrency: state.selectedCurrency,
+        initialBalance: state.initialBalance
       };
       dataUtils.exportToJSON(exportData);
       showNotification('Données exportées avec succès');
@@ -1059,8 +1065,20 @@ const useFinanceManager = () => {
     updateCategoryBudget: (id, budget) => {
       dispatch({ type: ACTIONS.UPDATE_CATEGORY_BUDGET, payload: { id, budget: sanitizers.currency(budget) } });
       showNotification('Budget de la catégorie mis à jour');
+    },
+    setInitialBalance: (balance) => {
+      // Ne pas afficher la notification ici, juste mettre à jour le state
+      dispatch({ type: ACTIONS.SET_INITIAL_BALANCE, payload: sanitizers.currency(balance) });
+    },
+    confirmInitialBalance: () => {
+      showNotification('Solde initial mis à jour');
     }
   };
+
+  // Automatisation des revenus fixes mensuels
+  useEffect(() => {
+    dispatch({ type: ACTIONS.PROCESS_RECURRING_REVENUES });
+  }, [state.selectedMonth]);
 
   return {
     state,

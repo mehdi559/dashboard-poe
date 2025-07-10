@@ -1,8 +1,12 @@
 import React, { useState, memo, useMemo } from 'react';
 import * as Icons from 'lucide-react';
+import { differenceInCalendarDays, addMonths } from 'date-fns';
 
 // Composant pour les QuickStats améliorées avec tendances
 export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency, previousMonthData, theme, t }) => {
+  // Calcul du revenu total à partir des sources renseignées
+  const totalRevenue = (state.revenues || []).reduce((sum, rev) => sum + rev.amount, 0);
+
   // Calcul des tendances (simulation avec données aléatoires pour l'exemple)
   const getTrendData = (current, previous = null) => {
     if (!previous) {
@@ -17,9 +21,9 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
     };
   };
 
-  const incomeTrend = getTrendData(state.monthlyIncome);
+  const incomeTrend = getTrendData(totalRevenue);
   const expensesTrend = getTrendData(computedValues.totalSpent);
-  const savingsTrend = getTrendData(state.monthlyIncome - computedValues.totalSpent);
+  const savingsTrend = getTrendData(totalRevenue - computedValues.totalSpent);
   const savingsRateTrend = getTrendData(computedValues.savingsRate);
 
   const TrendIndicator = ({ trend }) => (
@@ -44,6 +48,9 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
   const biggestExpense = computedValues.currentMonthExpenses.length > 0 
     ? Math.max(...computedValues.currentMonthExpenses.map(e => e.amount))
     : 0;
+  const biggestExpenseCategory = computedValues.currentMonthExpenses.length > 0
+    ? computedValues.currentMonthExpenses.reduce((max, e) => e.amount > max.amount ? e : max, { category: '', amount: 0 }).category
+    : '';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -53,11 +60,10 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
           <Icons.TrendingUp className="h-5 w-5 text-white opacity-80" />
         </div>
         <div className="text-xl font-bold text-white mt-2">
-          {state.showBalances ? formatCurrency(state.monthlyIncome) : `•••`}
+          {state.showBalances ? formatCurrency(totalRevenue) : `•••`}
         </div>
         <TrendIndicator trend={incomeTrend} />
       </div>
-      
       <div className="bg-red-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
         <div className="flex items-center justify-between w-full">
           <span className="text-white text-xs font-medium">{t('expenses')}</span>
@@ -68,18 +74,31 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
         </div>
         <TrendIndicator trend={expensesTrend} />
       </div>
-      
+      {/* Solde du compte */}
+      <div className="bg-teal-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
+        <div className="flex items-center justify-between w-full">
+          <span className="text-white text-xs font-medium">{t('accountBalance')}</span>
+          <Icons.Wallet className="h-5 w-5 text-white opacity-80" />
+        </div>
+        <div className="text-xl font-bold text-white mt-2">
+          {state.showBalances ? formatCurrency((state.initialBalance || 0) + (state.revenues || []).reduce((sum, rev) => sum + rev.amount, 0) - computedValues.totalSpent) : '•••'}
+        </div>
+        <div className="text-xs text-white opacity-75">
+          {t('includingInitialBalance') || 'Inclut le solde de départ'}
+        </div>
+      </div>
+      {/* Épargne à la place du taux d'épargne */}
       <div className="bg-blue-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
         <div className="flex items-center justify-between w-full">
           <span className="text-white text-xs font-medium">{t('savings')}</span>
           <Icons.PiggyBank className="h-5 w-5 text-white opacity-80" />
         </div>
         <div className="text-xl font-bold text-white mt-2">
-          {state.showBalances ? formatCurrency(state.monthlyIncome - computedValues.totalSpent) : `•••`}
+          {state.showBalances ? formatCurrency(totalRevenue - computedValues.totalSpent) : `•••`}
         </div>
         <TrendIndicator trend={savingsTrend} />
       </div>
-
+      {/* Taux d'épargne à la place du reste à dépenser */}
       <div className="bg-purple-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
         <div className="flex items-center justify-between w-full">
           <span className="text-white text-xs font-medium">{t('savingsRate')}</span>
@@ -90,10 +109,15 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
         </div>
         <TrendIndicator trend={savingsRateTrend} />
       </div>
-      
+      {/* Reste à dépenser en dernier */}
       <div className="bg-orange-500 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
         <div className="flex items-center justify-between w-full">
-          <span className="text-white text-xs font-medium">{t('remainingBudget')}</span>
+          <span className="text-white text-xs font-medium">
+            {t('remainingBudget', {
+              remaining: state.showBalances ? formatCurrency(Math.max(0, remainingBudget)) : `•••`,
+              total: formatCurrency(computedValues.totalBudget)
+            })}
+          </span>
           <Icons.Wallet className="h-5 w-5 text-white opacity-80" />
         </div>
         <div className="text-xl font-bold text-white mt-2">
@@ -102,17 +126,6 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
         <div className="text-xs text-white opacity-75">
           {remainingBudget > 0 ? t('available') : t('exceeded')}
         </div>
-      </div>
-      
-      <div className="bg-teal-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
-        <div className="flex items-center justify-between w-full">
-          <span className="text-white text-xs font-medium">{t('biggestExpense')}</span>
-          <Icons.AlertCircle className="h-5 w-5 text-white opacity-80" />
-        </div>
-        <div className="text-xl font-bold text-white mt-2">
-          {state.showBalances ? formatCurrency(biggestExpense) : `•••`}
-        </div>
-        <div className="text-xs text-white opacity-75">{t('thisMonth')}</div>
       </div>
     </div>
   );
@@ -174,23 +187,42 @@ export const TodaySection = memo(({ computedValues, formatCurrency, theme, state
         </div>
       </div>
 
-      {/* Prochaines échéances */}
-      <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
-        <h4 className={`font-semibold ${theme.text} mb-3 flex items-center`}>
-          <Icons.Bell className="h-4 w-4 mr-2" />
-          {t('upcomingPayments')} (3 {t('days')})
-        </h4>
-        <div className="space-y-2">
-          {state.recurringExpenses.slice(0, 3).map(recurring => (
-            <div key={recurring.id} className="flex items-center justify-between">
-              <span className={`text-sm ${theme.text}`}>{recurring.description}</span>
-              <span className={`text-sm font-medium ${theme.textSecondary}`}>
-                {formatCurrency(recurring.amount)}
-              </span>
+      {/* Prochaines échéances dynamiques */}
+      {(() => {
+        // Calculer le nombre de jours avant la prochaine échéance pour chaque dépense récurrente
+        const today = new Date();
+        const recurringWithNext = (state.recurringExpenses || []).map(rec => {
+          // Trouver la prochaine date d'échéance (en supposant dayOfMonth existe)
+          let nextDate = new Date(today.getFullYear(), today.getMonth(), rec.dayOfMonth || 1);
+          if (nextDate < today) {
+            nextDate = addMonths(nextDate, 1);
+          }
+          const days = differenceInCalendarDays(nextDate, today);
+          return { ...rec, days, nextDate };
+        });
+        // Trier par échéance la plus proche
+        const sorted = recurringWithNext.sort((a, b) => a.days - b.days);
+        // Prendre les 3 plus proches
+        const toShow = sorted.slice(0, 3);
+        // Nombre de jours jusqu'à la prochaine échéance
+        const minDays = toShow.length > 0 ? toShow[0].days : 0;
+        return (
+          <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
+            <h4 className={`font-semibold ${theme.text} mb-3 flex items-center`}>
+              <Icons.Bell className="h-4 w-4 mr-2" />
+              {t('upcomingDue', { days: minDays })}
+            </h4>
+            <div className="space-y-2">
+              {toShow.map(recurring => (
+                <div key={recurring.id} className="flex items-center justify-between">
+                  <span className={`text-sm ${theme.text}`}>{recurring.description}</span>
+                  <span className={`text-sm font-medium ${theme.textSecondary}`}>{formatCurrency(recurring.amount)}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        );
+      })()}
     </div>
   );
 });
@@ -554,6 +586,8 @@ export const RealTimeInsights = memo(({ state, computedValues, formatCurrency, t
 
 // Objectifs du Mois
 export const MonthlyGoals = memo(({ state, computedValues, formatCurrency, theme, t }) => {
+  // Calcul du revenu total à partir des sources renseignées
+  const totalRevenue = (state.revenues || []).reduce((sum, rev) => sum + rev.amount, 0);
   // Simulation objectifs du mois
   const monthlyGoals = useMemo(() => [
     {
@@ -567,8 +601,8 @@ export const MonthlyGoals = memo(({ state, computedValues, formatCurrency, theme
     {
       id: 2,
       title: t('save20OfIncome'),
-      target: state.monthlyIncome * 0.2,
-      current: state.monthlyIncome - computedValues.totalSpent,
+      target: totalRevenue * 0.2,
+      current: totalRevenue - computedValues.totalSpent,
       type: 'saving',
       icon: Icons.PiggyBank
     },
