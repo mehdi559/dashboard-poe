@@ -46,6 +46,7 @@ const useFinanceManager = () => {
       savingsGoals: state.savingsGoals,
       recurringExpenses: state.recurringExpenses,
       debts: state.debts,
+      revenues: state.revenues,
       darkMode: state.darkMode,
       language: state.language,
       showBalances: state.showBalances
@@ -860,6 +861,143 @@ const useFinanceManager = () => {
 
     setPaymentAmount: (value) => {
       dispatch({ type: ACTIONS.SET_PAYMENT_AMOUNT, payload: value });
+    },
+
+    // Revenue management actions
+    addRevenue: (revenueData) => {
+      const rules = {
+        name: [
+          { validator: validators.required, message: t('sourceNameRequired') },
+          { validator: validators.minLength(2), message: t('sourceNameMinLength') }
+        ],
+        amount: [
+          { validator: validators.required, message: t('amountRequired') },
+          { validator: validators.positiveNumber, message: t('amountPositive') }
+        ],
+        type: [
+          { validator: validators.required, message: t('revenueTypeRequired') }
+        ],
+        frequency: [
+          { validator: validators.required, message: t('frequencyRequired') }
+        ]
+      };
+
+      const { isValid, errors } = validateForm(revenueData, rules);
+      
+      if (!isValid) {
+        Object.entries(errors).forEach(([field, message]) => setError(field, message));
+        return false;
+      }
+
+      const sanitizedData = {
+        name: sanitizers.text(revenueData.name),
+        amount: sanitizers.currency(revenueData.amount),
+        type: revenueData.type, // 'fixed' or 'variable'
+        frequency: revenueData.frequency, // 'weekly', 'biweekly', 'monthly', 'quarterly', 'annually', 'irregular'
+        description: sanitizers.text(revenueData.description || ''),
+        startDate: revenueData.startDate || new Date().toISOString().split('T')[0],
+        active: revenueData.active !== false
+      };
+
+      dispatch({ type: ACTIONS.ADD_REVENUE, payload: sanitizedData });
+      showNotification(t('revenueAdded'));
+      return true;
+    },
+
+    updateRevenue: (revenueId, revenueData) => {
+      const rules = {
+        name: [
+          { validator: validators.required, message: t('sourceNameRequired') },
+          { validator: validators.minLength(2), message: t('sourceNameMinLength') }
+        ],
+        amount: [
+          { validator: validators.required, message: t('amountRequired') },
+          { validator: validators.positiveNumber, message: t('amountPositive') }
+        ],
+        type: [
+          { validator: validators.required, message: t('revenueTypeRequired') }
+        ],
+        frequency: [
+          { validator: validators.required, message: t('frequencyRequired') }
+        ]
+      };
+
+      const { isValid, errors } = validateForm(revenueData, rules);
+      
+      if (!isValid) {
+        Object.entries(errors).forEach(([field, message]) => setError(field, message));
+        return false;
+      }
+
+      const sanitizedData = {
+        id: revenueId,
+        name: sanitizers.text(revenueData.name),
+        amount: sanitizers.currency(revenueData.amount),
+        type: revenueData.type,
+        frequency: revenueData.frequency,
+        description: sanitizers.text(revenueData.description || ''),
+        startDate: revenueData.startDate,
+        active: revenueData.active
+      };
+
+      dispatch({ type: ACTIONS.UPDATE_REVENUE, payload: sanitizedData });
+      showNotification(t('revenueUpdated'));
+      return true;
+    },
+
+    deleteRevenue: (id) => {
+      if (window.confirm(t('confirmDeleteRevenue'))) {
+        dispatch({ type: ACTIONS.DELETE_REVENUE, payload: id });
+        showNotification(t('revenueDeleted'));
+      }
+    },
+
+    toggleRevenueActive: (id) => {
+      dispatch({ type: ACTIONS.TOGGLE_REVENUE_ACTIVE, payload: id });
+      showNotification(t('revenueStatusUpdated'));
+    },
+
+    addRevenueTransaction: (revenueId, transactionData) => {
+      const rules = {
+        amount: [
+          { validator: validators.required, message: t('amountRequired') },
+          { validator: validators.positiveNumber, message: t('amountPositive') }
+        ],
+        description: [
+          { validator: validators.required, message: t('descriptionRequired') },
+          { validator: validators.minLength(3), message: t('descriptionMinLength') }
+        ]
+      };
+
+      const { isValid, errors } = validateForm(transactionData, rules);
+      
+      if (!isValid) {
+        Object.entries(errors).forEach(([field, message]) => setError(field, message));
+        return false;
+      }
+
+      const sanitizedData = {
+        revenueId,
+        amount: sanitizers.currency(transactionData.amount),
+        description: sanitizers.text(transactionData.description),
+        date: transactionData.date || new Date().toISOString().split('T')[0],
+        type: transactionData.type || 'income' // 'income' or 'adjustment'
+      };
+
+      dispatch({ type: ACTIONS.ADD_REVENUE_TRANSACTION, payload: sanitizedData });
+      showNotification(t('revenueTransactionAdded'));
+      return true;
+    },
+
+    updateMonthlyIncome: (income) => {
+      if (!validators.positiveNumber(income)) {
+        showNotification(t('invalidAmount'), 'error');
+        return false;
+      }
+
+      dispatch({ type: ACTIONS.UPDATE_MONTHLY_INCOME, payload: sanitizers.currency(income) });
+      showNotification(t('monthlyIncomeUpdated'));
+      return true;
     },
 
     // Data management

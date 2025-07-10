@@ -59,6 +59,31 @@ export const initialState = {
     { id: 1, name: 'Prêt étudiant', balance: 15000, minPayment: 300, rate: 4.5, paymentHistory: [], autoDebit: false },
     { id: 2, name: 'Carte de crédit', balance: 3000, minPayment: 150, rate: 18.9, paymentHistory: [], autoDebit: false }
   ],
+  // Revenue data
+  revenues: [
+    { 
+      id: 1, 
+      name: 'Salaire Principal', 
+      amount: 2800, 
+      type: 'fixed', 
+      frequency: 'monthly', 
+      description: 'Salaire mensuel',
+      startDate: '2025-01-01',
+      active: true,
+      transactions: []
+    },
+    { 
+      id: 2, 
+      name: 'Freelance', 
+      amount: 700, 
+      type: 'variable', 
+      frequency: 'irregular', 
+      description: 'Travaux freelance',
+      startDate: '2025-01-01',
+      active: true,
+      transactions: []
+    }
+  ],
   // UI State for modals and forms
   modals: {
     income: false,
@@ -152,7 +177,14 @@ export const ACTIONS = {
   OPTIMIZE_BUDGETS: 'OPTIMIZE_BUDGETS',
   UPDATE_CATEGORY_BUDGET: 'UPDATE_CATEGORY_BUDGET',
   SET_PAYMENT_AMOUNT: 'SET_PAYMENT_AMOUNT',
-  SET_EDITING_PAYMENT: 'SET_EDITING_PAYMENT'
+  SET_EDITING_PAYMENT: 'SET_EDITING_PAYMENT',
+  // Revenue actions
+  ADD_REVENUE: 'ADD_REVENUE',
+  UPDATE_REVENUE: 'UPDATE_REVENUE',
+  DELETE_REVENUE: 'DELETE_REVENUE',
+  TOGGLE_REVENUE_ACTIVE: 'TOGGLE_REVENUE_ACTIVE',
+  ADD_REVENUE_TRANSACTION: 'ADD_REVENUE_TRANSACTION',
+  UPDATE_MONTHLY_INCOME: 'UPDATE_MONTHLY_INCOME'
 };
 
 export const financeReducer = (state, action) => {
@@ -657,6 +689,51 @@ export const financeReducer = (state, action) => {
       return { ...state, paymentAmount: action.payload };
     case ACTIONS.SET_EDITING_PAYMENT:
       return { ...state, editingPayment: action.payload };
+    // Revenue cases
+    case ACTIONS.ADD_REVENUE:
+      return {
+        ...state,
+        revenues: [...state.revenues, { ...action.payload, id: Date.now() }]
+      };
+    case ACTIONS.UPDATE_REVENUE:
+      return {
+        ...state,
+        revenues: state.revenues.map(revenue =>
+          revenue.id === action.payload.id ? action.payload : revenue
+        )
+      };
+    case ACTIONS.DELETE_REVENUE:
+      return {
+        ...state,
+        revenues: state.revenues.filter(revenue => revenue.id !== action.payload)
+      };
+    case ACTIONS.TOGGLE_REVENUE_ACTIVE:
+      return {
+        ...state,
+        revenues: state.revenues.map(revenue =>
+          revenue.id === action.payload ? { ...revenue, active: !revenue.active } : revenue
+        )
+      };
+    case ACTIONS.ADD_REVENUE_TRANSACTION:
+      return {
+        ...state,
+        revenues: state.revenues.map(revenue =>
+          revenue.id === action.payload.revenueId
+            ? {
+                ...revenue,
+                transactions: [...(revenue.transactions || []), {
+                  id: Date.now(),
+                  date: action.payload.date,
+                  amount: action.payload.amount,
+                  description: action.payload.description,
+                  type: action.payload.type
+                }]
+              }
+            : revenue
+        )
+      };
+    case ACTIONS.UPDATE_MONTHLY_INCOME:
+      return { ...state, monthlyIncome: action.payload };
     default:
       return state;
   }

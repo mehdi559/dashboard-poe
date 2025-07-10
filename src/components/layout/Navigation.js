@@ -12,6 +12,7 @@ const Navigation = memo(({ financeManager, t }) => {
     { id: 'budget', name: t('budget'), icon: Icons.Target, gradient: 'from-purple-500 to-pink-500', notifications: 0 },
     { id: 'expenses', name: t('expenses'), icon: Icons.CreditCard, gradient: 'from-red-500 to-orange-500', notifications: 3 },
     { id: 'savings', name: t('savings'), icon: Icons.PiggyBank, gradient: 'from-green-500 to-emerald-500', notifications: 0 },
+    { id: 'revenue', name: t('revenue'), icon: Icons.DollarSign, gradient: 'from-emerald-500 to-teal-500', notifications: 0 },
     { id: 'calendar', name: t('calendar'), icon: Icons.Calendar, gradient: 'from-indigo-500 to-purple-500', notifications: 1 },
     { id: 'recurring', name: t('recurring'), icon: Icons.RefreshCw, gradient: 'from-teal-500 to-blue-500', notifications: 0 },
     { id: 'debts', name: t('debts'), icon: Icons.AlertCircle, gradient: 'from-yellow-500 to-red-500', notifications: 2 },
@@ -20,13 +21,16 @@ const Navigation = memo(({ financeManager, t }) => {
 
   return (
     <nav className={`fixed left-0 top-0 h-full ${isCollapsed ? 'w-16' : 'w-64'} 
-      bg-gradient-to-b from-slate-900 via-gray-900 to-slate-800 
-      backdrop-blur-xl border-r border-gray-700/50 shadow-2xl z-30 transition-all duration-500 ease-out
+      ${state.darkMode 
+        ? 'bg-gradient-to-b from-slate-900 via-gray-900 to-slate-800 border-gray-700/50' 
+        : 'bg-gradient-to-b from-white via-gray-50 to-gray-100 border-gray-200/50'
+      }
+      backdrop-blur-xl border-r shadow-2xl z-30 transition-all duration-500 ease-out
       before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-600/5 before:to-purple-600/5`}>
       
       <div className="flex flex-col h-full relative">
         {/* Logo/Header avec effet néon */}
-        <div className="p-6 border-b border-gray-700/50 backdrop-blur-sm">
+        <div className={`p-6 border-b ${state.darkMode ? 'border-gray-700/50' : 'border-gray-200/50'} backdrop-blur-sm`}>
           <div className="flex items-center justify-between">
             <div className={`flex items-center space-x-3 ${isCollapsed ? 'justify-center' : ''}`}> 
               <div className="relative">
@@ -47,8 +51,11 @@ const Navigation = memo(({ financeManager, t }) => {
             
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white 
-                transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/25"
+              className={`p-2 rounded-lg ${
+                state.darkMode 
+                  ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white' 
+                  : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-gray-800'
+              } transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/25`}
               title={isCollapsed ? t('expandSidebar') : t('collapseSidebar')}
             >
               <Icons.PanelLeftClose className={`h-4 w-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
@@ -83,8 +90,12 @@ const Navigation = memo(({ financeManager, t }) => {
                       ${isActive 
                         ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg shadow-current/25 scale-105` 
                         : isHovered
-                          ? 'bg-gray-800/60 text-white scale-102 shadow-lg'
-                          : 'text-gray-400 hover:text-gray-300'
+                          ? state.darkMode 
+                            ? 'bg-gray-800/60 text-white scale-102 shadow-lg'
+                            : 'bg-gray-200/60 text-gray-800 scale-102 shadow-lg'
+                          : state.darkMode 
+                            ? 'text-gray-400 hover:text-gray-300'
+                            : 'text-gray-600 hover:text-gray-800'
                       } group-hover:shadow-2xl`}
                     aria-label={`${t('goTo')} ${tab.name}`}
                     style={{
@@ -113,12 +124,15 @@ const Navigation = memo(({ financeManager, t }) => {
                   
                   {/* Tooltip pour mode collapsed */}
                   {isCollapsed && isHovered && (
-                    <div className="absolute left-full ml-4 top-1/2 transform -translate-y-1/2 z-50
-                      bg-gray-900 text-white px-3 py-2 rounded-lg text-sm font-medium shadow-2xl
-                      border border-gray-700 backdrop-blur-sm">
+                    <div className={`absolute left-full ml-4 top-1/2 transform -translate-y-1/2 z-50
+                      ${state.darkMode 
+                        ? 'bg-gray-900 text-white border-gray-700' 
+                        : 'bg-white text-gray-800 border-gray-200'
+                      } px-3 py-2 rounded-lg text-sm font-medium shadow-2xl
+                      border backdrop-blur-sm`}>
                       {tab.name}
-                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 
-                        w-2 h-2 bg-gray-900 border-l border-b border-gray-700 rotate-45"></div>
+                      <div className={`absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 
+                        w-2 h-2 ${state.darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} border-l border-b rotate-45`}></div>
                     </div>
                   )}
                 </div>
@@ -128,15 +142,15 @@ const Navigation = memo(({ financeManager, t }) => {
         </div>
 
         {/* Footer futuriste */}
-        <div className="p-4 border-t border-gray-700/50 backdrop-blur-sm">
+        <div className={`p-4 border-t ${state.darkMode ? 'border-gray-700/50' : 'border-gray-200/50'} backdrop-blur-sm`}>
           {!isCollapsed ? (
             <div className="text-center">
-              <div className="text-xs text-gray-500 mb-2">
+              <div className={`text-xs ${state.darkMode ? 'text-gray-500' : 'text-gray-600'} mb-2`}>
                 {t('poweredByAI')} • v2.0.1
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-green-400 font-medium">{t('systemOperational')}</span>
+                <span className={`text-xs font-medium ${state.darkMode ? 'text-green-400' : 'text-green-600'}`}>{t('systemOperational')}</span>
               </div>
             </div>
           ) : (

@@ -26,6 +26,7 @@ import SavingsScreen from './screens/SavingsScreen';
 import CalendarScreen from './screens/CalendarScreen';
 import RecurringScreen from './screens/RecurringScreen';
 import DebtsScreen from './screens/DebtsScreen';
+import RevenueScreen from './screens/RevenueScreen';
 
 // Import des modals
 import IncomeModal from './components/modals/IncomeModal';
@@ -174,6 +175,8 @@ const App = () => {
         return <DebtsScreen {...screenProps} />;
       case 'reports':
         return <ReportsScreen {...screenProps} />;
+      case 'revenue':
+        return <RevenueScreen {...screenProps} />;
       default:
         return <DashboardScreen {...screenProps} />;
     }
