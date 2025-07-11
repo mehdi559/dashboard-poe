@@ -117,34 +117,7 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               {t('aiFinancialDashboard')}
             </h1>
-            
-            <div className="flex items-center space-x-2">
-              <select
-                value={state.selectedMonth}
-                onChange={(e) => actions.setSelectedMonth(e.target.value)}
-                className={`px-3 py-1 rounded-lg ${theme.card} ${theme.text} border ${theme.border} text-sm`}
-                aria-label={t('selectMonth')}
-              >
-                {Array.from({length: 12}, (_, i) => {
-                  const date = new Date(state.selectedYear, i);
-                  return (
-                    <option key={i} value={`${state.selectedYear}-${String(i + 1).padStart(2, '0')}`}>
-                      {date.toLocaleDateString(state.language === 'fr' ? 'fr-FR' : state.language === 'es' ? 'es-ES' : 'en-US', { month: 'long' })}
-                    </option>
-                  );
-                })}
-              </select>
-              <select
-                value={state.selectedYear}
-                onChange={(e) => actions.setSelectedYear(parseInt(e.target.value))}
-                className={`px-3 py-1 rounded-lg ${theme.card} ${theme.text} border ${theme.border} text-sm`}
-                aria-label={t('selectYear')}
-              >
-                {[2023, 2024, 2025, 2026].map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
+            {/* Suppression du sélecteur de mois et d'année */}
           </div>
           
           <div className="flex items-center space-x-1 mt-4 overflow-x-auto">
