@@ -184,7 +184,7 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
   const radarData = getRadarData;
 
   return (
-    <div className="space-y-6 mt-[80px]">
+    <div className="space-y-6">
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
           <h2 className={`text-2xl font-bold ${theme.text}`}>{t('intelligentFinancialReports')}</h2>

@@ -36,7 +36,7 @@ import EditExpenseModal from './components/modals/EditExpenseModal';
 import EditSavingModal from './components/modals/EditSavingModal';
 import PaymentModal from './components/modals/PaymentModal';
 import EditDebtModal from './components/modals/EditDebtModal';
-import ImportExportModal from './components/modals/ImportExportModal';
+import ExportModal from './components/modals/ExportModal';
 
 // Import du chatbot
 import Chatbot from './components/Chatbot';
@@ -219,15 +219,8 @@ const App = () => {
       <PaymentModal financeManager={financeManager} theme={theme} t={t} />
       <EditDebtModal financeManager={financeManager} theme={theme} t={t} />
       
-      {/* Import/Export Modal */}
-      <Modal
-        isOpen={state.modals.import}
-        onClose={() => actions.toggleModal('import', false)}
-        title={t('dataManagement')}
-        maxWidth="max-w-lg"
-      >
-        <ImportExportModal financeManager={financeManager} theme={theme} t={t} />
-      </Modal>
+      {/* Export Modal */}
+      <ExportModal financeManager={financeManager} theme={theme} t={t} />
 
       {/* Chatbot IA */}
       <Chatbot financeManager={financeManager} theme={theme} t={t} />
