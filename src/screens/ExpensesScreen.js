@@ -120,7 +120,10 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
   const patterns = getSpendingPatterns;
 
   // Déclaration des hooks pour la navigation semaine/jour/filtres
-  const [selectedWeek, setSelectedWeek] = useState(0);
+  // Calcul de la semaine actuelle du mois (0 = première semaine)
+  const today = new Date();
+  const currentWeek = Math.floor((today.getDate() - 1) / 7);
+  const [selectedWeek, setSelectedWeek] = useState(currentWeek);
   const [selectedDay, setSelectedDay] = useState(null);
   const [searchTermList, setSearchTermList] = useState('');
   const [categoryFilterList, setCategoryFilterList] = useState('all');
@@ -182,16 +185,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
           <h2 className={`text-2xl font-bold ${theme.text}`}>{t('expensesManagement')}</h2>
-          <div className="flex space-x-2">
-            <Button
-              onClick={() => actions.exportExpensesToCSV()}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <Icons.Download className="h-4 w-4" />
-              <span>{t('exportCSV')}</span>
-            </Button>
-          </div>
+          {/* Suppression du bouton Export CSV */}
         </div>
 
         {/* SUPPRIMER SearchAndFilter ici */}
