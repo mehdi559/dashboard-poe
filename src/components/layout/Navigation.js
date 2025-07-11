@@ -41,10 +41,12 @@ const Navigation = memo(({ financeManager, t }) => {
               </div>
               {!isCollapsed && (
                 <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                    FinanceAI
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-pink-500 via-blue-400 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(59,130,246,0.7)]">
+                    My Wallet
                   </h1>
-                  <p className="text-xs text-gray-400">{t('futureFinance')}</p>
+                  <p className="text-xs font-semibold bg-gradient-to-r from-emerald-400 via-pink-400 to-blue-400 bg-clip-text text-transparent drop-shadow-[0_0_6px_rgba(236,72,153,0.7)]">
+                    By MM
+                  </p>
                 </div>
               )}
             </div>
@@ -145,9 +147,7 @@ const Navigation = memo(({ financeManager, t }) => {
         <div className={`p-4 border-t ${state.darkMode ? 'border-gray-700/50' : 'border-gray-200/50'} backdrop-blur-sm`}>
           {!isCollapsed ? (
             <div className="text-center">
-              <div className={`text-xs ${state.darkMode ? 'text-gray-500' : 'text-gray-600'} mb-2`}>
-                {t('poweredByAI')} • v2.0.1
-              </div>
+              {/* Suppression de la mention 'Alimenté par IA • v2.0.1' */}
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className={`text-xs font-medium ${state.darkMode ? 'text-green-400' : 'text-green-600'}`}>{t('systemOperational')}</span>

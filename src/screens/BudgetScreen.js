@@ -110,7 +110,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
             </Button>
             <Button
               variant="outline"
-              className="flex items-center space-x-2 bg-white hover:bg-white dark:bg-white dark:hover:bg-white dark:!text-white"
+              className="flex items-center space-x-2 bg-white hover:bg-white dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white"
               onClick={() => {
                 const optimizedBudgets = {};
                 state.categories.forEach(cat => {
@@ -119,7 +119,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                 actions.optimizeBudgets(optimizedBudgets);
               }}
             >
-              <Icons.Zap className="h-4 w-4 dark:!text-white" />
+              <Icons.Zap className="h-4 w-4 dark:text-white" />
               <span>{t('optimize')}</span>
             </Button>
           </div>

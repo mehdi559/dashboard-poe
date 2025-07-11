@@ -217,14 +217,6 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
             >
               {t('performances')}
             </Button>
-            <Button
-              onClick={actions.exportData}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <Icons.Download className="h-4 w-4" />
-              <span>{t('export')}</span>
-            </Button>
           </div>
         </div>
 

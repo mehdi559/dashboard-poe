@@ -18,7 +18,7 @@ import Input from '../components/ui/Input';
 // Dashboard Screen
 const DashboardScreen = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
-  const [dashboardTab, setDashboardTab] = useState('today');
+  const [dashboardTab, setDashboardTab] = useState('overview');
   const [showWithInitial, setShowWithInitial] = useState(true);
 
   const WidgetCard = memo(({ title, icon: Icon, children, color = 'blue', className = '' }) => (
