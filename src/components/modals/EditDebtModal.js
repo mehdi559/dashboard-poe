@@ -48,17 +48,17 @@ const EditDebtModal = memo(({ financeManager, theme, t }) => {
           <p className={`text-sm ${theme.textSecondary} mb-2`}>{t('editDebtInformation')}</p>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
-              <span>{t('currentBalance')}:</span>
+              <span className={`${theme.text}`}>{t('currentBalance')}</span>
               <span className="font-medium text-red-600">
                 {state.editingItem.balance}
               </span>
             </div>
             <div className="flex justify-between">
-              <span>{t('minimumPayment')}:</span>
+              <span className={`${theme.text}`}>{t('minimumPayment')}</span>
               <span className={theme.text}>{state.editingItem.minPayment}</span>
             </div>
             <div className="flex justify-between">
-              <span>{t('interestRate')}:</span>
+              <span className={`${theme.text}`}>{t('interestRate')}</span>
               <span className={theme.text}>{state.editingItem.rate}%</span>
             </div>
           </div>
