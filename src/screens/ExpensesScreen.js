@@ -34,8 +34,11 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
     // Analyse par jour de la semaine
     const dayAnalysis = expenses.reduce((acc, exp) => {
       const day = new Date(exp.date).getDay();
-      const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-      const dayName = dayNames[day];
+      // Utilisation du format natif pour le jour selon la langue
+      const dayName = new Date(exp.date).toLocaleDateString(
+        state.language === 'fr' ? 'fr-FR' : state.language === 'es' ? 'es-ES' : 'en-US',
+        { weekday: 'long' }
+      );
       acc[dayName] = (acc[dayName] || 0) + exp.amount;
       return acc;
     }, {});
@@ -51,9 +54,9 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
 
     // Suggestions d'économie
     const economySuggestions = [
-      `Réduire les dépenses ${biggestExpense.category} de 10% économiserait ${formatCurrency(biggestExpense.amount * 0.1)} par transaction`,
-      `En groupant vos achats ${spendingByDay[0]?.[0] || 'du weekend'}, vous pourriez économiser sur les frais de transport`,
-      `Planifier vos dépenses ${biggestExpense.category} à l'avance pourrait réduire les achats impulsifs`
+      t('reduceCategory', { category: biggestExpense.category, amount: formatCurrency(biggestExpense.amount * 0.1) }),
+      t('groupPurchases', { day: spendingByDay[0]?.[0] || t('weekend') }),
+      t('planExpenses', { category: biggestExpense.category })
     ];
 
     return {
@@ -63,7 +66,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
       economySuggestions,
       averageDaily: expenses.reduce((sum, exp) => sum + exp.amount, 0) / Math.max(new Date().getDate(), 1)
     };
-  }, [filteredAndSortedExpenses, formatCurrency]);
+  }, [filteredAndSortedExpenses, formatCurrency, state.language]);
 
   // Détection des patterns de dépenses
   const getSpendingPatterns = useMemo(() => {
@@ -87,7 +90,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
       if (weekendAvg > weekdayAvg * 1.5) {
         patterns.push({
           type: 'weekend_spender',
-          message: `Vous dépensez ${Math.round((weekendAvg/weekdayAvg)*100)}% de plus le weekend`,
+          message: t('weekendSpender', { percent: Math.round((weekendAvg/weekdayAvg)*100) }),
           icon: Icons.Calendar,
           color: 'orange'
         });
@@ -107,14 +110,14 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
     if (mostFrequentAmount && mostFrequentAmount[1] > 2) {
       patterns.push({
         type: 'frequent_amount',
-        message: `Vous dépensez souvent ${formatCurrency(mostFrequentAmount[0])} (${mostFrequentAmount[1]} fois)`,
+        message: t('frequentAmount', { amount: formatCurrency(mostFrequentAmount[0]), count: mostFrequentAmount[1] }),
         icon: Icons.Repeat,
         color: 'blue'
       });
     }
 
     return patterns;
-  }, [filteredAndSortedExpenses, formatCurrency]);
+  }, [filteredAndSortedExpenses, formatCurrency, t]);
 
   const analytics = getExpenseAnalytics;
   const patterns = getSpendingPatterns;
@@ -425,7 +428,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                                   {isToday && (
                                     <>
                                       <span className="text-gray-400">•</span>
-                                      <span className="text-green-600 text-xs font-medium">Aujourd'hui</span>
+                                      <span className="text-green-600 text-xs font-medium">{t('today')}</span>
                                     </>
                                   )}
                                 </div>

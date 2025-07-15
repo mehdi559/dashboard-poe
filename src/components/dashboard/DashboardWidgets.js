@@ -3,7 +3,7 @@ import * as Icons from 'lucide-react';
 import { differenceInCalendarDays, addMonths } from 'date-fns';
 
 // Composant pour les QuickStats améliorées avec tendances
-export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency, previousMonthData, theme, t }) => {
+export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency, previousMonthData, theme, t, onWidgetClick }) => {
   // Calcul du revenu total à partir des sources renseignées
   const totalRevenue = (state.revenues || []).reduce((sum, rev) => sum + rev.amount, 0);
 
@@ -54,7 +54,7 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div className="bg-green-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
+      <div className="bg-green-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px] cursor-pointer hover:scale-105 transition-transform" onClick={() => onWidgetClick && onWidgetClick('income')}>
         <div className="flex items-center justify-between w-full">
           <span className="text-white text-xs font-medium">{t('income')}</span>
           <Icons.TrendingUp className="h-5 w-5 text-white opacity-80" />
@@ -64,7 +64,7 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
         </div>
         <TrendIndicator trend={incomeTrend} />
       </div>
-      <div className="bg-red-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
+      <div className="bg-red-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px] cursor-pointer hover:scale-105 transition-transform" onClick={() => onWidgetClick && onWidgetClick('expenses')}>
         <div className="flex items-center justify-between w-full">
           <span className="text-white text-xs font-medium">{t('expenses')}</span>
           <Icons.TrendingDown className="h-5 w-5 text-white opacity-80" />
@@ -75,7 +75,7 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
         <TrendIndicator trend={expensesTrend} />
       </div>
       {/* Solde du compte */}
-      <div className="bg-teal-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
+      <div className="bg-teal-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px] cursor-pointer hover:scale-105 transition-transform" onClick={() => onWidgetClick && onWidgetClick('accountBalance')}>
         <div className="flex items-center justify-between w-full">
           <span className="text-white text-xs font-medium">{t('accountBalance')}</span>
           <Icons.Wallet className="h-5 w-5 text-white opacity-80" />
@@ -88,7 +88,7 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
         </div>
       </div>
       {/* Épargne à la place du taux d'épargne */}
-      <div className="bg-blue-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
+      <div className="bg-blue-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px] cursor-pointer hover:scale-105 transition-transform" onClick={() => onWidgetClick && onWidgetClick('savings')}>
         <div className="flex items-center justify-between w-full">
           <span className="text-white text-xs font-medium">{t('savings')}</span>
           <Icons.PiggyBank className="h-5 w-5 text-white opacity-80" />
@@ -99,7 +99,7 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
         <TrendIndicator trend={savingsTrend} />
       </div>
       {/* Taux d'épargne à la place du reste à dépenser */}
-      <div className="bg-purple-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
+      <div className="bg-purple-600 rounded-xl p-4 flex flex-col justify-between min-h-[100px] cursor-pointer hover:scale-105 transition-transform" onClick={() => onWidgetClick && onWidgetClick('savingsRate')}>
         <div className="flex items-center justify-between w-full">
           <span className="text-white text-xs font-medium">{t('savingsRate')}</span>
           <Icons.Percent className="h-5 w-5 text-white opacity-80" />
@@ -110,7 +110,7 @@ export const EnhancedQuickStats = memo(({ state, computedValues, formatCurrency,
         <TrendIndicator trend={savingsRateTrend} />
       </div>
       {/* Reste à dépenser en dernier */}
-      <div className="bg-orange-500 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
+      <div className="bg-orange-500 rounded-xl p-4 flex flex-col justify-between min-h-[100px] cursor-pointer hover:scale-105 transition-transform" onClick={() => onWidgetClick && onWidgetClick('remainingBudget')}>
         <div className="flex items-center justify-between w-full">
           <span className="text-white text-xs font-medium">
             {t('remainingBudget', {

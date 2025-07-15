@@ -12,12 +12,12 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
   
   const monthNav = getMonthNavigation();
   const currentTime = new Date();
+  // Simple greeting selon la langue
   const greeting = useMemo(() => {
-    const hour = currentTime.getHours();
-    if (hour < 12) return t('greeting.morning');
-    if (hour < 18) return t('greeting.afternoon');
-    return t('greeting.evening');
-  }, [t]);
+    if (state.language === 'fr') return 'Bonjour';
+    if (state.language === 'es') return 'Hola';
+    return 'Hello';
+  }, [state.language]);
 
   return (
     <header className={`fixed top-0 left-16 lg:left-64 right-0 h-20 z-20 backdrop-blur-xl ${

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useRef } from 'react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import * as Icons from 'lucide-react';
 import { 
@@ -14,12 +14,16 @@ import {
   SavingsProgressWidget
 } from '../components/dashboard/DashboardWidgets';
 import Input from '../components/ui/Input';
+import RevenueScreen from './RevenueScreen';
+import ExpensesScreen from './ExpensesScreen';
+import SavingsScreen from './SavingsScreen';
 
 // Dashboard Screen
 const DashboardScreen = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
   const [dashboardTab, setDashboardTab] = useState('overview');
   const [showWithInitial, setShowWithInitial] = useState(true);
+  const endOfMonthRef = useRef(null);
 
   const WidgetCard = memo(({ title, icon: Icon, children, color = 'blue', className = '' }) => (
     <div className={`${theme.card} rounded-xl border ${theme.border} overflow-hidden ${className}`}>
@@ -35,9 +39,16 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
   // Génération d'insights IA basée sur les vraies données
   const generateFinancialInsights = useCallback(() => [
-    `${t('youHaveSpent')} ${formatCurrency(computedValues.totalSpent)} ${t('thisMonth')}, ${t('which_is')} ${computedValues.totalSpent < computedValues.totalBudget ? t('less') : t('more')} ${t('thanYourBudgetOf')} ${formatCurrency(computedValues.totalBudget)}`,
+    t('youHaveSpent', {
+      spent: formatCurrency(computedValues.totalSpent),
+      currency: '', // ou la devise si tu veux l’afficher séparément
+      lessOrMore: t(computedValues.totalSpent < computedValues.totalBudget ? 'less' : 'more'),
+      budget: formatCurrency(computedValues.totalBudget)
+    }),
     `${t('yourCurrentSavingsRate')} ${computedValues.savingsRate.toFixed(1)}%`,
-    `${t('yourTopSpendingCategory')} ${computedValues.pieChartData.length > 0 ? t(computedValues.pieChartData.reduce((a, b) => a.value > b.value ? a : b).name) : t('none')}`
+    t('yourTopSpendingCategory', {
+      category: computedValues.pieChartData.length > 0 ? t(computedValues.pieChartData.reduce((a, b) => a.value > b.value ? a : b).name) : t('none')
+    })
   ], [computedValues, formatCurrency, t, state.language]);
 
   const generatePersonalizedRecommendations = useCallback(() => [
@@ -109,6 +120,37 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
   const predictions = predictEndOfMonth();
   const healthScore = calculateFinancialHealthScore();
 
+  // Fonction pour gérer le clic sur un widget
+  const handleWidgetClick = (widget) => {
+    switch (widget) {
+      case 'income':
+        setDashboardTab('revenue');
+        break;
+      case 'expenses':
+        setDashboardTab('expenses');
+        break;
+      case 'accountBalance':
+        setDashboardTab('overview');
+        setTimeout(() => {
+          if (endOfMonthRef.current) {
+            endOfMonthRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 300);
+        break;
+      case 'savings':
+        setDashboardTab('savings');
+        break;
+      case 'savingsRate':
+        setDashboardTab('savings');
+        break;
+      case 'remainingBudget':
+        setDashboardTab('budget');
+        break;
+      default:
+        setDashboardTab('overview');
+    }
+  };
+
   return (
     <div className={`min-h-screen ${theme.bg} transition-colors duration-500`}>
       <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-10 backdrop-blur-lg bg-opacity-90 mt-[80px]`}>
@@ -150,18 +192,16 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {dashboardTab === 'today' && (
-          <div className="space-y-6">
-            <WidgetCard title={t('todaysSummary')} icon={Icons.Sun} color="orange">
-              <TodaySection 
-                computedValues={computedValues}
-                formatCurrency={formatCurrency}
-                theme={theme}
-                state={state}
-                t={t}
-              />
-            </WidgetCard>
-          </div>
+        {dashboardTab === 'revenue' && (
+          <RevenueScreen financeManager={financeManager} theme={theme} t={t} />
+        )}
+
+        {dashboardTab === 'expenses' && (
+          <ExpensesScreen financeManager={financeManager} theme={theme} t={t} />
+        )}
+
+        {dashboardTab === 'savings' && (
+          <SavingsScreen financeManager={financeManager} theme={theme} t={t} />
         )}
 
         {dashboardTab === 'overview' && (
@@ -173,6 +213,7 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                 formatCurrency={formatCurrency}
                 theme={theme}
                 t={t}
+                onWidgetClick={handleWidgetClick}
               />
             </div>
             {/* Suppression de la carte solde du compte ici */}
@@ -200,38 +241,40 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                 </div>
               </WidgetCard>
 
-              <WidgetCard title={t('endOfMonthPredictions')} icon={Icons.TrendingUp} color="purple">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <input
-                      type="checkbox"
-                      id="showWithInitial"
-                      checked={showWithInitial}
-                      onChange={e => setShowWithInitial(e.target.checked)}
-                      className="form-checkbox h-4 w-4 text-purple-600"
-                    />
-                    <label htmlFor="showWithInitial" className="text-sm text-purple-700 dark:text-purple-300 cursor-pointer">
-                      {t('includingInitialBalance')}
-                    </label>
+              <div ref={endOfMonthRef}>
+                <WidgetCard title={t('endOfMonthPredictions')} icon={Icons.TrendingUp} color="purple">
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <input
+                        type="checkbox"
+                        id="showWithInitial"
+                        checked={showWithInitial}
+                        onChange={e => setShowWithInitial(e.target.checked)}
+                        className="form-checkbox h-4 w-4 text-purple-600"
+                      />
+                      <label htmlFor="showWithInitial" className="text-sm text-purple-700 dark:text-purple-300 cursor-pointer">
+                        {t('includingInitialBalance')}
+                      </label>
+                    </div>
+                    <div className={`text-2xl font-bold ${theme.text}`}> 
+                      {state.showBalances
+                        ? showWithInitial
+                          ? formatCurrency((state.initialBalance || 0) + predictions.projectedEndBalance)
+                          : formatCurrency(predictions.projectedEndBalance)
+                        : '•••'}
+                    </div>
+                    <p className={`text-sm ${theme.textSecondary}`}>{t('projectedBalance')}</p>
+                    <div className={`text-xs text-blue-700 dark:text-blue-300`}>
+                      {showWithInitial
+                        ? `${t('includingInitialBalance')}: ${state.showBalances ? formatCurrency(state.initialBalance || 0) : '•••'}`
+                        : t('withoutInitialBalance') || 'Solde du mois sans solde initial'}
+                    </div>
+                    <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
+                      <p className={`text-xs ${theme.textSecondary}`}>{t('confidence')}: {predictions.confidence}%</p>
+                    </div>
                   </div>
-                  <div className={`text-2xl font-bold ${theme.text}`}>
-                    {state.showBalances
-                      ? showWithInitial
-                        ? formatCurrency((state.initialBalance || 0) + predictions.projectedEndBalance)
-                        : formatCurrency(predictions.projectedEndBalance)
-                      : '•••'}
-                  </div>
-                  <p className={`text-sm ${theme.textSecondary}`}>{t('projectedBalance')}</p>
-                  <div className={`text-xs text-blue-700 dark:text-blue-300`}>
-                    {showWithInitial
-                      ? `${t('includingInitialBalance')}: ${state.showBalances ? formatCurrency(state.initialBalance || 0) : '•••'}`
-                      : t('withoutInitialBalance') || 'Solde du mois sans solde initial'}
-                  </div>
-                  <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                    <p className={`text-xs ${theme.textSecondary}`}>{t('confidence')}: {predictions.confidence}%</p>
-                  </div>
-                </div>
-              </WidgetCard>
+                </WidgetCard>
+              </div>
 
               <WidgetCard title={t('expenseChart')} icon={Icons.PieChart} color="blue">
                 <div className="h-40">
