@@ -165,12 +165,8 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
           <div className="flex items-center space-x-1 mt-4 overflow-x-auto">
             {[
               { id: 'overview', label: t('overview'), icon: Icons.LayoutDashboard },
-              { id: 'today', label: t('today'), icon: Icons.Calendar },
               { id: 'budget', label: t('budget'), icon: Icons.PieChart },
-              { id: 'activity', label: t('activity'), icon: Icons.Activity },
-              { id: 'insights', label: t('aiInsights'), icon: Icons.Brain },
               { id: 'goals', label: t('goals'), icon: Icons.Target },
-              { id: 'reports', label: t('reports'), icon: Icons.BarChart },
               { id: 'tools', label: t('tools'), icon: Icons.Settings }
             ].map(tab => (
               <button
@@ -216,103 +212,86 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
                 onWidgetClick={handleWidgetClick}
               />
             </div>
-            {/* Suppression de la carte solde du compte ici */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <WidgetCard title={t('financialHealthScore')} icon={Icons.Heart} color="green">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-center">
-                    <div className="relative w-16 h-16">
-                      <svg className="w-16 h-16 transform -rotate-90">
-                        <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="none" className="text-gray-200 dark:text-gray-700" />
-                        <circle
-                          cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="none"
-                          strokeDasharray={`${healthScore.score * 1.76} 176`}
-                          className={`${healthScore.score > 70 ? 'text-green-500' : healthScore.score > 40 ? 'text-yellow-500' : 'text-red-500'}`}
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className={`text-lg font-bold ${theme.text}`}>{healthScore.score}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className={`text-xs ${theme.textSecondary} p-2 rounded-lg ${theme.bg} border ${theme.border}`}>
-                    {healthScore.message}
-                  </div>
-                </div>
-              </WidgetCard>
-
-              <div ref={endOfMonthRef}>
-                <WidgetCard title={t('endOfMonthPredictions')} icon={Icons.TrendingUp} color="purple">
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <input
-                        type="checkbox"
-                        id="showWithInitial"
-                        checked={showWithInitial}
-                        onChange={e => setShowWithInitial(e.target.checked)}
-                        className="form-checkbox h-4 w-4 text-purple-600"
-                      />
-                      <label htmlFor="showWithInitial" className="text-sm text-purple-700 dark:text-purple-300 cursor-pointer">
-                        {t('includingInitialBalance')}
-                      </label>
-                    </div>
-                    <div className={`text-2xl font-bold ${theme.text}`}> 
-                      {state.showBalances
-                        ? showWithInitial
-                          ? formatCurrency((state.initialBalance || 0) + predictions.projectedEndBalance)
-                          : formatCurrency(predictions.projectedEndBalance)
-                        : '•••'}
-                    </div>
-                    <p className={`text-sm ${theme.textSecondary}`}>{t('projectedBalance')}</p>
-                    <div className={`text-xs text-blue-700 dark:text-blue-300`}>
-                      {showWithInitial
-                        ? `${t('includingInitialBalance')}: ${state.showBalances ? formatCurrency(state.initialBalance || 0) : '•••'}`
-                        : t('withoutInitialBalance') || 'Solde du mois sans solde initial'}
-                    </div>
-                    <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                      <p className={`text-xs ${theme.textSecondary}`}>{t('confidence')}: {predictions.confidence}%</p>
-                    </div>
-                  </div>
-                </WidgetCard>
+            <div className="mb-6">
+              <div className={`rounded-2xl shadow-lg p-6 ${theme.card} border ${theme.border}`}>
+                <TodaySection
+                  computedValues={computedValues}
+                  formatCurrency={formatCurrency}
+                  theme={theme}
+                  state={state}
+                  t={t}
+                />
               </div>
-
-              <WidgetCard title={t('expenseChart')} icon={Icons.PieChart} color="blue">
-                <div className="h-40">
-                  {computedValues.pieChartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={computedValues.pieChartData}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={60}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({name, percent}) => `${t(name)} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {computedValues.pieChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => formatCurrency(value)} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <p className={`text-sm ${theme.textSecondary}`}>{t('noExpensesThisMonth')}</p>
-                    </div>
-                  )}
-                </div>
-              </WidgetCard>
-
-              <WidgetCard title={t('weeklyComparison')} icon={Icons.BarChart3} color="indigo">
-                <WeekComparison 
+            </div>
+            {/* Activité Récente et Alertes côte à côte */}
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className={`rounded-2xl shadow-lg p-6 ${theme.card} border ${theme.border}`}>
+                <RecentActivity 
                   computedValues={computedValues}
                   formatCurrency={formatCurrency}
                   theme={theme}
                   t={t}
                 />
-              </WidgetCard>
+              </div>
+              <div className={`rounded-2xl shadow-lg p-6 ${theme.card} border ${theme.border}`}>
+                <RealTimeInsights 
+                  state={state}
+                  computedValues={computedValues}
+                  formatCurrency={formatCurrency}
+                  theme={theme}
+                  t={t}
+                />
+              </div>
+            </div>
+            {/* Insights IA (RealTimeInsights, analyses IA, recommandations) */}
+            <div className="mb-6">
+              <div className={`rounded-2xl shadow-lg p-6 ${theme.card} border ${theme.border}`}>
+                <h3 className={`text-xl font-bold ${theme.text} mb-4`}>{t('financialAnalysisAI')}</h3>
+                <div className="space-y-3">
+                  {insights.map((insight, index) => (
+                    <div key={index} className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
+                      <p className={`text-sm ${theme.text}`}>{insight}</p>
+                    </div>
+                  ))}
+                </div>
+                <h3 className={`text-xl font-bold ${theme.text} mt-6 mb-4`}>{t('personalizedRecommendations')}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {recommendations.map((rec, index) => (
+                    <div key={index} className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
+                      <p className={`text-sm ${theme.text}`}>{rec}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {/* Expense Chart */}
+            <div className="mb-6">
+              <div className={`rounded-2xl shadow-lg p-6 ${theme.card} border ${theme.border}`}>
+                {computedValues.pieChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={computedValues.pieChartData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={60}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({name, percent}) => `${t(name)} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {computedValues.pieChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => formatCurrency(value)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-32">
+                    <p className={`text-sm ${theme.textSecondary}`}>{t('noExpensesThisMonth')}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}

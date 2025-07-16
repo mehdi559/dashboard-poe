@@ -102,7 +102,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
 
   // Allocation automatique d'épargne
   const getAutomaticAllocation = useMemo(() => {
-    const totalRevenue = getCurrentBalance.totalRevenue;
+    const totalRevenue = state.revenues?.reduce((sum, rev) => sum + rev.amount, 0) || state.monthlyIncome;
     
     return {
       emergency: { percentage: 10, amount: totalRevenue * 0.1, name: t('emergencyFund') },
@@ -110,7 +110,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
       vacation: { percentage: 5, amount: totalRevenue * 0.05, name: t('vacation') },
       investment: { percentage: 10, amount: totalRevenue * 0.1, name: t('investments') }
     };
-  }, [getCurrentBalance.totalRevenue, t]);
+  }, [state.revenues, state.monthlyIncome, t]);
 
   // Sources de revenus par défaut
   const getDefaultRevenueSources = () => {
@@ -197,10 +197,8 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
             {[
               { id: 'overview', label: t('overview'), icon: Icons.LayoutDashboard },
               { id: 'sources', label: t('revenueSources'), icon: Icons.DollarSign },
-              { id: 'balance', label: t('accountBalance'), icon: Icons.Wallet },
               { id: 'savings', label: t('savingsAllocation'), icon: Icons.PiggyBank },
-              { id: 'analysis', label: t('analysis'), icon: Icons.TrendingUp },
-              { id: 'tools', label: t('tools'), icon: Icons.Calculator }
+              { id: 'analysis', label: t('analysis'), icon: Icons.TrendingUp }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -552,197 +550,370 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
           </div>
         )}
 
-        {activeTab === 'balance' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <WidgetCard title={t('currentBalance')} icon={Icons.Wallet} color="blue" theme={theme}>
-                <div className="text-center">
-                  <div className={`text-3xl font-bold mb-2 ${balance.current >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {state.showBalances ? formatCurrency(balance.current) : '•••'}
-                  </div>
-                  <p className={`text-sm ${theme.textSecondary}`}>{t('availableNow')}</p>
-                  
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className={theme.textSecondary}>{t('totalRevenue')}:</span>
-                      <span className="text-green-600 font-medium">+{formatCurrency(balance.totalRevenue)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className={theme.textSecondary}>{t('expenses')}:</span>
-                      <span className="text-red-600 font-medium">-{formatCurrency(computedValues.totalSpent)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className={theme.textSecondary}>{t('recurring')}:</span>
-                      <span className="text-orange-600 font-medium">-{formatCurrency(computedValues.totalRecurring || 0)}</span>
-                    </div>
-                  </div>
-                </div>
-              </WidgetCard>
 
-              <WidgetCard title={t('projectedEndMonth')} icon={Icons.TrendingUp} color="purple" theme={theme}>
-                <div className="text-center">
-                  <div className={`text-3xl font-bold mb-2 ${balance.projectedEndMonth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {state.showBalances ? formatCurrency(balance.projectedEndMonth) : '•••'}
-                  </div>
-                  <p className={`text-sm ${theme.textSecondary}`}>{t('estimatedEndOfMonth')}</p>
-                  
-                  <div className="mt-4">
-                    <div className={`text-xs px-2 py-1 rounded-full ${
-                      balance.projectedEndMonth >= balance.current 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                    }`}>
-                      {balance.projectedEndMonth >= balance.current ? t('improving') : t('declining')}
-                    </div>
-                  </div>
-                </div>
-              </WidgetCard>
-
-              <WidgetCard title={t('cashFlow')} icon={Icons.ArrowUpDown} color="indigo" theme={theme}>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className={`text-sm ${theme.textSecondary}`}>{t('monthlyInflow')}:</span>
-                    <span className="text-green-600 font-medium">+{formatCurrency(balance.totalRevenue)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-sm ${theme.textSecondary}`}>{t('monthlyOutflow')}:</span>
-                    <span className="text-red-600 font-medium">-{formatCurrency(computedValues.totalSpent + (computedValues.totalRecurring || 0))}</span>
-                  </div>
-                  <div className="border-t pt-2">
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm font-medium ${theme.text}`}>{t('netCashFlow')}:</span>
-                      <span className={`font-bold ${balance.savingsThisMonth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(balance.savingsThisMonth)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </WidgetCard>
-            </div>
-
-            {/* Historique des soldes */}
-            <WidgetCard title={t('balanceHistory')} icon={Icons.History} color="blue" theme={theme}>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={evolution}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
-                    <Line type="monotone" dataKey="savings" stroke="#3b82f6" strokeWidth={2} name={t('balance')} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </WidgetCard>
-          </div>
-        )}
 
         {activeTab === 'savings' && (
           <div className="space-y-6">
-            <WidgetCard title={t('automaticSavingsAllocation')} icon={Icons.PiggyBank} color="green" theme={theme}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <h4 className={`font-semibold ${theme.text} mb-4`}>{t('recommendedAllocation')}</h4>
-                  <div className="space-y-3">
-                    {Object.entries(allocation).map(([key, item]) => (
-                      <div key={key} className={`p-3 rounded-lg border ${theme.border} ${theme.bg}`}>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className={`font-medium ${theme.text}`}>{item.name}</span>
-                          <span className="text-green-600 font-bold">{formatCurrency(item.amount)}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className={`text-sm ${theme.textSecondary}`}>{item.percentage}% {t('ofRevenue')}</span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              // Logique pour appliquer l'allocation automatique
-                              console.log(`Applying allocation for ${item.name}: ${item.amount}`);
-                            }}
-                          >
-                            {t('apply')}
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            {/* Section principale - Objectifs d'épargne */}
+            <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className={`text-2xl font-bold ${theme.text}`}>{t('savingsGoals')}</h2>
+                <div className="text-right">
+                  <p className={`text-2xl font-bold ${theme.text}`}>
+                    {state.showBalances ? formatCurrency(computedValues.totalSavings) : '•••'}
+                  </p>
+                  <p className={`text-sm ${theme.textSecondary}`}>{t('totalSaved')}</p>
                 </div>
-
-                <div>
-                  <h4 className={`font-semibold ${theme.text} mb-4`}>{t('savingsRules')}</h4>
-                  <div className="space-y-3">
-                    <div className={`p-3 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20`}>
-                      <h5 className={`font-medium ${theme.text} mb-2`}>{t('rule503020')}</h5>
-                      <p className={`text-xs ${theme.textSecondary} mb-2`}>{t('rule503020Description')}</p>
-                      <div className="space-y-1 text-xs">
-                        <div className="flex justify-between">
-                          <span>50% {t('needs')}:</span>
-                          <span className="font-medium">{formatCurrency(balance.totalRevenue * 0.5)}</span>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1">
+                  <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('newGoal')}</h3>
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (actions.addSavingsGoal(state.newGoal)) {
+                        actions.resetForm('newGoal');
+                      }
+                    }}
+                    className="space-y-4"
+                  >
+                    <Input
+                      label={t('goalName')}
+                      type="text"
+                      value={state.newGoal.name}
+                      onChange={(value) => actions.updateForm('newGoal', { name: value })}
+                      error={state.errors.name}
+                      required
+                      minLength={2}
+                      maxLength={50}
+                    />
+                    <Input
+                      label={t('targetAmount')}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={state.newGoal.targetAmount}
+                      onChange={(value) => actions.updateForm('newGoal', { targetAmount: value })}
+                      error={state.errors.targetAmount}
+                      required
+                    />
+                    <Input
+                      label={t('currentAmount')}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={state.newGoal.currentAmount}
+                      onChange={(value) => actions.updateForm('newGoal', { currentAmount: value })}
+                      error={state.errors.currentAmount}
+                    />
+                    <Button
+                      type="submit"
+                      variant="success"
+                      className="w-full"
+                      disabled={state.loading}
+                      loading={state.loading}
+                    >
+                      {t('createGoal')}
+                    </Button>
+                  </form>
+                </div>
+                <div className="lg:col-span-2">
+                  <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('goalsWithImpact')}</h3>
+                  <div className="space-y-4">
+                    {computedValues.savingsForSelectedMonth.map(goal => {
+                      const progress = (goal.currentAmount / goal.targetAmount) * 100;
+                      const segments = 10;
+                      const filledSegments = Math.floor((progress / 100) * segments);
+                      const open = false; // Pas de système d'ouverture dans RevenueScreen
+                      return (
+                        <div key={goal.id} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
+                          <div className="flex justify-between items-center mb-3">
+                            <div>
+                              <h4 className={`font-semibold ${theme.text}`}>{goal.name}</h4>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <span className={`font-medium ${theme.text}`}>{state.showBalances 
+                                  ? `${formatCurrency(goal.cumulativeAmount)} / ${formatCurrency(goal.targetAmount)}`
+                                  : '••• / •••'
+                                }</span>
+                                <span className={`text-xs ${theme.textSecondary}`}>{goal.cumulativeProgress.toFixed(1)}% {t('reached')}</span>
+                              </div>
+                              {/* Affichage de la progression du mois */}
+                              {goal.monthAmount > 0 && (
+                                <div className="flex items-center space-x-2 mt-1">
+                                  <span className={`text-xs text-green-600 font-medium`}>
+                                    +{formatCurrency(goal.monthAmount)} {t('thisMonth')}
+                                  </span>
+                                  <span className={`text-xs ${theme.textSecondary}`}>
+                                    ({goal.monthProgress.toFixed(1)}% {t('progressThisMonth')})
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  actions.setEditingItem(goal);
+                                  actions.toggleModal('editSaving', true);
+                                }}
+                                title={t('edit')}
+                              >
+                                <Icons.Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => {
+                                  if (window.confirm(t('confirmDeleteGoal') || 'Supprimer cet objectif ?')) {
+                                    actions.deleteSavingsGoal(goal.id);
+                                  }
+                                }}
+                                title={t('delete')}
+                              >
+                                <Icons.Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Progression visuelle */}
+                          <div className="space-y-3">
+                            <div className="flex justify-between text-sm">
+                              <span className={theme.textSecondary}>{t('progression')}</span>
+                              <span className={`font-medium ${theme.text}`}>{state.showBalances 
+                                ? `${formatCurrency(goal.cumulativeAmount)} / ${formatCurrency(goal.targetAmount)}`
+                                : '••• / •••'
+                              }</span>
+                            </div>
+                            {/* Barre de progression segmentée */}
+                            <div className="flex space-x-1">
+                              {Array.from({ length: segments }).map((_, index) => (
+                                <div
+                                  key={index}
+                                  className={`flex-1 h-3 rounded ${
+                                    index < filledSegments ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <p className={`text-xs ${theme.textSecondary}`}>
+                              {goal.cumulativeProgress.toFixed(1)}% {t('reached')}
+                              {goal.cumulativeProgress >= 100 && <span className="text-green-500 ml-2">{t('goalReached')}</span>}
+                            </p>
+                            
+                            {/* Progression du mois en cours */}
+                            {goal.monthAmount > 0 && (
+                              <div className={`mt-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800`}>
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className={`text-sm font-medium ${theme.text}`}>{t('progressThisMonth')}</span>
+                                  <span className={`text-sm font-bold text-green-600`}>+{formatCurrency(goal.monthAmount)}</span>
+                                </div>
+                                <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2">
+                                  <div 
+                                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${Math.min(goal.monthProgress, 100)}%` }}
+                                  />
+                                </div>
+                                <p className={`text-xs ${theme.textSecondary} mt-1`}>
+                                  {goal.monthProgress.toFixed(1)}% {t('ofTargetThisMonth')}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Calculateur d'impact */}
+                          <div className={`mt-4 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
+                            <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('impactCalculator')}</h5>
+                            <div className="grid grid-cols-2 gap-4 text-xs">
+                              <div>
+                                <span className={theme.textSecondary}>{t('remainingToSave')}</span>
+                                <div className={`font-bold ${theme.text}`}>{formatCurrency(goal.targetAmount - goal.cumulativeAmount)}</div>
+                              </div>
+                              <div>
+                                <span className={theme.textSecondary}>{t('perMonth')}</span>
+                                <div className={`font-bold text-blue-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 12)}</div>
+                              </div>
+                              <div>
+                                <span className={theme.textSecondary}>{t('perWeek')}</span>
+                                <div className={`font-bold text-purple-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 52)}</div>
+                              </div>
+                              <div>
+                                <span className={theme.textSecondary}>{t('perDay')}</span>
+                                <div className={`font-bold text-orange-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 365)}</div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span>30% {t('wants')}:</span>
-                          <span className="font-medium">{formatCurrency(balance.totalRevenue * 0.3)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>20% {t('savings')}:</span>
-                          <span className="font-medium text-green-600">{formatCurrency(balance.totalRevenue * 0.2)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={`p-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/20`}>
-                      <h5 className={`font-medium ${theme.text} mb-2`}>{t('automatedSavings')}</h5>
-                      <p className={`text-xs ${theme.textSecondary} mb-2`}>{t('automatedSavingsDescription')}</p>
-                      <Button
-                        size="sm"
-                        className="w-full bg-green-600 hover:bg-green-700"
-                        onClick={() => {
-                          // Logique pour configurer l'épargne automatique
-                          console.log('Setting up automated savings');
-                        }}
-                      >
-                        {t('setupAutomation')}
-                      </Button>
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
-            </WidgetCard>
+            </div>
 
-            {/* Progression des objectifs d'épargne liés */}
-            <WidgetCard title={t('savingsGoalsProgress')} icon={Icons.Target} color="purple" theme={theme}>
+            {/* Défis d'épargne */}
+            <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
+              <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
+                <Icons.Trophy className="h-6 w-6 mr-2 text-yellow-500" />
+                {t('savingsChallenges')}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  {
+                    name: t('challenge365Days'),
+                    description: t('challenge365Description'),
+                    targetAmount: 66795,
+                    duration: t('days365'),
+                    dailyAmount: t('variable1to365'),
+                    difficulty: t('difficult'),
+                    color: "red"
+                  },
+                  {
+                    name: t('challenge52Weeks'),
+                    description: t('challenge52Description'),
+                    targetAmount: 1378,
+                    duration: t('weeks52'),
+                    dailyAmount: t('variableWeekly'),
+                    difficulty: t('medium'),
+                    color: "yellow"
+                  },
+                  {
+                    name: t('rule5PerDay'),
+                    description: t('rule5Description'),
+                    targetAmount: 1825,
+                    duration: t('year1'),
+                    dailyAmount: t('amount5'),
+                    difficulty: t('easy'),
+                    color: "green"
+                  },
+                  {
+                    name: t('coinSavings'),
+                    description: t('coinDescription'),
+                    targetAmount: 365,
+                    duration: t('year1'),
+                    dailyAmount: t('variable'),
+                    difficulty: t('veryEasy'),
+                    color: "blue"
+                  }
+                ].map((challenge, index) => (
+                  <div key={index} className={`p-4 rounded-lg border-2 border-${challenge.color}-200 bg-${challenge.color}-50 dark:bg-${challenge.color}-900/20 hover:shadow-lg transition-shadow cursor-pointer`}>
+                    <h4 className={`font-bold ${theme.text} mb-2`}>{challenge.name}</h4>
+                    <p className={`text-xs ${theme.textSecondary} mb-3`}>{challenge.description}</p>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className={theme.textSecondary}>{t('target')}:</span>
+                        <span className={`font-medium text-${challenge.color}-600`}>{formatCurrency(challenge.targetAmount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className={theme.textSecondary}>{t('duration')}:</span>
+                        <span className={theme.text}>{challenge.duration}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className={theme.textSecondary}>{t('difficulty')}:</span>
+                        <span className={`font-medium text-${challenge.color}-600`}>{challenge.difficulty}</span>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      className={`w-full mt-3 bg-${challenge.color}-500 hover:bg-${challenge.color}-600`}
+                      onClick={() => {
+                        const newGoal = {
+                          name: challenge.name,
+                          targetAmount: challenge.targetAmount,
+                          currentAmount: 0,
+                          transactions: []
+                        };
+                        if (actions.addSavingsGoal(newGoal)) {
+                          financeManager.showNotification(t('challengeCreated', { name: challenge.name }), 'success');
+                        }
+                      }}
+                    >
+                      {t('start')}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Suggestions d'allocation */}
+            <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
+              <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
+                <Icons.PieChart className="h-6 w-6 mr-2 text-indigo-500" />
+                {t('recommendedAllocation')}
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {state.savingsGoals?.slice(0, 3).map(goal => {
-                  const progress = (goal.currentAmount / goal.targetAmount) * 100;
+                {[
+                  {
+                    key: 'emergency',
+                    name: t('emergencyFund'),
+                    recommended: state.monthlyIncome * 6,
+                    current: state.savingsGoals.find(g => g.name.toLowerCase().includes('urgence'))?.currentAmount || 0,
+                    priority: 1
+                  },
+                  {
+                    key: 'vacation',
+                    name: t('vacation'),
+                    recommended: state.monthlyIncome * 0.1 * 12,
+                    current: state.savingsGoals.find(g => g.name.toLowerCase().includes('vacances'))?.currentAmount || 0,
+                    priority: 3
+                  },
+                  {
+                    key: 'retirement',
+                    name: t('retirement'),
+                    recommended: state.monthlyIncome * 0.15 * 12,
+                    current: state.savingsGoals.find(g => g.name.toLowerCase().includes('retraite'))?.currentAmount || 0,
+                    priority: 2
+                  }
+                ].map((allocation) => {
+                  const completionRate = (allocation.current / allocation.recommended) * 100;
                   return (
-                    <div key={goal.id} className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
-                      <h5 className={`font-medium ${theme.text} mb-2`}>{goal.name}</h5>
+                    <div key={allocation.key} className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className={`font-semibold ${theme.text}`}>{allocation.name}</h4>
+                        <div className={`px-2 py-1 rounded-full text-xs font-bold ${
+                          allocation.priority === 1 ? 'bg-red-100 text-red-800' :
+                          allocation.priority === 2 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {t('priority')} {allocation.priority}
+                        </div>
+                      </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className={theme.textSecondary}>{t('progress')}:</span>
-                          <span className={theme.text}>{progress.toFixed(1)}%</span>
+                          <span className={theme.textSecondary}>{t('current')}</span>
+                          <span className={theme.text}>{formatCurrency(allocation.current)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className={theme.textSecondary}>{t('recommended')}</span>
+                          <span className={theme.text}>{formatCurrency(allocation.recommended)}</span>
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                           <div
-                            className="bg-purple-500 h-2 rounded-full transition-all"
-                            style={{ width: `${Math.min(progress, 100)}%` }}
-                          />
+                            className={`h-2 rounded-full ${
+                              completionRate >= 100 ? 'bg-green-500' :
+                              completionRate >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${Math.min(completionRate, 100)}%` }}
+                          ></div>
                         </div>
-                        <div className="flex justify-between text-xs">
-                          <span className={theme.textSecondary}>{formatCurrency(goal.currentAmount)}</span>
-                          <span className={theme.textSecondary}>{formatCurrency(goal.targetAmount)}</span>
-                        </div>
+                        <p className={`text-xs ${theme.textSecondary}`}>
+                          {completionRate.toFixed(1)}% {t('completed')}
+                        </p>
                       </div>
                     </div>
                   );
-                }) || (
-                  <div className="col-span-3 text-center py-6">
-                    <Icons.Target className={`h-12 w-12 mx-auto mb-3 ${theme.textSecondary} opacity-50`} />
-                    <p className={theme.textSecondary}>{t('noSavingsGoals')}</p>
-                  </div>
-                )}
+                })}
               </div>
-            </WidgetCard>
+            </div>
+            
+            {state.savingsGoals.length === 0 && (
+              <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
+                <Icons.PiggyBank className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p>{t('noSavingsGoals')}</p>
+                <p className="text-xs mt-2">{t('startWithChallenge')}</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -871,193 +1042,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
           </div>
         )}
 
-        {activeTab === 'tools' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <WidgetCard title={t('taxCalculator')} icon={Icons.Calculator} color="orange" theme={theme}>
-                <div className="space-y-4">
-                  <Input
-                    label={t('annualGrossIncome')}
-                    type="number"
-                    value={state.taxCalculator?.grossIncome || balance.totalRevenue * 12}
-                    onChange={(value) => actions.updateForm && actions.updateForm('taxCalculator', { grossIncome: value })}
-                  />
-                  
-                  {(() => {
-                    const taxData = getTaxEstimation(state.taxCalculator?.grossIncome || balance.totalRevenue * 12);
-                    return (
-                      <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
-                        <h5 className={`font-semibold ${theme.text} mb-3`}>{t('taxEstimation')}</h5>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className={theme.textSecondary}>{t('grossIncome')}:</span>
-                            <span className={theme.text}>{formatCurrency(taxData.grossRevenue)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className={theme.textSecondary}>{t('estimatedTax')}:</span>
-                            <span className="text-red-600">{formatCurrency(taxData.tax)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className={theme.textSecondary}>{t('netIncome')}:</span>
-                            <span className="text-green-600 font-semibold">{formatCurrency(taxData.netRevenue)}</span>
-                          </div>
-                          <div className="flex justify-between border-t pt-2">
-                            <span className={theme.textSecondary}>{t('effectiveTaxRate')}:</span>
-                            <span className={theme.text}>{taxData.taxRate.toFixed(1)}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </WidgetCard>
 
-              <WidgetCard title={t('netGrossConverter')} icon={Icons.ArrowLeftRight} color="blue" theme={theme}>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label={t('grossAmount')}
-                      type="number"
-                      value={state.converter?.gross || ''}
-                      onChange={(value) => {
-                        actions.updateForm && actions.updateForm('converter', { 
-                          gross: value,
-                          net: value * 0.7 // Estimation simple
-                        });
-                      }}
-                    />
-                    <Input
-                      label={t('netAmount')}
-                      type="number"
-                      value={state.converter?.net || ''}
-                      onChange={(value) => {
-                        actions.updateForm && actions.updateForm('converter', { 
-                          net: value,
-                          gross: value / 0.7 // Estimation simple
-                        });
-                      }}
-                    />
-                  </div>
-                  
-                  <div className={`p-3 rounded-lg ${theme.bg} border ${theme.border} text-center`}>
-                    <div className={`text-xs ${theme.textSecondary} mb-1`}>{t('conversionRate')}</div>
-                    <div className={`text-lg font-bold ${theme.text}`}>~70%</div>
-                    <div className={`text-xs ${theme.textSecondary}`}>{t('approximateAfterTaxes')}</div>
-                  </div>
-                </div>
-              </WidgetCard>
-
-              <WidgetCard title={t('savingsSimulator')} icon={Icons.TrendingUp} color="green" theme={theme}>
-                <div className="space-y-4">
-                  <Input
-                    label={t('monthlySavings')}
-                    type="number"
-                    value={state.savingsSimulator?.monthly || ''}
-                    onChange={(value) => actions.updateForm && actions.updateForm('savingsSimulator', { monthly: value })}
-                  />
-                  
-                  <Input
-                    label={t('interestRate')} 
-                    type="number"
-                    step="0.1"
-                    value={state.savingsSimulator?.rate || 3}
-                    onChange={(value) => actions.updateForm && actions.updateForm('savingsSimulator', { rate: value })}
-                  />
-                  
-                  <Input
-                    label={t('timeHorizonYears')}
-                    type="number"
-                    value={state.savingsSimulator?.years || 10}
-                    onChange={(value) => actions.updateForm && actions.updateForm('savingsSimulator', { years: value })}
-                  />
-                  
-                  {(() => {
-                    const monthly = parseFloat(state.savingsSimulator?.monthly || 0);
-                    const rate = parseFloat(state.savingsSimulator?.rate || 3) / 100 / 12;
-                    const years = parseFloat(state.savingsSimulator?.years || 10);
-                    const months = years * 12;
-                    
-                    const futureValue = monthly * (((1 + rate) ** months - 1) / rate);
-                    const totalContributions = monthly * months;
-                    const interest = futureValue - totalContributions;
-                    
-                    return (
-                      <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
-                        <h5 className={`font-semibold ${theme.text} mb-3`}>{t('projectedResults')}</h5>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className={theme.textSecondary}>{t('totalContributions')}:</span>
-                            <span className={theme.text}>{formatCurrency(totalContributions)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className={theme.textSecondary}>{t('interestEarned')}:</span>
-                            <span className="text-green-600">{formatCurrency(interest)}</span>
-                          </div>
-                          <div className="flex justify-between border-t pt-2">
-                            <span className={`font-semibold ${theme.text}`}>{t('finalAmount')}:</span>
-                            <span className="text-green-600 font-bold">{formatCurrency(futureValue)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </WidgetCard>
-
-              <WidgetCard title={t('financialRatios')} icon={Icons.BarChart} color="purple" theme={theme}>
-                <div className="space-y-3">
-                  {[
-                    { 
-                      name: t('savingsRatio'), 
-                      value: (balance.savingsThisMonth / balance.totalRevenue) * 100,
-                      target: 20,
-                      unit: '%'
-                    },
-                    { 
-                      name: t('expenseRatio'), 
-                      value: (computedValues.totalSpent / balance.totalRevenue) * 100,
-                      target: 80,
-                      unit: '%',
-                      invert: true
-                    },
-                    { 
-                      name: t('emergencyFundRatio'), 
-                      value: (computedValues.totalSavings / computedValues.totalSpent) * 100,
-                      target: 300,
-                      unit: '%'
-                    }
-                  ].map((ratio, index) => (
-                    <div key={index} className={`p-3 rounded-lg border ${theme.border} ${theme.bg}`}>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`font-medium ${theme.text}`}>{ratio.name}</span>
-                        <span className={`font-bold ${
-                          ratio.invert 
-                            ? (ratio.value <= ratio.target ? 'text-green-600' : 'text-red-600')
-                            : (ratio.value >= ratio.target ? 'text-green-600' : 'text-yellow-600')
-                        }`}>
-                          {ratio.value.toFixed(1)}{ratio.unit}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className={theme.textSecondary}>{t('target')}: {ratio.target}{ratio.unit}</span>
-                        <span className={`${
-                          ratio.invert 
-                            ? (ratio.value <= ratio.target ? 'text-green-600' : 'text-red-600')
-                            : (ratio.value >= ratio.target ? 'text-green-600' : 'text-yellow-600')
-                        }`}>
-                          {ratio.invert 
-                            ? (ratio.value <= ratio.target ? t('good') : t('high'))
-                            : (ratio.value >= ratio.target ? t('achieved') : t('belowTarget'))
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </WidgetCard>
-            </div>
-          </div>
-        )}
       </div>
       {/* Formulaire d'édition de revenu */}
       {editingRevenueId && (
