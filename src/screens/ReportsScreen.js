@@ -184,431 +184,430 @@ const ReportsScreen = memo(({ financeManager, theme, t }) => {
   const radarData = getRadarData;
 
   return (
-    <div className="space-y-6">
-      <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('intelligentFinancialReports')}</h2>
-          <div className="flex space-x-2">
-            <Button
-              variant={reportType === 'overview' ? 'primary' : 'outline'}
-              onClick={() => setReportType('overview')}
-              size="sm"
-            >
-              {t('overview')}
-            </Button>
-            <Button
-              variant={reportType === 'behavioral' ? 'primary' : 'outline'}
-              onClick={() => setReportType('behavioral')}
-              size="sm"
-            >
-              {t('behavioral')}
-            </Button>
-            <Button
-              variant={reportType === 'projections' ? 'primary' : 'outline'}
-              onClick={() => setReportType('projections')}
-              size="sm"
-            >
-              {t('projections')}
-            </Button>
-            <Button
-              variant={reportType === 'benchmarks' ? 'primary' : 'outline'}
-              onClick={() => setReportType('benchmarks')}
-              size="sm"
-            >
-              {t('performances')}
-            </Button>
+    <div className={`min-h-screen ${theme.bg} transition-colors duration-500`}>
+      <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-10 backdrop-blur-lg bg-opacity-90 mt-6`}>
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              {t('intelligentFinancialReports')}
+            </h1>
+          </div>
+          <div className="flex items-center space-x-1 lg:space-x-4 overflow-x-auto mt-2">
+            {[
+              { id: 'overview', label: t('overview'), icon: Icons.BarChart3 },
+              { id: 'behavioral', label: t('behavioral'), icon: Icons.Activity },
+              { id: 'projections', label: t('projections'), icon: Icons.TrendingUp },
+              { id: 'benchmarks', label: t('performances'), icon: Icons.Target }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setReportType(tab.id)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
+                  reportType === tab.id
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 font-semibold'
+                    : `text-${theme.text} hover:bg-gray-100 dark:hover:bg-gray-800`
+                }`}
+                aria-label={`${t('goTo')} ${tab.label}`}
+              >
+                <tab.icon className="h-4 w-4" />
+                <span className="text-sm font-medium">{tab.label}</span>
+              </button>
+            ))}
           </div>
         </div>
-
-        {reportType === 'overview' && (
-          <div className="space-y-6">
-            {/* Score financier global */}
-            <div className={`p-6 rounded-xl bg-gradient-to-br ${
-              financialScore.color === 'green' ? 'from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/30' :
-              financialScore.color === 'blue' ? 'from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/30' :
-              financialScore.color === 'yellow' ? 'from-yellow-50 to-orange-100 dark:from-yellow-900/20 dark:to-orange-900/30' :
-              'from-red-50 to-pink-100 dark:from-red-900/20 dark:to-pink-900/30'
-            } border ${theme.border}`}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={`text-xl font-bold ${theme.text}`}>{t('globalFinancialScore')}</h3>
-                <div className="flex items-center space-x-2">
-                  <div className={`text-4xl font-bold text-${financialScore.color}-600`}>
-                    {financialScore.total}
-                  </div>
-                  <div className="text-right">
-                    <div className={`text-sm font-medium text-${financialScore.color}-600`}>/ 100</div>
-                    <div className={`text-xs ${theme.textSecondary}`}>{financialScore.level}</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                {financialScore.factors.map((factor, index) => (
-                  <div key={index} className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                    <div className={`text-xs ${theme.textSecondary} mb-1`}>{factor.name}</div>
-                    <div className="flex items-center space-x-2">
-                      <div className={`text-lg font-bold text-${financialScore.color}-600`}>
-                        {Math.round(factor.score)}
-                      </div>
-                      <div className={`text-xs ${theme.textSecondary}`}>/{factor.max}</div>
+      </div>
+      <div className="space-y-6">
+        <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
+          {reportType === 'overview' && (
+            <div className="space-y-6">
+              {/* Score financier global */}
+              <div className={`p-6 rounded-xl bg-gradient-to-br ${
+                financialScore.color === 'green' ? 'from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/30' :
+                financialScore.color === 'blue' ? 'from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/30' :
+                financialScore.color === 'yellow' ? 'from-yellow-50 to-orange-100 dark:from-yellow-900/20 dark:to-orange-900/30' :
+                'from-red-50 to-pink-100 dark:from-red-900/20 dark:to-pink-900/30'
+              } border ${theme.border}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`text-xl font-bold ${theme.text}`}>{t('globalFinancialScore')}</h3>
+                  <div className="flex items-center space-x-2">
+                    <div className={`text-4xl font-bold text-${financialScore.color}-600`}>
+                      {financialScore.total}
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-2">
-                      <div
-                        className={`bg-${financialScore.color}-500 h-1 rounded-full`}
-                        style={{ width: `${(factor.score / factor.max) * 100}%` }}
-                      ></div>
+                    <div className="text-right">
+                      <div className={`text-sm font-medium text-${financialScore.color}-600`}>/ 100</div>
+                      <div className={`text-xs ${theme.textSecondary}`}>{financialScore.level}</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Graphique radar */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('multidimensionalAnalysis')}</h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={radarData}>
-                      <PolarGrid />
-                      <PolarAngleAxis dataKey="subject" />
-                      <PolarRadiusAxis domain={[0, 'dataMax']} />
-                      <Radar
-                        name="Score"
-                        dataKey="score"
-                        stroke="#3b82f6"
-                        fill="#3b82f6"
-                        fillOpacity={0.3}
-                      />
-                    </RadarChart>
-                  </ResponsiveContainer>
                 </div>
-              </div>
-
-              <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('detailedMonthlySummary')}</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className={theme.textSecondary}>{t('income')}</span>
-                    <span className={`font-bold text-green-600`}>
-                      {state.showBalances ? `+${formatCurrency(state.monthlyIncome)}` : '+•••'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className={theme.textSecondary}>{t('expenses')}</span>
-                    <span className={`font-bold text-red-600`}>
-                      {state.showBalances ? `-${formatCurrency(computedValues.totalSpent)}` : '-•••'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className={theme.textSecondary}>{t('recurring')}</span>
-                    <span className={`font-bold text-orange-600`}>
-                      {state.showBalances ? `-${formatCurrency(computedValues.totalRecurring)}` : '-•••'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className={theme.textSecondary}>{t('debts')}</span>
-                    <span className={`font-bold text-purple-600`}>
-                      {state.showBalances ? formatCurrency(computedValues.totalDebt) : '•••'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-t pt-3">
-                    <span className={`font-semibold ${theme.text}`}>{t('balance')}</span>
-                    <span className={`font-bold ${(state.monthlyIncome - computedValues.totalSpent) > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {state.showBalances ? formatCurrency(state.monthlyIncome - computedValues.totalSpent) : '•••'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className={theme.textSecondary}>{t('savingsRateLabel')}</span>
-                    <span className={`font-medium ${computedValues.savingsRate > 20 ? 'text-green-600' : computedValues.savingsRate > 10 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {computedValues.savingsRate.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {reportType === 'behavioral' && (
-          <div className="space-y-6">
-            {/* Insights comportementaux */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {insights.map((insight, index) => {
-                const Icon = insight.icon;
-                return (
-                  <div key={index} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
-                    <div className="flex items-center space-x-3 mb-2">
-                      <Icon className="h-5 w-5 text-blue-600" />
-                      <h4 className={`font-semibold ${theme.text}`}>{insight.title}</h4>
-                    </div>
-                    <div className={`text-lg font-bold ${theme.text} mb-1`}>{insight.value}</div>
-                    <p className={`text-xs ${theme.textSecondary}`}>{insight.detail}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Analyse par catégorie détaillée */}
-            <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-              <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('behavioralCategoryDistribution')}</h3>
-              <div className="space-y-3">
-                {state.categories.map(category => {
-                  const spent = computedValues.currentMonthExpenses
-                    .filter(e => e.category === category.name)
-                    .reduce((sum, e) => sum + e.amount, 0);
-                  const percentage = computedValues.totalSpent > 0 ? (spent / computedValues.totalSpent) * 100 : 0;
-                  const budgetPercentage = (spent / category.budget) * 100;
-                  const transactionCount = computedValues.currentMonthExpenses.filter(e => e.category === category.name).length;
-                  const avgTransaction = transactionCount > 0 ? spent / transactionCount : 0;
-
-                  return (
-                    <div key={category.id} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: category.color }}
-                          />
-                          <span className={`text-sm font-medium ${theme.text}`}>{category.name}</span>
+                
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {financialScore.factors.map((factor, index) => (
+                    <div key={index} className={`p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
+                      <div className={`text-xs ${theme.textSecondary} mb-1`}>{factor.name}</div>
+                      <div className="flex items-center space-x-2">
+                        <div className={`text-lg font-bold text-${financialScore.color}-600`}>
+                          {Math.round(factor.score)}
                         </div>
-                        <div className="text-right">
-                          <span className={`text-sm font-medium ${theme.text}`}>
-                            {state.showBalances ? formatCurrency(spent) : '•••'}
-                          </span>
-                          <span className={`text-xs ${theme.textSecondary} ml-2`}>
-                            ({percentage.toFixed(1)}%)
-                          </span>
-                        </div>
+                        <div className={`text-xs ${theme.textSecondary}`}>/{factor.max}</div>
                       </div>
-                      
-                      <div className="grid grid-cols-3 gap-4 text-xs">
-                        <div>
-                          <span className={theme.textSecondary}>{t('budgetUsed')}</span>
-                          <div className={`font-medium ${budgetPercentage > 100 ? 'text-red-600' : budgetPercentage > 80 ? 'text-yellow-600' : 'text-green-600'}`}>
-                            {budgetPercentage.toFixed(1)}%
-                          </div>
-                        </div>
-                        <div>
-                          <span className={theme.textSecondary}>{t('transactions')}</span>
-                          <div className={theme.text}>{transactionCount}</div>
-                        </div>
-                        <div>
-                          <span className={theme.textSecondary}>{t('avgTransaction')}</span>
-                          <div className={theme.text}>{formatCurrency(avgTransaction)}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-2">
                         <div
-                          className={`h-2 rounded-full ${
-                            budgetPercentage > 100 ? 'bg-red-500' : 
-                            budgetPercentage > 80 ? 'bg-yellow-500' : 'bg-green-500'
-                          }`}
-                          style={{ width: `${Math.min(budgetPercentage, 100)}%` }}
-                        />
+                          className={`bg-${financialScore.color}-500 h-1 rounded-full`}
+                          style={{ width: `${(factor.score / factor.max) * 100}%` }}
+                        ></div>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Graphique radar */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
+                  <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('multidimensionalAnalysis')}</h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarData}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="subject" />
+                        <PolarRadiusAxis domain={[0, 'dataMax']} />
+                        <Radar
+                          name="Score"
+                          dataKey="score"
+                          stroke="#3b82f6"
+                          fill="#3b82f6"
+                          fillOpacity={0.3}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
+                  <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('detailedMonthlySummary')}</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className={theme.textSecondary}>{t('income')}</span>
+                      <span className={`font-bold text-green-600`}>
+                        {state.showBalances ? `+${formatCurrency(state.monthlyIncome)}` : '+•••'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={theme.textSecondary}>{t('expenses')}</span>
+                      <span className={`font-bold text-red-600`}>
+                        {state.showBalances ? `-${formatCurrency(computedValues.totalSpent)}` : '-•••'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={theme.textSecondary}>{t('recurring')}</span>
+                      <span className={`font-bold text-orange-600`}>
+                        {state.showBalances ? `-${formatCurrency(computedValues.totalRecurring)}` : '-•••'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={theme.textSecondary}>{t('debts')}</span>
+                      <span className={`font-bold text-purple-600`}>
+                        {state.showBalances ? formatCurrency(computedValues.totalDebt) : '•••'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-t pt-3">
+                      <span className={`font-semibold ${theme.text}`}>{t('balance')}</span>
+                      <span className={`font-bold ${(state.monthlyIncome - computedValues.totalSpent) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {state.showBalances ? formatCurrency(state.monthlyIncome - computedValues.totalSpent) : '•••'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={theme.textSecondary}>{t('savingsRateLabel')}</span>
+                      <span className={`font-medium ${computedValues.savingsRate > 20 ? 'text-green-600' : computedValues.savingsRate > 10 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {computedValues.savingsRate.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {reportType === 'behavioral' && (
+            <div className="space-y-6">
+              {/* Insights comportementaux */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {insights.map((insight, index) => {
+                  const Icon = insight.icon;
+                  return (
+                    <div key={index} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
+                      <div className="flex items-center space-x-3 mb-2">
+                        <Icon className="h-5 w-5 text-blue-600" />
+                        <h4 className={`font-semibold ${theme.text}`}>{insight.title}</h4>
+                      </div>
+                      <div className={`text-lg font-bold ${theme.text} mb-1`}>{insight.value}</div>
+                      <p className={`text-xs ${theme.textSecondary}`}>{insight.detail}</p>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          </div>
-        )}
 
-        {reportType === 'projections' && (
-          <div className="space-y-6">
-            {/* Projections fin d'année */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Analyse par catégorie détaillée */}
               <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-                <h3 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
-                  <Icons.Calendar className="h-5 w-5 mr-2 text-blue-600" />
-                  {t('endOfYearProjections')}
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className={theme.textSecondary}>{t('projectedTotalSavings')}</span>
-                    <span className={`font-bold text-green-600`}>
-                      {formatCurrency(projections.endOfYear.savings)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className={theme.textSecondary}>{t('projectedTotalExpenses')}</span>
-                    <span className={`font-bold text-red-600`}>
-                      {formatCurrency(projections.endOfYear.totalSpent)}
-                    </span>
-                  </div>
-                  <div className="pt-3 border-t">
-                    <h4 className={`font-medium ${theme.text} mb-2`}>{t('savingsGoals')}</h4>
-                    {projections.endOfYear.goals.map(goal => (
-                      <div key={goal.id} className="flex justify-between text-sm">
-                        <span className={theme.textSecondary}>{goal.name}:</span>
-                        <span className={`${goal.projectedCompletion >= goal.targetAmount ? 'text-green-600' : 'text-yellow-600'}`}>
-                          {((goal.projectedCompletion / goal.targetAmount) * 100).toFixed(0)}%
-                        </span>
+                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('behavioralCategoryDistribution')}</h3>
+                <div className="space-y-3">
+                  {state.categories.map(category => {
+                    const spent = computedValues.currentMonthExpenses
+                      .filter(e => e.category === category.name)
+                      .reduce((sum, e) => sum + e.amount, 0);
+                    const percentage = computedValues.totalSpent > 0 ? (spent / computedValues.totalSpent) * 100 : 0;
+                    const budgetPercentage = (spent / category.budget) * 100;
+                    const transactionCount = computedValues.currentMonthExpenses.filter(e => e.category === category.name).length;
+                    const avgTransaction = transactionCount > 0 ? spent / transactionCount : 0;
+
+                    return (
+                      <div key={category.id} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center space-x-2">
+                            <div
+                              className="w-4 h-4 rounded-full"
+                              style={{ backgroundColor: category.color }}
+                            />
+                            <span className={`text-sm font-medium ${theme.text}`}>{category.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-sm font-medium ${theme.text}`}>
+                              {state.showBalances ? formatCurrency(spent) : '•••'}
+                            </span>
+                            <span className={`text-xs ${theme.textSecondary} ml-2`}>
+                              ({percentage.toFixed(1)}%)
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-4 text-xs">
+                          <div>
+                            <span className={theme.textSecondary}>{t('budgetUsed')}</span>
+                            <div className={`font-medium ${budgetPercentage > 100 ? 'text-red-600' : budgetPercentage > 80 ? 'text-yellow-600' : 'text-green-600'}`}>
+                              {budgetPercentage.toFixed(1)}%
+                            </div>
+                          </div>
+                          <div>
+                            <span className={theme.textSecondary}>{t('transactions')}</span>
+                            <div className={theme.text}>{transactionCount}</div>
+                          </div>
+                          <div>
+                            <span className={theme.textSecondary}>{t('avgTransaction')}</span>
+                            <div className={theme.text}>{formatCurrency(avgTransaction)}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${
+                              budgetPercentage > 100 ? 'bg-red-500' : 
+                              budgetPercentage > 80 ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+                          />
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
+            </div>
+          )}
 
-              <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-                <h3 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
-                  <Icons.TrendingUp className="h-5 w-5 mr-2 text-purple-600" />
-                  {t('nextMonthForecasts')}
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className={theme.textSecondary}>{t('predictedExpenses')}</span>
-                    <span className={theme.text}>
-                      {formatCurrency(projections.nextMonth.predictedSpending)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className={theme.textSecondary}>{t('budgetStatus')}</span>
-                    <span className={`font-medium ${projections.nextMonth.budgetStatus === 'risk' ? 'text-red-600' : 'text-green-600'}`}>
-                      {projections.nextMonth.budgetStatus === 'risk' ? t('atRisk') : t('secure')}
-                    </span>
-                  </div>
-                  <div className="pt-3 border-t">
-                    <h4 className={`font-medium ${theme.text} mb-2`}>{t('recommendations')}</h4>
-                    <ul className="space-y-1">
-                      {projections.nextMonth.recommendations.map((rec, index) => (
-                        <li key={index} className={`text-sm ${theme.textSecondary} flex items-center space-x-2`}>
-                          <Icons.CheckCircle className="h-3 w-3 text-green-500" />
-                          <span>{rec}</span>
-                        </li>
+          {reportType === 'projections' && (
+            <div className="space-y-6">
+              {/* Projections fin d'année */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
+                  <h3 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
+                    <Icons.Calendar className="h-5 w-5 mr-2 text-blue-600" />
+                    {t('endOfYearProjections')}
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className={theme.textSecondary}>{t('projectedTotalSavings')}</span>
+                      <span className={`font-bold text-green-600`}>
+                        {formatCurrency(projections.endOfYear.savings)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={theme.textSecondary}>{t('projectedTotalExpenses')}</span>
+                      <span className={`font-bold text-red-600`}>
+                        {formatCurrency(projections.endOfYear.totalSpent)}
+                      </span>
+                    </div>
+                    <div className="pt-3 border-t">
+                      <h4 className={`font-medium ${theme.text} mb-2`}>{t('savingsGoals')}</h4>
+                      {projections.endOfYear.goals.map(goal => (
+                        <div key={goal.id} className="flex justify-between text-sm">
+                          <span className={theme.textSecondary}>{goal.name}:</span>
+                          <span className={`${goal.projectedCompletion >= goal.targetAmount ? 'text-green-600' : 'text-yellow-600'}`}>
+                            {((goal.projectedCompletion / goal.targetAmount) * 100).toFixed(0)}%
+                          </span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
+                  <h3 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
+                    <Icons.TrendingUp className="h-5 w-5 mr-2 text-purple-600" />
+                    {t('nextMonthForecasts')}
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className={theme.textSecondary}>{t('predictedExpenses')}</span>
+                      <span className={theme.text}>
+                        {formatCurrency(projections.nextMonth.predictedSpending)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={theme.textSecondary}>{t('budgetStatus')}</span>
+                      <span className={`font-medium ${projections.nextMonth.budgetStatus === 'risk' ? 'text-red-600' : 'text-green-600'}`}>
+                        {projections.nextMonth.budgetStatus === 'risk' ? t('atRisk') : t('secure')}
+                      </span>
+                    </div>
+                    <div className="pt-3 border-t">
+                      <h4 className={`font-medium ${theme.text} mb-2`}>{t('recommendations')}</h4>
+                      <ul className="space-y-1">
+                        {projections.nextMonth.recommendations.map((rec, index) => (
+                          <li key={index} className={`text-sm ${theme.textSecondary} flex items-center space-x-2`}>
+                            <Icons.CheckCircle className="h-3 w-3 text-green-500" />
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Graphique de tendances */}
-            <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-              <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('monthlyEvolution')}</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={computedValues.monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="savings" 
-                      stackId="1"
-                      stroke="#10b981" 
-                      fill="#10b981" 
-                      fillOpacity={0.6}
-                      name={t('savings')}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="expenses" 
-                      stackId="2"
-                      stroke="#ef4444" 
-                      fill="#ef4444" 
-                      fillOpacity={0.6}
-                      name={t('expenses')}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {reportType === 'benchmarks' && (
-          <div className="space-y-6">
-            {/* Benchmarks personnels */}
-            <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-              <h3 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
-                <Icons.BarChart3 className="h-5 w-5 mr-2 text-indigo-600" />
-                {t('historicalPerformance')}
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border} text-center`}>
-                  <div className={`text-xs ${theme.textSecondary} mb-1`}>{t('thisMonth')}</div>
-                  <div className={`text-lg font-bold ${theme.text}`}>
-                    {formatCurrency(benchmarks.current)}
-                  </div>
-                  <div className={`text-xs ${benchmarks.improvement > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {benchmarks.improvement > 0 ? '↓' : '↑'} {Math.abs(benchmarks.improvement).toFixed(1)}%
-                  </div>
-                </div>
-                <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border} text-center`}>
-                  <div className={`text-xs ${theme.textSecondary} mb-1`}>{t('lastMonth')}</div>
-                  <div className={`text-lg font-bold ${theme.text}`}>
-                    {formatCurrency(benchmarks.lastMonth)}
-                  </div>
-                  <div className={`text-xs ${theme.textSecondary}`}>{t('reference')}</div>
-                </div>
-                <div className={`p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 text-center`}>
-                  <div className={`text-xs text-green-600 mb-1`}>{t('bestMonth')}</div>
-                  <div className={`text-lg font-bold text-green-700`}>
-                    {formatCurrency(benchmarks.bestMonth)}
-                  </div>
-                  <div className={`text-xs text-green-600`}>🎯 {t('target')}</div>
-                </div>
-                <div className={`p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 text-center`}>
-                  <div className={`text-xs text-red-600 mb-1`}>{t('worstMonth')}</div>
-                  <div className={`text-lg font-bold text-red-700`}>
-                    {formatCurrency(benchmarks.worstMonth)}
-                  </div>
-                  <div className={`text-xs text-red-600`}>⚠️ {t('toAvoid')}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Analyse comparative */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Graphique de tendances */}
               <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('comparativeAnalysis')}</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className={theme.textSecondary}>{t('vsPersonalAverage')}</span>
-                    <span className={`font-bold ${benchmarks.current < benchmarks.average ? 'text-green-600' : 'text-red-600'}`}>
-                      {((benchmarks.current - benchmarks.average) / benchmarks.average * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className={theme.textSecondary}>{t('vsBestMonth')}</span>
-                    <span className={`font-bold ${benchmarks.current < benchmarks.bestMonth ? 'text-green-600' : 'text-red-600'}`}>
-                      {((benchmarks.current - benchmarks.bestMonth) / benchmarks.bestMonth * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className={theme.textSecondary}>{t('distanceFromWorst')}</span>
-                    <span className={`font-bold text-green-600`}>
-                      {((benchmarks.worstMonth - benchmarks.current) / benchmarks.worstMonth * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
-                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('trends')}</h3>
-                <div className="h-32">
+                <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('monthlyEvolution')}</h3>
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={[
-                      { name: t('best'), value: benchmarks.bestMonth },
-                      { name: t('average'), value: benchmarks.average },
-                      { name: t('current'), value: benchmarks.current },
-                      { name: t('worst'), value: benchmarks.worstMonth }
-                    ]}>
-                      <XAxis dataKey="name" />
+                    <AreaChart data={computedValues.monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
                       <YAxis />
                       <Tooltip formatter={(value) => formatCurrency(value)} />
-                      <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
-                    </LineChart>
+                      <Area 
+                        type="monotone" 
+                        dataKey="savings" 
+                        stackId="1"
+                        stroke="#10b981" 
+                        fill="#10b981" 
+                        fillOpacity={0.6}
+                        name={t('savings')}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="expenses" 
+                        stackId="2"
+                        stroke="#ef4444" 
+                        fill="#ef4444" 
+                        fillOpacity={0.6}
+                        name={t('expenses')}
+                      />
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {reportType === 'benchmarks' && (
+            <div className="space-y-6">
+              {/* Benchmarks personnels */}
+              <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
+                <h3 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
+                  <Icons.BarChart3 className="h-5 w-5 mr-2 text-indigo-600" />
+                  {t('historicalPerformance')}
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border} text-center`}>
+                    <div className={`text-xs ${theme.textSecondary} mb-1`}>{t('thisMonth')}</div>
+                    <div className={`text-lg font-bold ${theme.text}`}>
+                      {formatCurrency(benchmarks.current)}
+                    </div>
+                    <div className={`text-xs ${benchmarks.improvement > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {benchmarks.improvement > 0 ? '↓' : '↑'} {Math.abs(benchmarks.improvement).toFixed(1)}%
+                    </div>
+                  </div>
+                  <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border} text-center`}>
+                    <div className={`text-xs ${theme.textSecondary} mb-1`}>{t('lastMonth')}</div>
+                    <div className={`text-lg font-bold ${theme.text}`}>
+                      {formatCurrency(benchmarks.lastMonth)}
+                    </div>
+                    <div className={`text-xs ${theme.textSecondary}`}>{t('reference')}</div>
+                  </div>
+                  <div className={`p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 text-center`}>
+                    <div className={`text-xs text-green-600 mb-1`}>{t('bestMonth')}</div>
+                    <div className={`text-lg font-bold text-green-700`}>
+                      {formatCurrency(benchmarks.bestMonth)}
+                    </div>
+                    <div className={`text-xs text-green-600`}>🎯 {t('target')}</div>
+                  </div>
+                  <div className={`p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 text-center`}>
+                    <div className={`text-xs text-red-600 mb-1`}>{t('worstMonth')}</div>
+                    <div className={`text-lg font-bold text-red-700`}>
+                      {formatCurrency(benchmarks.worstMonth)}
+                    </div>
+                    <div className={`text-xs text-red-600`}>⚠️ {t('toAvoid')}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Analyse comparative */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
+                  <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('comparativeAnalysis')}</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className={theme.textSecondary}>{t('vsPersonalAverage')}</span>
+                      <span className={`font-bold ${benchmarks.current < benchmarks.average ? 'text-green-600' : 'text-red-600'}`}>
+                        {((benchmarks.current - benchmarks.average) / benchmarks.average * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className={theme.textSecondary}>{t('vsBestMonth')}</span>
+                      <span className={`font-bold ${benchmarks.current < benchmarks.bestMonth ? 'text-green-600' : 'text-red-600'}`}>
+                        {((benchmarks.current - benchmarks.bestMonth) / benchmarks.bestMonth * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className={theme.textSecondary}>{t('distanceFromWorst')}</span>
+                      <span className={`font-bold text-green-600`}>
+                        {((benchmarks.worstMonth - benchmarks.current) / benchmarks.worstMonth * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`${theme.card} border ${theme.border} rounded-lg p-6`}>
+                  <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('trends')}</h3>
+                  <div className="h-32">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={[
+                        { name: t('best'), value: benchmarks.bestMonth },
+                        { name: t('average'), value: benchmarks.average },
+                        { name: t('current'), value: benchmarks.current },
+                        { name: t('worst'), value: benchmarks.worstMonth }
+                      ]}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => formatCurrency(value)} />
+                        <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
