@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import * as Icons from 'lucide-react';
 import Button from './Button';
 import Input from './Input';
@@ -250,7 +250,108 @@ const FinancialTools = memo(({ financeManager, theme, t }) => {
             ))}
           </div>
         </WidgetCard>
+
+        {/* Simulateur de scénarios budgétaires */}
+        <WidgetCard title="Simulateur de Scénarios" icon={Icons.Calculator} color="indigo" theme={theme}>
+          <ScenarioSimulator 
+            categories={state.categories}
+            expenses={computedValues.currentMonthExpenses}
+            theme={theme}
+            t={t}
+            formatCurrency={formatCurrency}
+          />
+        </WidgetCard>
       </div>
+    </div>
+  );
+});
+
+// Composant simulateur de scénarios
+const ScenarioSimulator = memo(({ categories, expenses, theme, t, formatCurrency }) => {
+  const [scenario, setScenario] = useState({
+    incomeChange: 0,
+    categoryChanges: {},
+    timeframe: 3
+  });
+  
+  const [simulation, setSimulation] = useState(null);
+
+  const runSimulation = () => {
+    const totalBudget = categories.reduce((sum, cat) => sum + cat.budget, 0);
+    const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    
+    const newBudget = totalBudget * (1 + scenario.incomeChange / 100);
+    const projectedSavings = (newBudget - totalSpent) * scenario.timeframe;
+    
+    setSimulation({
+      originalBudget: totalBudget,
+      newBudget,
+      projectedSavings,
+      timeframe: scenario.timeframe
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className={`block text-sm font-medium ${theme.text} mb-2`}>
+          Changement de Revenu (%)
+        </label>
+        <input
+          type="range"
+          min="-50"
+          max="50"
+          value={scenario.incomeChange}
+          onChange={(e) => setScenario(prev => ({ ...prev, incomeChange: parseInt(e.target.value) }))}
+          className="w-full"
+        />
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>-50%</span>
+          <span className="font-medium">{scenario.incomeChange}%</span>
+          <span>+50%</span>
+        </div>
+      </div>
+
+      <div>
+        <label className={`block text-sm font-medium ${theme.text} mb-2`}>
+          Période (Mois)
+        </label>
+        <select
+          value={scenario.timeframe}
+          onChange={(e) => setScenario(prev => ({ ...prev, timeframe: parseInt(e.target.value) }))}
+          className={`w-full p-2 rounded border ${theme.border} ${theme.input} text-black dark:text-white bg-white dark:bg-gray-800`}
+        >
+          <option value={1}>1 Mois</option>
+          <option value={3}>3 Mois</option>
+          <option value={6}>6 Mois</option>
+          <option value={12}>1 Année</option>
+        </select>
+      </div>
+
+      <Button onClick={runSimulation} className="w-full">
+        <Icons.Play className="h-4 w-4 mr-2" />
+        Lancer la Simulation
+      </Button>
+
+      {simulation && (
+        <div className="mt-6 p-4 rounded-lg bg-purple-50 border border-purple-200 dark:bg-purple-900/20">
+          <h4 className="font-medium mb-3">Résultats de la Simulation</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Budget Actuel:</span>
+              <span className="font-medium">{formatCurrency(simulation.originalBudget)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Nouveau Budget:</span>
+              <span className="font-medium">{formatCurrency(simulation.newBudget)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Épargne Prévue ({simulation.timeframe} Mois):</span>
+              <span className="font-bold text-green-600">{formatCurrency(simulation.projectedSavings)}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

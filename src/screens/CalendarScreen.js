@@ -153,7 +153,7 @@ const CalendarScreen = memo(({ financeManager, theme, t }) => {
   const stats = getAdvancedStats;
 
   return (
-    <div className="space-y-6 mt-[80px]">
+    <div className="space-y-6 mt-6">
       {/* Rappels intelligents */}
       {getSmartReminders.length > 0 && (
         <div className={`${theme.card} rounded-xl border ${theme.border} p-4`}>

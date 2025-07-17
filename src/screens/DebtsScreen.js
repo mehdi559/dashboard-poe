@@ -171,11 +171,22 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
   const advice = getPersonalizedAdvice;
 
   return (
-    <div className="space-y-6 mt-[80px]">
+    <div className={`min-h-screen ${theme.bg} transition-colors duration-500`}>
+      <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-10 backdrop-blur-lg bg-opacity-90 mt-6`}>
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Gestion de Dette
+            </h1>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Section principale - Gestion des dettes */}
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('debtManagement')}</h2>
+            <div></div>
           <div className="text-right">
             <p className={`text-2xl font-bold text-red-600`}>
               {state.showBalances ? formatCurrency(computedValues.totalDebt) : '•••'}
@@ -810,6 +821,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 });

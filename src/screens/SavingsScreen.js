@@ -123,7 +123,7 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
   };
 
   return (
-    <div className="space-y-6 mt-[80px]">
+    <div className="space-y-6 mt-6">
       {/* Section principale - Objectifs d'épargne */}
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex justify-between items-center mb-6">

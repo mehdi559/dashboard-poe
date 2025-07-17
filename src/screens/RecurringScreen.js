@@ -109,7 +109,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
   const trends = getWithdrawalTrends;
 
   return (
-    <div className="space-y-6 mt-[80px]">
+    <div className="space-y-6 mt-6">
       {/* Section principale - Dépenses récurrentes */}
       <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
         <div className="flex justify-between items-center mb-6">

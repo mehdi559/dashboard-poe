@@ -186,44 +186,42 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
     return expenses;
   }, [daysOfWeek, selectedDay, categoryFilterList, searchTermList, weekendOnly]);
 
+  // Onglets pour la navigation (exemple minimal, adapte selon tes besoins)
+  const widgets = {
+    expenses: { icon: Icons.List, label: t('expenses') },
+    aiInsights: { icon: Icons.Brain, label: 'IA Insights' }
+  };
+
   return (
-    <div className="space-y-6 mt-[80px]">
-      {/* Section principale - Gestion des Dépenses */}
-      <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
-          <h2 className={`text-2xl font-bold ${theme.text}`}>{t('expensesManagement')}</h2>
-          <div className="flex items-center space-x-2">
-            <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-              <Icons.Download className="h-4 w-4" />
-              <span>Export to Excel</span>
-            </button>
+    <div className={`min-h-screen ${theme.bg} transition-colors duration-500`}>
+      <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-10 backdrop-blur-lg bg-opacity-90 mt-6`}>
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Gestion des Dépenses
+            </h1>
+          </div>
+          <div className="flex items-center space-x-1 mt-4 overflow-x-auto">
+            {Object.entries(widgets).map(([key, widget]) => (
+          <button
+                key={key}
+                onClick={() => setExpensesTab(key)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
+                  expensesTab === key
+                    ? `bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`
+                    : `${theme.text} hover:bg-gray-100 dark:hover:bg-gray-800`
+                }`}
+                aria-label={`Aller à ${widget.label}`}
+              >
+                <widget.icon className="h-4 w-4" />
+                <span className="text-sm font-medium">{widget.label}</span>
+          </button>
+            ))}
           </div>
         </div>
-
-        {/* Onglets Dépenses / Dépenses récurrentes */}
-        <div className="flex space-x-1 mb-6">
-          <button
-            onClick={() => setExpensesTab('expenses')}
-            className={`px-6 py-3 rounded-t-lg font-medium transition-colors ${
-              expensesTab === 'expenses' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-          >
-            {t('expenses')}
-          </button>
-          <button
-            onClick={() => setExpensesTab('recurring')}
-            className={`px-6 py-3 rounded-t-lg font-medium transition-colors ${
-              expensesTab === 'recurring' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-          >
-            {t('recurringExpenses')}
-          </button>
         </div>
 
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Contenu de l'onglet Dépenses */}
         {expensesTab === 'expenses' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

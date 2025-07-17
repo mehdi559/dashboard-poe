@@ -10,7 +10,6 @@ import {
   RealTimeInsights,
   MonthlyGoals,
   MiniReports,
-  InteractiveWidgets,
   SavingsProgressWidget
 } from '../components/dashboard/DashboardWidgets';
 import Input from '../components/ui/Input';
@@ -153,7 +152,7 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
   return (
     <div className={`min-h-screen ${theme.bg} transition-colors duration-500`}>
-      <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-10 backdrop-blur-lg bg-opacity-90 mt-[80px]`}>
+      <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-10 backdrop-blur-lg bg-opacity-90 mt-6`}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -166,8 +165,7 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
             {[
               { id: 'overview', label: t('overview'), icon: Icons.LayoutDashboard },
               { id: 'budget', label: t('budget'), icon: Icons.PieChart },
-              { id: 'goals', label: t('goals'), icon: Icons.Target },
-              { id: 'tools', label: t('tools'), icon: Icons.Settings }
+              { id: 'goals', label: t('goals'), icon: Icons.Target }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -409,18 +407,7 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
           </div>
         )}
 
-        {dashboardTab === 'tools' && (
-          <div className="space-y-6">
-            <h2 className={`text-xl font-bold ${theme.text} mb-4`}>{t('interactiveTools')}</h2>
-            <InteractiveWidgets 
-              state={state}
-              actions={actions}
-              formatCurrency={formatCurrency}
-              theme={theme}
-              t={t}
-            />
-          </div>
-        )}
+
       </div>
     </div>
   );
