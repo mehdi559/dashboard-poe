@@ -20,11 +20,11 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
   }, [state.language]);
 
   return (
-    <header className={`fixed top-0 left-16 lg:left-64 right-0 h-20 z-20 backdrop-blur-xl ${
+    <header className={`fixed top-0 ${state.sidebarCollapsed ? 'left-16' : 'left-64'} right-0 h-20 z-20 backdrop-blur-xl ${
       state.darkMode 
         ? 'bg-gradient-to-r from-slate-900/95 via-gray-900/95 to-slate-800/95 border-gray-700/50' 
         : 'bg-gradient-to-r from-white/95 via-gray-50/95 to-gray-100/95 border-gray-200/50'
-    } border-b shadow-2xl`}>
+    } border-b shadow-2xl transition-all duration-500`}>
       <div className="flex items-center justify-between h-full px-8">
         {/* Section gauche - Salutation et navigation temporelle */}
         <div className="flex items-center space-x-8">

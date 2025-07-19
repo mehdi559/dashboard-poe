@@ -107,25 +107,10 @@ const useFinanceManager = () => {
     // Calcul des économies filtrées par mois
     const calculateSavingsForMonth = (monthStr) => {
       return state.savingsGoals.map(goal => {
-        // Debug: Afficher toutes les dates des transactions
-        console.log('DEBUG Dates des transactions pour', goal.name, ':');
-        (goal.transactions || []).forEach(tx => {
-          console.log('  Transaction date:', tx.date, 'parsed:', new Date(tx.date));
-        });
-        
         // Filtrer les transactions par mois
         const monthTransactions = (goal.transactions || []).filter(transaction => {
           const txMonth = transaction.date.slice(0, 7);
-          const matches = txMonth === monthStr;
-          console.log('DEBUG txMonth:', txMonth, 'monthStr:', monthStr, 'match:', matches, 'pour transaction:', transaction.date);
-          return matches;
-        });
-        
-        console.log('DEBUG calculateSavingsForMonth:', {
-          goal: goal.name,
-          monthStr,
-          allTransactions: goal.transactions,
-          monthTransactions
+          return txMonth === monthStr;
         });
         
         // Calculer le montant ajouté ce mois
@@ -375,6 +360,7 @@ const useFinanceManager = () => {
     setActiveTab: (tab) => dispatch({ type: ACTIONS.SET_ACTIVE_TAB, payload: tab }),
     setSelectedMonth: (month) => dispatch({ type: ACTIONS.SET_SELECTED_MONTH, payload: month }),
     setSelectedYear: (year) => dispatch({ type: ACTIONS.SET_SELECTED_YEAR, payload: year }),
+    setSidebarCollapsed: (collapsed) => dispatch({ type: ACTIONS.SET_SIDEBAR_COLLAPSED, payload: collapsed }),
 
     // User actions
     setUserName: (name) => dispatch({ type: ACTIONS.SET_USER_NAME, payload: sanitizers.text(name) }),

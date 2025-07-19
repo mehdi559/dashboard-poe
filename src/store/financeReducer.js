@@ -9,6 +9,7 @@ export const initialState = {
   activeTab: 'dashboard',
   selectedMonth: new Date().toISOString().slice(0, 7),
   selectedYear: new Date().getFullYear(),
+  sidebarCollapsed: false,
   // User Data
   userName: 'Utilisateur',
   selectedCurrency: 'EUR',
@@ -136,6 +137,7 @@ export const ACTIONS = {
   SET_ACTIVE_TAB: 'SET_ACTIVE_TAB',
   SET_SELECTED_MONTH: 'SET_SELECTED_MONTH',
   SET_SELECTED_YEAR: 'SET_SELECTED_YEAR',
+  SET_SIDEBAR_COLLAPSED: 'SET_SIDEBAR_COLLAPSED',
   SET_USER_NAME: 'SET_USER_NAME',
   SET_CURRENCY: 'SET_CURRENCY',
   SET_MONTHLY_INCOME: 'SET_MONTHLY_INCOME',
@@ -216,6 +218,8 @@ export const financeReducer = (state, action) => {
       };
     case ACTIONS.SET_SELECTED_YEAR:
       return { ...state, selectedYear: action.payload };
+    case ACTIONS.SET_SIDEBAR_COLLAPSED:
+      return { ...state, sidebarCollapsed: action.payload };
     case ACTIONS.SET_USER_NAME:
       return { ...state, userName: action.payload };
     case ACTIONS.SET_CURRENCY:

@@ -244,11 +244,11 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
       <div className="flex items-center justify-between mb-6">
         <h3 className={`text-2xl font-semibold ${theme.text} flex items-center`}>
           <Icons.Brain className="h-6 w-6 mr-3 text-indigo-500" />
-          IA Insights
+          {t('aiInsights')}
         </h3>
         <div className="flex items-center space-x-2 text-xs text-indigo-500">
           <Icons.Zap className="h-3 w-3" />
-          <span>Analysé en temps réel</span>
+          <span>{t('analyzedInRealtime')}</span>
         </div>
       </div>
 
@@ -257,31 +257,26 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
         <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
           <h4 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
             <Icons.TrendingUp className="h-5 w-5 mr-2 text-blue-500" />
-            Prédictions de Dépenses
+            {t('budgetPredictions')}
           </h4>
           <div className="space-y-3">
             <div className={`p-3 rounded-lg border ${theme.border} ${theme.bg}`}>
               <div className="flex items-center justify-between mb-2">
-                <span className={`font-medium ${theme.text}`}>Utilisation globale du budget</span>
-                <span className={`font-bold ${budgetUtilization > 100 ? 'text-red-600' : budgetUtilization > 80 ? 'text-yellow-600' : 'text-green-600'}`}>
-                  {budgetUtilization.toFixed(1)}%
-                </span>
+                <span className={`font-medium ${theme.text}`}>{t('globalBudgetUsage')}</span>
+                <span className={`font-bold ${budgetUtilization > 100 ? 'text-red-600' : budgetUtilization > 80 ? 'text-yellow-600' : 'text-green-600'}`}>{budgetUtilization.toFixed(1)}%</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
                 <div
-                  className={`h-2 rounded-full transition-all ${
-                    budgetUtilization > 100 ? 'bg-red-500' : 
-                    budgetUtilization > 80 ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}
+                  className={`h-2 rounded-full transition-all ${budgetUtilization > 100 ? 'bg-red-500' : budgetUtilization > 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
                   style={{ width: `${Math.min(budgetUtilization, 100)}%` }}
                 />
               </div>
               <p className={`text-sm ${theme.textSecondary}`}>
                 {budgetUtilization > 100 
-                  ? `Vous avez dépassé votre budget de ${formatCurrency(totalSpent - totalBudget)}`
+                  ? t('budgetExceeded', { amount: formatCurrency(totalSpent - totalBudget) })
                   : budgetUtilization > 80
-                  ? `Attention : ${formatCurrency(totalBudget - totalSpent)} restant`
-                  : `Excellent ! Vous avez encore ${formatCurrency(totalBudget - totalSpent)} disponible`
+                  ? t('budgetWarning', { amount: formatCurrency(totalBudget - totalSpent) })
+                  : t('budgetExcellent', { amount: formatCurrency(totalBudget - totalSpent) })
                 }
               </p>
             </div>
@@ -289,12 +284,10 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
             {averageDailySpending > 0 && (
               <div className={`p-3 rounded-lg border ${theme.border} ${theme.bg}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`font-medium ${theme.text}`}>Dépense moyenne quotidienne</span>
+                  <span className={`font-medium ${theme.text}`}>{t('averageDailySpending')}</span>
                   <span className={`font-bold ${theme.text}`}>{formatCurrency(averageDailySpending)}</span>
                 </div>
-                <p className={`text-sm ${theme.textSecondary}`}>
-                  Basé sur vos dépenses des 7 derniers jours
-                </p>
+                <p className={`text-sm ${theme.textSecondary}`}>{t('basedOnLast7Days')}</p>
               </div>
             )}
           </div>
@@ -304,7 +297,7 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
         <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
           <h4 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
             <Icons.Target className="h-5 w-5 mr-2 text-green-500" />
-            Insights Comportementaux
+            {t('behavioralInsights')}
           </h4>
           <div className="space-y-3">
             {/* Analyse des habitudes de dépenses */}
@@ -312,51 +305,36 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
               <div className={`p-3 rounded-lg border ${theme.border} ${theme.bg}`}>
                 <h5 className={`font-medium ${theme.text} mb-3 flex items-center`}>
                   <Icons.Activity className="h-4 w-4 mr-2 text-blue-500" />
-                  Analyse de vos habitudes
+                  {t('habitAnalysis')}
                 </h5>
                 <div className="space-y-2 text-sm">
                   {(() => {
                     // Analyser les jours de dépense
                     const spendingByDay = Array(7).fill(0);
-                    const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-                    
+                    const dayNames = [t('sunday'), t('monday'), t('tuesday'), t('wednesday'), t('thursday'), t('friday'), t('saturday')];
                     expenses.forEach(expense => {
                       const day = new Date(expense.date).getDay();
                       spendingByDay[day] += expense.amount;
                     });
-                    
-                    // Trouver le jour avec le plus de dépenses
                     const maxDay = spendingByDay.indexOf(Math.max(...spendingByDay));
-                    
-                    // Trouver les jours sans dépenses
                     const daysWithoutExpenses = spendingByDay
                       .map((amount, index) => ({ amount, day: index, name: dayNames[index] }))
                       .filter(day => day.amount === 0)
                       .map(day => day.name);
-                    
                     return (
                       <>
                         <div className="flex justify-between items-center">
-                          <span className={theme.textSecondary}>Jour de dépense max :</span>
-                          <span className={`font-medium ${theme.text}`}>
-                            {dayNames[maxDay]} ({formatCurrency(spendingByDay[maxDay])})
-                          </span>
+                          <span className={theme.textSecondary}>{t('maxSpendingDay')}</span>
+                          <span className={`font-medium ${theme.text}`}>{dayNames[maxDay]} ({formatCurrency(spendingByDay[maxDay])})</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className={theme.textSecondary}>Jours sans dépenses :</span>
-                          <span className={`font-medium ${theme.text}`}>
-                            {daysWithoutExpenses.length > 0 
-                              ? daysWithoutExpenses.slice(0, 3).join(', ') + (daysWithoutExpenses.length > 3 ? '...' : '')
-                              : 'Aucun'
-                            }
-                          </span>
+                          <span className={theme.textSecondary}>{t('daysWithoutSpending')}</span>
+                          <span className={`font-medium ${theme.text}`}>{daysWithoutExpenses.length > 0 ? daysWithoutExpenses.slice(0, 3).join(', ') + (daysWithoutExpenses.length > 3 ? '...' : '') : t('none')}</span>
                         </div>
                         {expenses.length > 0 && (
                           <div className="flex justify-between items-center">
-                            <span className={theme.textSecondary}>Total dépenses :</span>
-                            <span className={`font-medium ${theme.text}`}>
-                              {formatCurrency(expenses.reduce((sum, e) => sum + e.amount, 0))}
-                            </span>
+                            <span className={theme.textSecondary}>{t('totalSpending')}</span>
+                            <span className={`font-medium ${theme.text}`}>{formatCurrency(expenses.reduce((sum, e) => sum + e.amount, 0))}</span>
                           </div>
                         )}
                       </>
@@ -370,52 +348,27 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
             <div className={`p-3 rounded-lg border ${theme.border} ${theme.bg}`}>
               <h5 className={`font-medium ${theme.text} mb-3 flex items-center`}>
                 <Icons.Lightbulb className="h-4 w-4 mr-2 text-yellow-500" />
-                Suggestions d'optimisation
+                {t('optimizationSuggestions')}
               </h5>
               <div className="space-y-2 text-sm">
                 {(() => {
                   const suggestions = [];
-                  
-                  // Suggestion basée sur le nombre de catégories
                   if (categories.length < 5) {
-                    suggestions.push({
-                      icon: Icons.Plus,
-                      text: "Ajoutez plus de catégories pour un meilleur contrôle",
-                      color: "text-blue-600"
-                    });
+                    suggestions.push({ icon: Icons.Plus, text: t('addMoreCategories'), color: 'text-blue-600' });
                   }
-                  
-                  // Suggestion basée sur les dépenses récentes
                   if (recentExpenses.length > 0) {
                     const avgAmount = recentExpenses.reduce((sum, e) => sum + e.amount, 0) / recentExpenses.length;
                     if (avgAmount > 50) {
-                      suggestions.push({
-                        icon: Icons.TrendingDown,
-                        text: "Vos dépenses moyennes sont élevées - pensez aux achats groupés",
-                        color: "text-orange-600"
-                      });
+                      suggestions.push({ icon: Icons.TrendingDown, text: t('highAverageSpending'), color: 'text-orange-600' });
                     }
                   }
-                  
-                  // Suggestion basée sur la diversité des catégories
                   const usedCategories = [...new Set(expenses.map(e => e.category))];
                   if (usedCategories.length < categories.length * 0.5) {
-                    suggestions.push({
-                      icon: Icons.BarChart3,
-                      text: "Diversifiez vos dépenses pour mieux équilibrer vos budgets",
-                      color: "text-purple-600"
-                    });
+                    suggestions.push({ icon: Icons.BarChart3, text: t('diversifySpending'), color: 'text-purple-600' });
                   }
-                  
-                  // Suggestion par défaut si aucune autre
                   if (suggestions.length === 0) {
-                    suggestions.push({
-                      icon: Icons.CheckCircle,
-                      text: "Vos habitudes de dépenses semblent équilibrées",
-                      color: "text-green-600"
-                    });
+                    suggestions.push({ icon: Icons.CheckCircle, text: t('spendingHabitsBalanced'), color: 'text-green-600' });
                   }
-                  
                   return suggestions.map((suggestion, index) => (
                     <div key={index} className="flex items-start space-x-2">
                       <suggestion.icon className={`h-4 w-4 mt-0.5 ${suggestion.color}`} />
@@ -430,53 +383,42 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
             <div className={`p-3 rounded-lg border ${theme.border} ${theme.bg}`}>
               <h5 className={`font-medium ${theme.text} mb-3 flex items-center`}>
                 <Icons.TrendingUp className="h-4 w-4 mr-2 text-purple-500" />
-                Analyse des tendances
+                {t('trendAnalysis')}
               </h5>
               <div className="space-y-2 text-sm">
                 {(() => {
-                  // Analyser les tendances de dépenses
                   const monthlyExpenses = expenses.filter(e => {
                     const expenseDate = new Date(e.date);
                     const currentDate = new Date();
-                    return expenseDate.getMonth() === currentDate.getMonth() && 
-                           expenseDate.getFullYear() === currentDate.getFullYear();
+                    return expenseDate.getMonth() === currentDate.getMonth() && expenseDate.getFullYear() === currentDate.getFullYear();
                   });
-                  
                   const weeklyExpenses = expenses.filter(e => {
                     const expenseDate = new Date(e.date);
                     const currentDate = new Date();
                     const weekAgo = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
                     return expenseDate >= weekAgo && expenseDate <= currentDate;
                   });
-                  
                   const monthlyTotal = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
                   const weeklyTotal = weeklyExpenses.reduce((sum, e) => sum + e.amount, 0);
-                  const avgWeekly = monthlyTotal / 4; // Estimation
-                  
+                  const avgWeekly = monthlyTotal / 4;
                   return (
                     <>
                       <div className="flex justify-between items-center">
-                        <span className={theme.textSecondary}>Dépenses cette semaine :</span>
-                        <span className={`font-medium ${theme.text}`}>
-                          {formatCurrency(weeklyTotal)}
-                        </span>
+                        <span className={theme.textSecondary}>{t('spendingThisWeek')}</span>
+                        <span className={`font-medium ${theme.text}`}>{formatCurrency(weeklyTotal)}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className={theme.textSecondary}>Moyenne hebdomadaire :</span>
-                        <span className={`font-medium ${theme.text}`}>
-                          {formatCurrency(avgWeekly)}
-                        </span>
+                        <span className={theme.textSecondary}>{t('weeklyAverage')}</span>
+                        <span className={`font-medium ${theme.text}`}>{formatCurrency(avgWeekly)}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className={theme.textSecondary}>Tendance :</span>
-                        <span className={`font-medium ${weeklyTotal > avgWeekly ? 'text-red-600' : 'text-green-600'}`}>
-                          {weeklyTotal > avgWeekly ? '↗️ Au-dessus' : '↘️ En dessous'}
-                        </span>
+                        <span className={theme.textSecondary}>{t('trend')}</span>
+                        <span className={`font-medium ${weeklyTotal > avgWeekly ? 'text-red-600' : 'text-green-600'}`}>{weeklyTotal > avgWeekly ? t('aboveAverage') : t('belowAverage')}</span>
                       </div>
                       {weeklyTotal > avgWeekly && (
                         <div className="flex items-center space-x-2 text-orange-600">
                           <Icons.AlertCircle className="h-4 w-4" />
-                          <span className="text-sm">Dépenses plus élevées que la moyenne</span>
+                          <span className="text-sm">{t('spendingAboveAverage')}</span>
                         </div>
                       )}
                     </>
@@ -489,25 +431,23 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
             <div className={`p-3 rounded-lg border ${theme.border} ${theme.bg}`}>
               <h5 className={`font-medium ${theme.text} mb-3 flex items-center`}>
                 <Icons.MessageSquare className="h-4 w-4 mr-2 text-indigo-500" />
-                Conseils personnalisés
+                {t('personalizedTips')}
               </h5>
               <div className="space-y-2 text-sm">
                 {(() => {
                   const tips = [];
-                  
                   if (expenses.length === 0) {
-                    tips.push("Commencez par ajouter vos premières dépenses pour recevoir des conseils personnalisés");
+                    tips.push(t('addFirstExpensesTip'));
                   } else if (budgetUtilization > 100) {
-                    tips.push("Priorisez les dépenses essentielles et reportez les achats non urgents");
-                    tips.push("Considérez revoir vos budgets pour les prochains mois");
+                    tips.push(t('prioritizeEssentials'));
+                    tips.push(t('reviewBudgets'));
                   } else if (budgetUtilization > 80) {
-                    tips.push("Surveillez vos dépenses cette semaine pour rester dans vos limites");
-                    tips.push("Planifiez vos achats pour éviter les dépenses impulsives");
+                    tips.push(t('watchSpendingThisWeek'));
+                    tips.push(t('planPurchases'));
                   } else {
-                    tips.push("Excellent contrôle ! Continuez à surveiller vos dépenses régulièrement");
-                    tips.push("Considérez augmenter vos objectifs d'épargne");
+                    tips.push(t('excellentControl'));
+                    tips.push(t('increaseSavingsGoals'));
                   }
-                  
                   return tips.map((tip, index) => (
                     <div key={index} className="flex items-start space-x-2">
                       <Icons.CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
@@ -524,14 +464,14 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
         <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
           <h4 className={`text-lg font-semibold ${theme.text} mb-4 flex items-center`}>
             <Icons.Shield className="h-5 w-5 mr-2 text-red-500" />
-            Détection d'Anomalies
+            {t('anomalyDetection')}
           </h4>
           <div className="space-y-3">
             {expenses.length === 0 ? (
               <div className="text-center py-6">
                 <Icons.Shield className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                <p className={`${theme.textSecondary} text-sm`}>Aucune donnée à analyser</p>
-                <p className={`${theme.textSecondary} text-xs mt-1`}>Ajoutez vos premières dépenses</p>
+                <p className={`${theme.textSecondary} text-sm`}>{t('noDataToAnalyze')}</p>
+                <p className={`${theme.textSecondary} text-xs mt-1`}>{t('addFirstExpenses')}</p>
               </div>
             ) : (
               <>
@@ -540,12 +480,10 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
                     <div className="flex items-center space-x-2 mb-2">
                       <Icons.AlertTriangle className="h-4 w-4 text-red-600" />
                       <span className="font-medium text-sm text-red-800 dark:text-red-200">
-                        {overspentCategories.length} dépassement{overspentCategories.length > 1 ? 's' : ''} détecté{overspentCategories.length > 1 ? 's' : ''}
+                        {t('overspendingDetected', { count: overspentCategories.length })}
                       </span>
                     </div>
-                    <p className={`text-sm ${theme.textSecondary}`}>
-                      Ces catégories ont dépassé leur budget alloué
-                    </p>
+                    <p className={`text-sm ${theme.textSecondary}`}>{t('categoriesExceededBudget')}</p>
                   </div>
                 )}
 
@@ -553,48 +491,45 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
                   <div className={`p-3 rounded-lg border ${theme.border} ${theme.bg}`}>
                     <h5 className={`font-medium ${theme.text} mb-3 flex items-center`}>
                       <Icons.Activity className="h-4 w-4 mr-2 text-blue-500" />
-                      Activité récente
+                      {t('recentActivity')}
                     </h5>
                     <div className="space-y-2 text-sm">
                       {recentExpenses.slice(0, 3).map((expense, index) => (
                         <div key={index} className="flex justify-between items-center">
                           <span className={theme.text}>{expense.description}</span>
-                          <span className={`font-medium ${theme.text}`}>
-                            {formatCurrency(expense.amount)}
-                          </span>
+                          <span className={`font-medium ${theme.text}`}>{formatCurrency(expense.amount)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-                
                 {/* Conseils de prévention */}
                 <div className={`p-3 rounded-lg border ${theme.border} ${theme.bg}`}>
                   <h5 className={`font-medium ${theme.text} mb-3 flex items-center`}>
                     <Icons.Lightbulb className="h-4 w-4 mr-2 text-yellow-500" />
-                    Conseils personnalisés
+                    {t('personalizedTips')}
                   </h5>
                   <div className="space-y-2 text-sm">
                     {budgetUtilization > 100 ? (
                       <>
                         <div className="flex items-start space-x-2">
                           <Icons.CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                          <span className={theme.textSecondary}>Réduisez les dépenses dans les catégories en dépassement</span>
+                          <span className={theme.textSecondary}>{t('reduceSpendingInOverspent')}</span>
                         </div>
                         <div className="flex items-start space-x-2">
                           <Icons.CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                          <span className={theme.textSecondary}>Revisitez vos priorités de dépenses</span>
+                          <span className={theme.textSecondary}>{t('revisitSpendingPriorities')}</span>
                         </div>
                       </>
                     ) : (
                       <>
                         <div className="flex items-start space-x-2">
                           <Icons.CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                          <span className={theme.textSecondary}>Continuez à surveiller vos dépenses</span>
+                          <span className={theme.textSecondary}>{t('keepMonitoringSpending')}</span>
                         </div>
                         <div className="flex items-start space-x-2">
                           <Icons.CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                          <span className={theme.textSecondary}>Planifiez vos achats à l'avance</span>
+                          <span className={theme.textSecondary}>{t('planPurchasesInAdvance')}</span>
                         </div>
                       </>
                     )}
@@ -628,7 +563,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
 
   const widgets = {
     overview: { icon: Icons.BarChart3, label: t('overview') },
-    aiInsights: { icon: Icons.Brain, label: 'IA Insights' }
+    aiInsights: { icon: Icons.Brain, label: t('aiInsights') }
   };
 
   return (
@@ -637,7 +572,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Aperçu du Budget
+              {t('budgetOverview')}
             </h1>
           </div>
           <div className="flex items-center space-x-1 mt-4 overflow-x-auto">
@@ -675,7 +610,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                       className="flex items-center space-x-2"
                     >
                       <Icons.Plus className="h-4 w-4" />
-                      <span>Nouvelle Catégorie</span>
+                      <span>{t('newCategory')}</span>
                     </Button>
                     <Button
                       variant="outline"
@@ -690,7 +625,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                       }}
                     >
                       <Icons.Zap className="h-4 w-4" />
-                      <span>Optimiser</span>
+                      <span>{t('optimize')}</span>
                     </Button>
                   </div>
                 </div>
@@ -733,7 +668,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                                   />
                                   <button
                                     className="text-green-600 hover:text-green-800 p-1 rounded transition-colors"
-                                    title="Valider"
+                                    title={t('validate')}
                                     onClick={() => {
                                       actions.updateCategoryBudget(category.id, parseFloat(editedBudget));
                                       setEditingCategoryId(null);
@@ -744,7 +679,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                                   </button>
                                   <button
                                     className="text-red-600 hover:text-red-800 p-1 rounded transition-colors"
-                                    title="Annuler"
+                                    title={t('cancel')}
                                     onClick={() => {
                                       setEditingCategoryId(null);
                                       setEditedBudget('');
@@ -764,14 +699,14 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                                       setEditedBudget(category.budget.toString());
                                     }}
                                     className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors"
-                                    title="Modifier le budget"
+                                    title={t('editBudget')}
                                   >
                                     <Icons.Edit className="h-4 w-4" />
                                   </button>
                                   <button
                                     onClick={() => actions.deleteCategory(category.id)}
                                     className="text-red-500 hover:text-red-700 p-1 rounded transition-colors"
-                                    title="Supprimer cette catégorie"
+                                    title={t('deleteCategory')}
                                   >
                                     <Icons.Trash2 className="h-4 w-4" />
                                   </button>
@@ -804,13 +739,13 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
 
                   {/* Graphique visuel des budgets (en bas) */}
                   <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>Vue d'Ensemble Visuelle</h3>
+                    <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('overallBudgetVisual')}</h3>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Graphique en barres amélioré */}
                       <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
                         <h4 className={`font-medium ${theme.text} mb-4 flex items-center`}>
                           <Icons.BarChart3 className="h-5 w-5 mr-2 text-blue-500" />
-                          Utilisation des Budgets
+                          {t('budgetUsage')}
                         </h4>
                         <div className="space-y-4">
                           {state.categories.map(category => {
@@ -847,10 +782,10 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                                 </div>
                                 <div className="flex justify-between text-xs">
                                   <span className={theme.textSecondary}>
-                                    Restant: {formatCurrency(remaining)}
+                                    {t('remaining')}: {formatCurrency(remaining)}
                                   </span>
                                   <span className={`${percentage > 100 ? 'text-red-600' : theme.textSecondary}`}>
-                                    {percentage > 100 ? 'Dépassé' : percentage > 80 ? 'Attention' : 'Normal'}
+                                    {percentage > 100 ? t('exceeded') : percentage > 80 ? t('attention') : t('normal')}
                                   </span>
                                 </div>
                               </div>
@@ -863,7 +798,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                       <div className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
                         <h4 className={`font-medium ${theme.text} mb-4 flex items-center`}>
                           <Icons.PieChart className="h-5 w-5 mr-2 text-purple-500" />
-                          Répartition Totale
+                          {t('totalDistribution')}
                         </h4>
                         <div className="flex items-center justify-center mb-4">
                           <div className="relative w-40 h-40">
@@ -919,7 +854,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                                     return totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(1) : '0';
                                   })()}%
                                 </div>
-                                <div className={`text-xs ${theme.textSecondary}`}>Utilisé</div>
+                                <div className={`text-xs ${theme.textSecondary}`}>{t('used')}</div>
                                 <div className={`text-xs ${theme.textSecondary} mt-1`}>
                                   {(() => {
                                     const totalSpent = computedValues.currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0);

@@ -4,7 +4,6 @@ import * as Icons from 'lucide-react';
 // Navigation Component - Sidebar futuriste
 const Navigation = memo(({ financeManager, t }) => {
   const { state, actions } = financeManager;
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [hoveredTab, setHoveredTab] = useState(null);
   
   const tabs = useMemo(() => [
@@ -15,11 +14,12 @@ const Navigation = memo(({ financeManager, t }) => {
     { id: 'calendar', name: t('calendar'), icon: Icons.Calendar, gradient: 'from-indigo-500 to-purple-500', notifications: 1 },
     { id: 'debts', name: t('debts'), icon: Icons.AlertCircle, gradient: 'from-yellow-500 to-red-500', notifications: 2 },
     { id: 'tools', name: t('tools'), icon: Icons.Calculator, gradient: 'from-orange-500 to-red-500', notifications: 0 },
-    { id: 'reports', name: t('reports'), icon: Icons.FileText, gradient: 'from-gray-500 to-slate-500', notifications: 0 }
+    { id: 'reports', name: t('reports'), icon: Icons.FileText, gradient: 'from-gray-500 to-slate-500', notifications: 0 },
+    { id: 'calendarAI', name: t('aiCalendar'), icon: Icons.Brain, gradient: 'from-indigo-500 to-pink-500', notifications: 0 },
   ], [t]);
 
   return (
-    <nav className={`fixed left-0 top-0 h-full ${isCollapsed ? 'w-16' : 'w-64'} 
+    <nav className={`fixed left-0 top-0 h-full ${state.sidebarCollapsed ? 'w-16' : 'w-64'} 
       ${state.darkMode 
         ? 'bg-gradient-to-b from-slate-900 via-gray-900 to-slate-800 border-gray-700/50' 
         : 'bg-gradient-to-b from-white via-gray-50 to-gray-100 border-gray-200/50'
@@ -31,14 +31,14 @@ const Navigation = memo(({ financeManager, t }) => {
         {/* Logo/Header avec effet néon */}
         <div className={`p-6 border-b ${state.darkMode ? 'border-gray-700/50' : 'border-gray-200/50'} backdrop-blur-sm`}>
           <div className="flex items-center justify-between">
-            <div className={`flex items-center space-x-3 ${isCollapsed ? 'justify-center' : ''}`}> 
+            <div className={`flex items-center space-x-3 ${state.sidebarCollapsed ? 'justify-center' : ''}`}> 
               <div className="relative">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
                   <Icons.Zap className="h-6 w-6 text-white" />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl blur opacity-50"></div>
               </div>
-              {!isCollapsed && (
+              {!state.sidebarCollapsed && (
                 <div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-pink-500 via-blue-400 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(59,130,246,0.7)]">
                     My Wallet
@@ -51,15 +51,15 @@ const Navigation = memo(({ financeManager, t }) => {
             </div>
             
             <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
+              onClick={() => actions.setSidebarCollapsed(!state.sidebarCollapsed)}
               className={`p-2 rounded-lg ${
                 state.darkMode 
                   ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white' 
                   : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-gray-800'
               } transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/25`}
-              title={isCollapsed ? t('expandSidebar') : t('collapseSidebar')}
+              title={state.sidebarCollapsed ? t('expandSidebar') : t('collapseSidebar')}
             >
-              <Icons.PanelLeftClose className={`h-4 w-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
+              <Icons.PanelLeftClose className={`h-4 w-4 transition-transform duration-300 ${state.sidebarCollapsed ? 'rotate-180' : ''}`} />
             </button>
           </div>
         </div>
@@ -86,7 +86,7 @@ const Navigation = memo(({ financeManager, t }) => {
                   
                   <button
                     onClick={() => actions.setActiveTab(tab.id)}
-                    className={`relative w-full flex items-center ${isCollapsed ? 'justify-center px-4' : 'px-4'} py-4 
+                    className={`relative w-full flex items-center ${state.sidebarCollapsed ? 'justify-center px-4' : 'px-4'} py-4 
                       text-sm font-medium rounded-2xl transition-all duration-300 ease-out transform
                       ${isActive 
                         ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg shadow-current/25 scale-105` 
@@ -104,14 +104,14 @@ const Navigation = memo(({ financeManager, t }) => {
                     }}
                   >
                     {/* Icône avec animation */}
-                    <div className={`relative flex items-center justify-center ${isCollapsed ? '' : 'mr-4'}`}>
+                    <div className={`relative flex items-center justify-center ${state.sidebarCollapsed ? '' : 'mr-4'}`}>
                       <Icon className={`h-6 w-6 transition-all duration-300 ${
                         isActive ? 'scale-110' : isHovered ? 'scale-105' : ''
                       } ${isActive && tab.icon === Icons.RefreshCw ? 'animate-spin' : ''}`} />
                     </div>
                     
                     {/* Texte avec animation de slide */}
-                    {!isCollapsed && (
+                    {!state.sidebarCollapsed && (
                       <span className={`transition-all duration-300 ${isActive ? 'font-semibold' : ''}`}>
                         {tab.name}
                       </span>
@@ -124,7 +124,7 @@ const Navigation = memo(({ financeManager, t }) => {
                   </button>
                   
                   {/* Tooltip pour mode collapsed */}
-                  {isCollapsed && isHovered && (
+                  {state.sidebarCollapsed && isHovered && (
                     <div className={`absolute left-full ml-4 top-1/2 transform -translate-y-1/2 z-50
                       ${state.darkMode 
                         ? 'bg-gray-900 text-white border-gray-700' 
@@ -144,7 +144,7 @@ const Navigation = memo(({ financeManager, t }) => {
 
         {/* Footer futuriste */}
         <div className={`p-4 border-t ${state.darkMode ? 'border-gray-700/50' : 'border-gray-200/50'} backdrop-blur-sm`}>
-          {!isCollapsed ? (
+          {!state.sidebarCollapsed ? (
             <div className="text-center">
               {/* Suppression de la mention 'Alimenté par IA • v2.0.1' */}
               <div className="flex items-center justify-center space-x-2">

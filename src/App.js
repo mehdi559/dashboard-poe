@@ -28,6 +28,7 @@ import RecurringScreen from './screens/RecurringScreen';
 import DebtsScreen from './screens/DebtsScreen';
 import RevenueScreen from './screens/RevenueScreen';
 import ToolsScreen from './screens/ToolsScreen';
+import CalendarScreenAI from './screens/CalendarScreenAI';
 
 // Import des modals
 import IncomeModal from './components/modals/IncomeModal';
@@ -180,6 +181,8 @@ const App = () => {
         return <RevenueScreen {...screenProps} />;
       case 'tools':
         return <ToolsScreen {...screenProps} />;
+      case 'calendarAI':
+        return <CalendarScreenAI {...screenProps} />;
       default:
         return <DashboardScreen {...screenProps} />;
     }
@@ -207,23 +210,23 @@ const App = () => {
       <DashboardHeader financeManager={financeManager} theme={theme} t={t} />
 
       {/* Main Content */}
-      <main className="ml-16 lg:ml-64 pt-20 px-8 lg:px-12 py-8 transition-all duration-500">
+      <main className={`${state.sidebarCollapsed ? 'ml-16' : 'ml-64'} pt-20 px-8 lg:px-12 py-8 transition-all duration-500`}>
         <div className="max-w-7xl mx-auto">
           {renderScreen()}
         </div>
       </main>
 
-      {/* Modals */}
-      <IncomeModal financeManager={financeManager} theme={theme} t={t} />
-      <CurrencyModal financeManager={financeManager} theme={theme} t={t} />
-      <CategoryModal financeManager={financeManager} theme={theme} t={t} />
-      <EditExpenseModal financeManager={financeManager} theme={theme} t={t} />
-      <EditSavingModal financeManager={financeManager} theme={theme} t={t} />
-      <PaymentModal financeManager={financeManager} theme={theme} t={t} />
-      <EditDebtModal financeManager={financeManager} theme={theme} t={t} />
+      {/* Modals - Rendu conditionnel pour optimiser les performances */}
+      {state.modals.income && <IncomeModal financeManager={financeManager} theme={theme} t={t} />}
+      {state.modals.currency && <CurrencyModal financeManager={financeManager} theme={theme} t={t} />}
+      {state.modals.category && <CategoryModal financeManager={financeManager} theme={theme} t={t} />}
+      {state.modals.editExpense && <EditExpenseModal financeManager={financeManager} theme={theme} t={t} />}
+      {state.modals.editSaving && <EditSavingModal financeManager={financeManager} theme={theme} t={t} />}
+      {state.modals.payment && <PaymentModal financeManager={financeManager} theme={theme} t={t} />}
+      {state.modals.editDebt && <EditDebtModal financeManager={financeManager} theme={theme} t={t} />}
       
       {/* Export Modal */}
-      <ExportModal financeManager={financeManager} theme={theme} t={t} />
+      {state.modals.export && <ExportModal financeManager={financeManager} theme={theme} t={t} />}
 
       {/* Chatbot IA */}
       <Chatbot financeManager={financeManager} theme={theme} t={t} />
