@@ -1,6 +1,10 @@
 import React, { memo, useState, useRef, useCallback, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 import Button from './ui/Button';
+import { chatbotTrainer, evaluateResponseQuality } from '../utils/chatbotTraining';
+import ChatbotTrainingStats from './ChatbotTrainingStats';
+import CollaborativeTrainingModal from './CollaborativeTrainingModal';
+import TrainingAnalyzerModal from './TrainingAnalyzerModal';
 
 const Chatbot = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
@@ -10,6 +14,12 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationContext, setConversationContext] = useState([]);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [lastResponse, setLastResponse] = useState(null);
+  const [showTrainingStats, setShowTrainingStats] = useState(false);
+  const [showCollaborativeTraining, setShowCollaborativeTraining] = useState(false);
+  const [showTrainingAnalyzer, setShowTrainingAnalyzer] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -25,7 +35,11 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
   const getBotResponse = useCallback((msg) => {
     const m = normalize(msg);
     
-    // Ajout de dépense intelligent
+    // Analyse d'intention et contexte
+    const context = analyzeUserIntent(msg);
+    const contextualPrefix = generateContextualResponse(context.intent, context, msg);
+    
+    // Ajout de dépense intelligent avec contexte
     if ((m.includes('ajoute') || m.includes('ajouter')) && m.includes('depense')) {
       const montantMatch = m.match(/([0-9]+(?:[.,][0-9]+)?)/);
       let categorieMatch = m.match(/en ([a-z ]+)/) || m.match(/pour ([a-z ]+)/) || m.match(/dans ([a-z ]+)/);
@@ -48,15 +62,15 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           
           if (actions.addExpense(expense)) {
             const percentage = ((computedValues.currentMonthExpenses.filter(e => e.category === categoryExists.name).reduce((sum, e) => sum + e.amount, 0) + montant) / categoryExists.budget * 100).toFixed(1);
-            return t('expenseAddedSuccess', { amount: formatCurrency(montant), category: categoryExists.name, percentage });
+            return contextualPrefix + t('expenseAddedSuccess', { amount: formatCurrency(montant), category: categoryExists.name, percentage });
           } else {
-            return t('expenseAddError');
+            return contextualPrefix + t('expenseAddError');
           }
         } else {
-          return t('categoryNotFound', { category: categorie, categories: state.categories.map(c => c.name).join(', ') });
+          return contextualPrefix + t('categoryNotFound', { category: categorie, categories: state.categories.map(c => c.name).join(', ') });
         }
       } else if (montantMatch) {
-        return t('amountSeenButNoCategory', { amount: montantMatch[1] });
+        return contextualPrefix + t('amountSeenButNoCategory', { amount: montantMatch[1] });
       }
     }
 
@@ -191,6 +205,228 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
     return `${t('dontUnderstand')}\n\n${t('analyzeFinances')}\n${t('giveAdvice')}\n${t('addExpenses')}\n${t('trackGoals')}\n${t('makePredictions')}\n\n${t('typeYourQuestion')}`;
   }, [state, actions, computedValues, formatCurrency, normalize, t]);
 
+  // Nouvelle fonction pour l'analyse de sentiment et contexte
+  const analyzeUserIntent = useCallback((message) => {
+    const normalized = normalize(message);
+    const context = {
+      intent: null,
+      confidence: 0,
+      entities: {},
+      sentiment: 'neutral'
+    };
+
+    // Analyse d'intention avec scoring
+    const intentPatterns = {
+      addExpense: {
+        patterns: ['ajoute', 'ajouter', 'depense', 'gasté', 'payé'],
+        score: 0
+      },
+      financialAnalysis: {
+        patterns: ['analyse', 'bilan', 'situation', 'comment va'],
+        score: 0
+      },
+      advice: {
+        patterns: ['conseil', 'recommandation', 'aide', 'que faire'],
+        score: 0
+      },
+      prediction: {
+        patterns: ['prevision', 'prediction', 'fin de mois', 'va t-il'],
+        score: 0
+      },
+      goals: {
+        patterns: ['objectif', 'progression', 'epargne', 'economies'],
+        score: 0
+      },
+      debts: {
+        patterns: ['dettes', 'emprunt', 'credit', 'remboursement'],
+        score: 0
+      }
+    };
+
+    // Calcul du score pour chaque intention
+    Object.keys(intentPatterns).forEach(intent => {
+      intentPatterns[intent].patterns.forEach(pattern => {
+        if (normalized.includes(pattern)) {
+          intentPatterns[intent].score += 1;
+        }
+      });
+    });
+
+    // Sélection de l'intention avec le score le plus élevé
+    let bestIntent = null;
+    let bestScore = 0;
+    
+    Object.keys(intentPatterns).forEach(intent => {
+      if (intentPatterns[intent].score > bestScore) {
+        bestScore = intentPatterns[intent].score;
+        bestIntent = intent;
+      }
+    });
+
+    context.intent = bestIntent;
+    context.confidence = bestScore / 3; // Normalisation
+
+    // Extraction d'entités (montants, catégories, dates)
+    const amountMatch = message.match(/([0-9]+(?:[.,][0-9]+)?)\s*(?:€|euros?|dollars?|USD)?/i);
+    if (amountMatch) {
+      context.entities.amount = parseFloat(amountMatch[1].replace(',', '.'));
+    }
+
+    const categoryMatch = message.match(/(?:en|pour|dans|catégorie)\s+([a-zéèêëàâäôöùûüç\s]+)/i);
+    if (categoryMatch) {
+      context.entities.category = categoryMatch[1].trim();
+    }
+
+    // Analyse de sentiment basique
+    const positiveWords = ['bien', 'bon', 'excellent', 'super', 'génial', 'parfait'];
+    const negativeWords = ['mal', 'mauvais', 'problème', 'difficile', 'stressant', 'inquiet'];
+    
+    const positiveCount = positiveWords.filter(word => normalized.includes(word)).length;
+    const negativeCount = negativeWords.filter(word => normalized.includes(word)).length;
+    
+    if (positiveCount > negativeCount) context.sentiment = 'positive';
+    else if (negativeCount > positiveCount) context.sentiment = 'negative';
+
+    return context;
+  }, [normalize]);
+
+  // Fonction pour générer des réponses contextuelles
+  const generateContextualResponse = useCallback((intent, context, userMessage) => {
+    const responses = {
+      addExpense: {
+        positive: "Parfait ! Je vais vous aider à ajouter cette dépense. ",
+        negative: "Je comprends que ce n'est pas agréable d'ajouter une dépense, mais c'est important de tout tracker. ",
+        neutral: "Je vais vous aider à ajouter cette dépense. "
+      },
+      financialAnalysis: {
+        positive: "Excellente idée de faire le point ! ",
+        negative: "Ne vous inquiétez pas, analysons ensemble votre situation. ",
+        neutral: "Analysons votre situation financière. "
+      },
+      advice: {
+        positive: "Je suis ravi de pouvoir vous conseiller ! ",
+        negative: "Je comprends que vous ayez besoin d'aide, je suis là pour vous. ",
+        neutral: "Je vais vous donner des conseils personnalisés. "
+      }
+    };
+
+    const baseResponse = responses[intent]?.[context.sentiment] || responses[intent]?.neutral || "";
+    return baseResponse;
+  }, []);
+
+  // Fonction pour l'apprentissage conversationnel
+  const updateConversationContext = useCallback((userMessage, botResponse, intent) => {
+    setConversationContext(prev => {
+      const newContext = [...prev, {
+        userMessage,
+        botResponse,
+        intent,
+        timestamp: Date.now()
+      }];
+      
+      // Garder seulement les 10 dernières interactions
+      return newContext.slice(-10);
+    });
+  }, []);
+
+  // Fonction pour les suggestions intelligentes basées sur l'historique
+  const generateSmartSuggestions = useCallback(() => {
+    const suggestions = [];
+    
+    // Suggestion basée sur le budget restant
+    const remainingBudget = computedValues.totalBudget - computedValues.totalSpent;
+    if (remainingBudget < computedValues.totalBudget * 0.2) {
+      suggestions.push("Voulez-vous que j'analyse vos dépenses pour optimiser votre budget ?");
+    }
+    
+    // Suggestion basée sur les objectifs d'épargne
+    if (state.savingsGoals.length > 0) {
+      const lowProgressGoals = state.savingsGoals.filter(goal => 
+        (goal.currentAmount / goal.targetAmount) < 0.5
+      );
+      if (lowProgressGoals.length > 0) {
+        suggestions.push("Voulez-vous que je vous aide à atteindre vos objectifs d'épargne ?");
+      }
+    }
+    
+    // Suggestion basée sur les dettes
+    if (state.debts.length > 0) {
+      suggestions.push("Souhaitez-vous un plan de remboursement pour vos dettes ?");
+    }
+    
+    // Suggestion basée sur l'heure de la journée
+    const hour = new Date().getHours();
+    if (hour >= 18 && hour <= 22) {
+      suggestions.push("C'est le moment idéal pour faire le point sur vos dépenses de la journée !");
+    }
+    
+    return suggestions.slice(0, 2); // Maximum 2 suggestions
+  }, [state, computedValues]);
+
+  // Fonction pour l'analyse prédictive avancée
+  const generatePredictiveInsights = useCallback(() => {
+    const insights = [];
+    
+    // Analyse des tendances de dépenses
+    const currentDay = new Date().getDate();
+    const dailyAverage = computedValues.totalSpent / currentDay;
+    const projectedMonthEnd = dailyAverage * new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+    
+    if (projectedMonthEnd > state.monthlyIncome) {
+      insights.push("⚠️ Attention : Au rythme actuel, vous risquez de dépasser votre budget de " + 
+        formatCurrency(projectedMonthEnd - state.monthlyIncome) + " ce mois-ci.");
+    }
+    
+    // Analyse des catégories les plus dépensières
+    const topCategory = computedValues.pieChartData.reduce((a, b) => a.value > b.value ? a : b, { value: 0 });
+    if (topCategory.name && topCategory.value > state.monthlyIncome * 0.3) {
+      insights.push("💡 La catégorie '" + topCategory.name + "' représente " + 
+        ((topCategory.value / state.monthlyIncome) * 100).toFixed(1) + "% de vos revenus. " +
+        "Envisagez-vous de la réduire ?");
+    }
+    
+    // Analyse de l'épargne
+    const savingsRate = computedValues.savingsRate;
+    if (savingsRate < 10) {
+      insights.push("💰 Votre taux d'épargne est de " + savingsRate.toFixed(1) + "%. " +
+        "L'objectif recommandé est de 20%. Voulez-vous des conseils pour l'améliorer ?");
+    }
+    
+    return insights;
+  }, [state, computedValues, formatCurrency]);
+
+  // Fonction pour l'apprentissage des préférences utilisateur
+  const learnUserPreferences = useCallback((userMessage, botResponse, userSatisfaction) => {
+    // Stockage des préférences dans localStorage
+    const preferences = JSON.parse(localStorage.getItem('chatbotPreferences') || '{}');
+    
+    // Analyse des patterns d'utilisation
+    const patterns = preferences.patterns || {};
+    const intent = analyzeUserIntent(userMessage).intent;
+    
+    if (intent) {
+      patterns[intent] = (patterns[intent] || 0) + 1;
+    }
+    
+    // Stockage de la satisfaction utilisateur (basé sur la longueur de la réponse et les mots positifs)
+    const satisfaction = userSatisfaction || (botResponse.length > 50 ? 0.8 : 0.5);
+    preferences.satisfaction = (preferences.satisfaction || 0.5) * 0.9 + satisfaction * 0.1;
+    
+    preferences.patterns = patterns;
+    localStorage.setItem('chatbotPreferences', JSON.stringify(preferences));
+    
+    // Ajout aux données d'entraînement
+    const responseQuality = evaluateResponseQuality(userMessage, botResponse, intent);
+    chatbotTrainer.addTrainingExample(
+      userMessage,
+      intent,
+      botResponse,
+      botResponse,
+      responseQuality
+    );
+    chatbotTrainer.saveToLocalStorage();
+  }, [analyzeUserIntent]);
+
   const simulateTyping = useCallback(async (response) => {
     setIsTyping(true);
     await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
@@ -209,8 +445,37 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
     const response = getBotResponse(input);
     setInput('');
     
+    // Apprentissage et mise à jour du contexte
+    const context = analyzeUserIntent(input);
+    updateConversationContext(input, response, context.intent);
+    learnUserPreferences(input, response);
+    
+    // Stockage de la réponse pour le feedback
+    setLastResponse({ userInput: input, botResponse: response, intent: context.intent });
+    
     await simulateTyping(response);
-  }, [input, getBotResponse, simulateTyping]);
+    
+    // Ajout de suggestions intelligentes après un délai
+    setTimeout(() => {
+      const suggestions = generateSmartSuggestions();
+      const insights = generatePredictiveInsights();
+      
+      if (suggestions.length > 0 || insights.length > 0) {
+        let additionalResponse = "";
+        if (insights.length > 0) {
+          additionalResponse += insights.join('\n\n') + '\n\n';
+        }
+        if (suggestions.length > 0) {
+          additionalResponse += "💡 Suggestions :\n" + suggestions.map(s => "• " + s).join('\n');
+        }
+        
+        if (additionalResponse.trim()) {
+          const suggestionMsg = { id: Date.now() + 2, from: 'bot', text: additionalResponse };
+          setMessages(prev => [...prev, suggestionMsg]);
+        }
+      }
+    }, 2000);
+  }, [input, getBotResponse, simulateTyping, analyzeUserIntent, updateConversationContext, learnUserPreferences, generateSmartSuggestions, generatePredictiveInsights]);
 
   if (!isOpen) {
     return (
@@ -233,13 +498,36 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           </div>
           <span className="font-semibold">{t('aiAssistant')}</span>
         </div>
-        <button 
-          onClick={() => setIsOpen(false)} 
-          className="text-white/80 hover:text-white transition-colors"
-          aria-label={t('closeAssistant')}
-        >
-          <Icons.X className="h-5 w-5" />
-        </button>
+                  <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowTrainingAnalyzer(true)}
+              className="text-white/80 hover:text-white transition-colors p-1"
+              title="Analyse après 2 jours"
+            >
+              <Icons.Target className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setShowCollaborativeTraining(true)}
+              className="text-white/80 hover:text-white transition-colors p-1"
+              title="Entraînement collaboratif"
+            >
+              <Icons.Users className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setShowTrainingStats(true)}
+              className="text-white/80 hover:text-white transition-colors p-1"
+              title="Statistiques d'entraînement"
+            >
+              <Icons.BarChart3 className="h-4 w-4" />
+            </button>
+            <button 
+              onClick={() => setIsOpen(false)} 
+              className="text-white/80 hover:text-white transition-colors"
+              aria-label={t('closeAssistant')}
+            >
+              <Icons.X className="h-5 w-5" />
+            </button>
+          </div>
       </div>
       
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3 max-h-80">
@@ -278,6 +566,62 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         )}
         
         <div ref={messagesEndRef} />
+        
+        {/* Système de feedback */}
+        {lastResponse && !showFeedback && (
+          <div className="flex justify-center py-2">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {
+                  chatbotTrainer.addUserFeedback(
+                    Date.now(),
+                    lastResponse.userInput,
+                    lastResponse.botResponse,
+                    5,
+                    "Excellent"
+                  );
+                  setShowFeedback(true);
+                }}
+                className="text-green-600 hover:text-green-700 text-sm"
+                title="Excellente réponse"
+              >
+                👍
+              </button>
+              <button
+                onClick={() => {
+                  chatbotTrainer.addUserFeedback(
+                    Date.now(),
+                    lastResponse.userInput,
+                    lastResponse.botResponse,
+                    3,
+                    "Correct"
+                  );
+                  setShowFeedback(true);
+                }}
+                className="text-yellow-600 hover:text-yellow-700 text-sm"
+                title="Réponse correcte"
+              >
+                👌
+              </button>
+              <button
+                onClick={() => {
+                  chatbotTrainer.addUserFeedback(
+                    Date.now(),
+                    lastResponse.userInput,
+                    lastResponse.botResponse,
+                    1,
+                    "Incorrect"
+                  );
+                  setShowFeedback(true);
+                }}
+                className="text-red-600 hover:text-red-700 text-sm"
+                title="Réponse incorrecte"
+              >
+                👎
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       
       <form 
@@ -303,6 +647,26 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           <Icons.Send className="h-4 w-4" />
         </Button>
       </form>
+      
+      {/* Modal des statistiques d'entraînement */}
+      <ChatbotTrainingStats 
+        isOpen={showTrainingStats}
+        onClose={() => setShowTrainingStats(false)}
+      />
+      
+      {/* Modal d'entraînement collaboratif */}
+      <CollaborativeTrainingModal 
+        isOpen={showCollaborativeTraining}
+        onClose={() => setShowCollaborativeTraining(false)}
+        chatbotTrainer={chatbotTrainer}
+      />
+      
+      {/* Modal d'analyse après 2 jours */}
+      <TrainingAnalyzerModal 
+        isOpen={showTrainingAnalyzer}
+        onClose={() => setShowTrainingAnalyzer(false)}
+        trainingData={chatbotTrainer.trainingData}
+      />
     </div>
   );
 });
