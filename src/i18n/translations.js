@@ -213,6 +213,7 @@ const translations = {
       "purpleSoft": "Violet Doux",
       "current": "Actuel",
       "clickToApply": "Cliquer pour appliquer",
+      "debtManagement": "Gestion de Dette",
       "exportExcelPremium": "Export Excel Premium",
       "exportExcelPremiumDesc": "Rapport Excel professionnel avec 5 feuilles d'analyse",
       "excelReportIncludes": "Votre rapport inclura 5 feuilles d'analyse professionnelle :",
@@ -2878,7 +2879,8 @@ a: 'a' ,
      "purple": "Purple",
      "purpleSoft": "Purple Soft",
      "current": "Current",
-     "clickToApply": "Click to apply"
+     "clickToApply": "Click to apply",
+     "debtManagement": "Debt Management"
    },
   es: {
     exportExcelPremium: 'Exportar Excel Premium',
@@ -4528,7 +4530,8 @@ monthlyExpenses: 'Gastos mensuales',
      "purple": "Púrpura",
      "purpleSoft": "Púrpura Suave",
      "current": "Actual",
-     "clickToApply": "Hacer clic para aplicar"
+     "clickToApply": "Hacer clic para aplicar",
+     "debtManagement": "Gestión de Deudas"
    }
 };
 

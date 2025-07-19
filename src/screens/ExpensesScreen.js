@@ -198,7 +198,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Gestion des Dépenses
+              {t('expensesManagement')}
             </h1>
           </div>
           <div className="flex items-center space-x-1 mt-4 overflow-x-auto">

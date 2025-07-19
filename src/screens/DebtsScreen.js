@@ -176,7 +176,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Gestion de Dette
+              {t('debtManagement')}
             </h1>
           </div>
         </div>
