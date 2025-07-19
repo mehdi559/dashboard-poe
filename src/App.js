@@ -6,6 +6,7 @@ import './App.css';
 import { validators } from './utils/validators';
 import { dateUtils } from './utils/dateUtils';
 import translations from './i18n/translations';
+import { THEMES } from './store/financeReducer';
 import useFinanceManager from './features/dashboard/hooks/useFinanceManager';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import Input from './components/ui/Input';
@@ -16,6 +17,7 @@ import SearchAndFilter from './components/ui/SearchAndFilter';
 import Pagination from './components/ui/Pagination';
 import DashboardHeader from './components/layout/DashboardHeader';
 import Navigation from './components/layout/Navigation';
+import ThemeSelector from './components/ui/ThemeSelector';
 
 // Import des écrans
 import DashboardScreen from './screens/DashboardScreen';
@@ -23,7 +25,6 @@ import BudgetScreen from './screens/BudgetScreen';
 import ReportsScreen from './screens/ReportsScreen';
 import ExpensesScreen from './screens/ExpensesScreen';
 import SavingsScreen from './screens/SavingsScreen';
-import CalendarScreen from './screens/CalendarScreen';
 import RecurringScreen from './screens/RecurringScreen';
 import DebtsScreen from './screens/DebtsScreen';
 import RevenueScreen from './screens/RevenueScreen';
@@ -137,24 +138,23 @@ const App = () => {
     }
   }, [t, financeManager]);
 
-  // Gestion du mode sombre
+  // Gestion du thème
   useEffect(() => {
-    if (state.darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    const currentTheme = THEMES[state.theme];
+    if (currentTheme) {
+      // Appliquer les classes CSS du thème
+      document.documentElement.className = currentTheme.name === 'dark' ? 'dark' : '';
     }
-  }, [state.darkMode]);
+  }, [state.theme]);
 
   // Styles thématiques
-  const theme = useMemo(() => ({
-    bg: state.darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-indigo-100',
-    card: state.darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-900 shadow-lg',
-    text: state.darkMode ? 'text-white' : 'text-gray-900',
-    textSecondary: state.darkMode ? 'text-gray-300' : 'text-gray-600',
-    border: state.darkMode ? 'border-gray-700' : 'border-gray-200',
-    input: state.darkMode ? 'bg-gray-700 text-white border-gray-600 focus:border-blue-500' : 'bg-white text-gray-900 border-gray-300 focus:border-blue-500'
-  }), [state.darkMode]);
+  const theme = useMemo(() => {
+    const currentTheme = THEMES[state.theme] || THEMES.light;
+    return {
+      ...currentTheme,
+      darkMode: state.theme === 'dark' // Pour la compatibilité
+    };
+  }, [state.theme]);
 
   // Rendu conditionnel des écrans
   const renderScreen = useCallback(() => {
@@ -170,7 +170,7 @@ const App = () => {
       case 'savings':
         return <SavingsScreen {...screenProps} />;
       case 'calendar':
-        return <CalendarScreen {...screenProps} />;
+        return <CalendarScreenAI {...screenProps} />;
       case 'recurring':
         return <RecurringScreen {...screenProps} />;
       case 'debts':
@@ -181,8 +181,6 @@ const App = () => {
         return <RevenueScreen {...screenProps} />;
       case 'tools':
         return <ToolsScreen {...screenProps} />;
-      case 'calendarAI':
-        return <CalendarScreenAI {...screenProps} />;
       default:
         return <DashboardScreen {...screenProps} />;
     }
@@ -204,7 +202,7 @@ const App = () => {
       <NotificationContainer notifications={state.notifications} />
 
       {/* Navigation Sidebar */}
-      <Navigation financeManager={financeManager} t={t} />
+      <Navigation financeManager={financeManager} theme={theme} t={t} />
 
       {/* Header */}
       <DashboardHeader financeManager={financeManager} theme={theme} t={t} />

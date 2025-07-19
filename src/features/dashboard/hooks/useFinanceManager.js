@@ -354,7 +354,7 @@ const useFinanceManager = () => {
   const actions = {
     // UI actions
     setLoading: (loading) => dispatch({ type: ACTIONS.SET_LOADING, payload: loading }),
-    setDarkMode: (darkMode) => dispatch({ type: ACTIONS.SET_DARK_MODE, payload: darkMode }),
+    setTheme: (theme) => dispatch({ type: ACTIONS.SET_THEME, payload: theme }),
     setLanguage: (language) => dispatch({ type: ACTIONS.SET_LANGUAGE, payload: language }),
     setShowBalances: (show) => dispatch({ type: ACTIONS.SET_SHOW_BALANCES, payload: show }),
     setActiveTab: (tab) => dispatch({ type: ACTIONS.SET_ACTIVE_TAB, payload: tab }),

@@ -341,10 +341,10 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
                                 <div className="relative">
                                   {/* Zone de défilement avec hauteur fixe pour 3 opérations */}
                                   <div 
-                                    className={`h-[72px] overflow-y-auto pr-2 ${theme.darkMode ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
+                                    className={`h-[72px] overflow-y-auto pr-2 ${theme.name === 'dark' ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
                                     style={{
                                       scrollbarWidth: 'auto',
-                                      scrollbarColor: theme.darkMode ? '#6B7280' : '#9CA3AF'
+                                      scrollbarColor: theme.name === 'dark' ? '#6B7280' : '#9CA3AF'
                                     }}
                                   >
                                     <div className="space-y-1">

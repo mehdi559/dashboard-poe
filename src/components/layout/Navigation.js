@@ -2,7 +2,7 @@ import React, { memo, useMemo, useState } from 'react';
 import * as Icons from 'lucide-react';
 
 // Navigation Component - Sidebar futuriste
-const Navigation = memo(({ financeManager, t }) => {
+const Navigation = memo(({ financeManager, theme, t }) => {
   const { state, actions } = financeManager;
   const [hoveredTab, setHoveredTab] = useState(null);
   
@@ -15,21 +15,17 @@ const Navigation = memo(({ financeManager, t }) => {
     { id: 'debts', name: t('debts'), icon: Icons.AlertCircle, gradient: 'from-yellow-500 to-red-500', notifications: 2 },
     { id: 'tools', name: t('tools'), icon: Icons.Calculator, gradient: 'from-orange-500 to-red-500', notifications: 0 },
     { id: 'reports', name: t('reports'), icon: Icons.FileText, gradient: 'from-gray-500 to-slate-500', notifications: 0 },
-    { id: 'calendarAI', name: t('aiCalendar'), icon: Icons.Brain, gradient: 'from-indigo-500 to-pink-500', notifications: 0 },
   ], [t]);
 
   return (
     <nav className={`fixed left-0 top-0 h-full ${state.sidebarCollapsed ? 'w-16' : 'w-64'} 
-      ${state.darkMode 
-        ? 'bg-gradient-to-b from-slate-900 via-gray-900 to-slate-800 border-gray-700/50' 
-        : 'bg-gradient-to-b from-white via-gray-50 to-gray-100 border-gray-200/50'
-      }
+      ${theme.bg} ${theme.border}
       backdrop-blur-xl border-r shadow-2xl z-30 transition-all duration-500 ease-out
       before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-600/5 before:to-purple-600/5`}>
       
       <div className="flex flex-col h-full relative">
         {/* Logo/Header avec effet néon */}
-        <div className={`p-6 border-b ${state.darkMode ? 'border-gray-700/50' : 'border-gray-200/50'} backdrop-blur-sm`}>
+        <div className={`p-6 border-b ${theme.border} backdrop-blur-sm`}>
           <div className="flex items-center justify-between">
             <div className={`flex items-center space-x-3 ${state.sidebarCollapsed ? 'justify-center' : ''}`}> 
               <div className="relative">
@@ -53,7 +49,7 @@ const Navigation = memo(({ financeManager, t }) => {
             <button
               onClick={() => actions.setSidebarCollapsed(!state.sidebarCollapsed)}
               className={`p-2 rounded-lg ${
-                state.darkMode 
+                theme.name === 'dark'
                   ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white' 
                   : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-gray-800'
               } transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/25`}
@@ -91,10 +87,10 @@ const Navigation = memo(({ financeManager, t }) => {
                       ${isActive 
                         ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg shadow-current/25 scale-105` 
                         : isHovered
-                          ? state.darkMode 
+                          ? theme.name === 'dark'
                             ? 'bg-gray-800/60 text-white scale-102 shadow-lg'
                             : 'bg-gray-200/60 text-gray-800 scale-102 shadow-lg'
-                          : state.darkMode 
+                          : theme.name === 'dark'
                             ? 'text-gray-400 hover:text-gray-300'
                             : 'text-gray-600 hover:text-gray-800'
                       } group-hover:shadow-2xl`}
@@ -126,14 +122,14 @@ const Navigation = memo(({ financeManager, t }) => {
                   {/* Tooltip pour mode collapsed */}
                   {state.sidebarCollapsed && isHovered && (
                     <div className={`absolute left-full ml-4 top-1/2 transform -translate-y-1/2 z-50
-                      ${state.darkMode 
+                      ${theme.name === 'dark'
                         ? 'bg-gray-900 text-white border-gray-700' 
                         : 'bg-white text-gray-800 border-gray-200'
                       } px-3 py-2 rounded-lg text-sm font-medium shadow-2xl
                       border backdrop-blur-sm`}>
                       {tab.name}
                       <div className={`absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 
-                        w-2 h-2 ${state.darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} border-l border-b rotate-45`}></div>
+                        w-2 h-2 ${theme.name === 'dark' ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} border-l border-b rotate-45`}></div>
                     </div>
                   )}
                 </div>
@@ -143,13 +139,13 @@ const Navigation = memo(({ financeManager, t }) => {
         </div>
 
         {/* Footer futuriste */}
-        <div className={`p-4 border-t ${state.darkMode ? 'border-gray-700/50' : 'border-gray-200/50'} backdrop-blur-sm`}>
+        <div className={`p-4 border-t ${theme.border} backdrop-blur-sm`}>
           {!state.sidebarCollapsed ? (
             <div className="text-center">
               {/* Suppression de la mention 'Alimenté par IA • v2.0.1' */}
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className={`text-xs font-medium ${state.darkMode ? 'text-green-400' : 'text-green-600'}`}>{t('systemOperational')}</span>
+                <span className={`text-xs font-medium ${theme.name === 'dark' ? 'text-green-400' : 'text-green-600'}`}>{t('systemOperational')}</span>
               </div>
             </div>
           ) : (

@@ -38,17 +38,10 @@ const DashboardScreen = memo(({ financeManager, theme, t }) => {
 
   // Génération d'insights IA basée sur les vraies données
   const generateFinancialInsights = useCallback(() => [
-    t('youHaveSpent', {
-      spent: formatCurrency(computedValues.totalSpent),
-      currency: '', // ou la devise si tu veux l’afficher séparément
-      lessOrMore: t(computedValues.totalSpent < computedValues.totalBudget ? 'less' : 'more'),
-      budget: formatCurrency(computedValues.totalBudget)
-    }),
+    `${t('youHaveSpent')} ${formatCurrency(computedValues.totalSpent)}`,
     `${t('yourCurrentSavingsRate')} ${computedValues.savingsRate.toFixed(1)}%`,
-    t('yourTopSpendingCategory', {
-      category: computedValues.pieChartData.length > 0 ? t(computedValues.pieChartData.reduce((a, b) => a.value > b.value ? a : b).name) : t('none')
-    })
-  ], [computedValues, formatCurrency, t, state.language]);
+    `${t('yourTopSpendingCategory')} ${computedValues.pieChartData.length > 0 ? t(computedValues.pieChartData.reduce((a, b) => a.value > b.value ? a : b).name) : t('none')}`
+  ], [computedValues, formatCurrency, t]);
 
   const generatePersonalizedRecommendations = useCallback(() => [
     computedValues.totalSpent > computedValues.totalBudget ? t('reduceNonEssentialExpenses') : t('excellentBudgetControl'),

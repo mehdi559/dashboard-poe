@@ -313,7 +313,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
           </div>
           <div className="lg:col-span-2">
             <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('yourDebtsWithAnalysis')}</h3>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
               {computedValues.debtsForSelectedMonth.map(debt => {
                 const monthsToPayOff = Math.ceil(debt.remainingBalance / debt.minPayment);
                 const totalInterest = debt.remainingBalance * (debt.rate / 100 / 12) * monthsToPayOff;
@@ -526,10 +526,10 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                                 <div className="relative">
                                   {/* Zone de défilement avec hauteur fixe pour 3 paiements */}
                                   <div 
-                                    className={`h-[72px] overflow-y-auto pr-2 ${theme.darkMode ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
+                                    className={`h-[72px] overflow-y-auto pr-2 ${theme.name === 'dark' ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
                                     style={{
                                       scrollbarWidth: 'auto',
-                                      scrollbarColor: theme.darkMode ? '#6B7280' : '#9CA3AF'
+                                      scrollbarColor: theme.name === 'dark' ? '#6B7280' : '#9CA3AF'
                                     }}
                                   >
                                     <div className="space-y-1">

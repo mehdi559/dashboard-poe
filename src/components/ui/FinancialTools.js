@@ -252,7 +252,7 @@ const FinancialTools = memo(({ financeManager, theme, t }) => {
         </WidgetCard>
 
         {/* Simulateur de scénarios budgétaires */}
-        <WidgetCard title="Simulateur de Scénarios" icon={Icons.Calculator} color="indigo" theme={theme}>
+        <WidgetCard title={t('scenarioSimulator')} icon={Icons.Calculator} color="indigo" theme={theme}>
           <ScenarioSimulator 
             categories={state.categories}
             expenses={computedValues.currentMonthExpenses}
@@ -295,7 +295,7 @@ const ScenarioSimulator = memo(({ categories, expenses, theme, t, formatCurrency
     <div className="space-y-4">
       <div>
         <label className={`block text-sm font-medium ${theme.text} mb-2`}>
-          Changement de Revenu (%)
+          {t('incomeChange')} (%)
         </label>
         <input
           type="range"
@@ -314,39 +314,39 @@ const ScenarioSimulator = memo(({ categories, expenses, theme, t, formatCurrency
 
       <div>
         <label className={`block text-sm font-medium ${theme.text} mb-2`}>
-          Période (Mois)
+          {t('timeframe')} ({t('months')})
         </label>
         <select
           value={scenario.timeframe}
           onChange={(e) => setScenario(prev => ({ ...prev, timeframe: parseInt(e.target.value) }))}
           className={`w-full p-2 rounded border ${theme.border} ${theme.input} text-black dark:text-white bg-white dark:bg-gray-800`}
         >
-          <option value={1}>1 Mois</option>
-          <option value={3}>3 Mois</option>
-          <option value={6}>6 Mois</option>
-          <option value={12}>1 Année</option>
+          <option value={1}>{t('oneMonth')}</option>
+          <option value={3}>{t('threeMonths')}</option>
+          <option value={6}>{t('sixMonths')}</option>
+          <option value={12}>{t('oneYear')}</option>
         </select>
       </div>
 
       <Button onClick={runSimulation} className="w-full">
         <Icons.Play className="h-4 w-4 mr-2" />
-        Lancer la Simulation
+        {t('runSimulation')}
       </Button>
 
       {simulation && (
         <div className="mt-6 p-4 rounded-lg bg-purple-50 border border-purple-200 dark:bg-purple-900/20">
-          <h4 className="font-medium mb-3">Résultats de la Simulation</h4>
+          <h4 className="font-medium mb-3">{t('simulationResults')}</h4>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>Budget Actuel:</span>
+              <span>{t('currentBudget')}:</span>
               <span className="font-medium">{formatCurrency(simulation.originalBudget)}</span>
             </div>
             <div className="flex justify-between">
-              <span>Nouveau Budget:</span>
+              <span>{t('newBudget')}:</span>
               <span className="font-medium">{formatCurrency(simulation.newBudget)}</span>
             </div>
             <div className="flex justify-between">
-              <span>Épargne Prévue ({simulation.timeframe} Mois):</span>
+              <span>{t('projectedSavings')} ({simulation.timeframe} {t('months')}):</span>
               <span className="font-bold text-green-600">{formatCurrency(simulation.projectedSavings)}</span>
             </div>
           </div>

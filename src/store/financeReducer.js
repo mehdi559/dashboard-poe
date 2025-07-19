@@ -1,9 +1,178 @@
 // Centralized state management for the finance app
 
+// Système de thèmes avancé
+export const THEMES = {
+  light: {
+    name: 'light',
+    displayName: 'Clair',
+    bg: 'bg-gradient-to-br from-blue-100 to-indigo-200',
+    card: 'bg-white border-gray-300 text-gray-900 shadow-lg',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-700',
+    border: 'border-gray-300',
+    input: 'bg-white text-gray-900 border-gray-400 focus:border-blue-600',
+    primary: 'text-blue-700',
+    secondary: 'text-gray-600',
+    success: 'text-green-700',
+    warning: 'text-yellow-700',
+    danger: 'text-red-700'
+  },
+  lightSoft: {
+    name: 'lightSoft',
+    displayName: 'Clair Doux',
+    bg: 'bg-gradient-to-br from-blue-50 to-indigo-100',
+    card: 'bg-white border-gray-200 text-gray-900 shadow-lg',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-600',
+    border: 'border-gray-200',
+    input: 'bg-white text-gray-900 border-gray-300 focus:border-blue-500',
+    primary: 'text-blue-600',
+    secondary: 'text-gray-500',
+    success: 'text-green-600',
+    warning: 'text-yellow-600',
+    danger: 'text-red-600'
+  },
+  dark: {
+    name: 'dark',
+    displayName: 'Sombre',
+    bg: 'bg-gray-900',
+    card: 'bg-gray-800 border-gray-700 text-white',
+    text: 'text-white',
+    textSecondary: 'text-gray-300',
+    border: 'border-gray-700',
+    input: 'bg-gray-700 text-white border-gray-600 focus:border-blue-500',
+    primary: 'text-blue-300',
+    secondary: 'text-gray-400',
+    success: 'text-green-400',
+    warning: 'text-yellow-400',
+    danger: 'text-red-400'
+  },
+  ocean: {
+    name: 'ocean',
+    displayName: 'Océan',
+    bg: 'bg-gradient-to-br from-cyan-200 to-blue-300',
+    card: 'bg-white border-cyan-300 text-gray-900 shadow-lg',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-700',
+    border: 'border-cyan-300',
+    input: 'bg-white text-gray-900 border-cyan-400 focus:border-cyan-600',
+    primary: 'text-cyan-700',
+    secondary: 'text-gray-600',
+    success: 'text-green-700',
+    warning: 'text-yellow-700',
+    danger: 'text-red-700'
+  },
+  oceanSoft: {
+    name: 'oceanSoft',
+    displayName: 'Océan Doux',
+    bg: 'bg-gradient-to-br from-cyan-50 to-blue-100',
+    card: 'bg-white border-cyan-200 text-gray-900 shadow-lg',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-600',
+    border: 'border-cyan-200',
+    input: 'bg-white text-gray-900 border-cyan-300 focus:border-cyan-500',
+    primary: 'text-cyan-600',
+    secondary: 'text-gray-500',
+    success: 'text-green-600',
+    warning: 'text-yellow-600',
+    danger: 'text-red-600'
+  },
+  forest: {
+    name: 'forest',
+    displayName: 'Forêt',
+    bg: 'bg-gradient-to-br from-green-200 to-emerald-300',
+    card: 'bg-white border-green-300 text-gray-900 shadow-lg',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-700',
+    border: 'border-green-300',
+    input: 'bg-white text-gray-900 border-green-400 focus:border-green-600',
+    primary: 'text-green-700',
+    secondary: 'text-gray-600',
+    success: 'text-emerald-700',
+    warning: 'text-yellow-700',
+    danger: 'text-red-700'
+  },
+  forestSoft: {
+    name: 'forestSoft',
+    displayName: 'Forêt Douce',
+    bg: 'bg-gradient-to-br from-green-50 to-emerald-100',
+    card: 'bg-white border-green-200 text-gray-900 shadow-lg',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-600',
+    border: 'border-green-200',
+    input: 'bg-white text-gray-900 border-green-300 focus:border-green-500',
+    primary: 'text-green-600',
+    secondary: 'text-gray-500',
+    success: 'text-emerald-600',
+    warning: 'text-yellow-600',
+    danger: 'text-red-600'
+  },
+  sunset: {
+    name: 'sunset',
+    displayName: 'Coucher de soleil',
+    bg: 'bg-gradient-to-br from-orange-200 to-pink-300',
+    card: 'bg-white border-orange-300 text-gray-900 shadow-lg',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-700',
+    border: 'border-orange-300',
+    input: 'bg-white text-gray-900 border-orange-400 focus:border-orange-600',
+    primary: 'text-orange-700',
+    secondary: 'text-gray-600',
+    success: 'text-green-700',
+    warning: 'text-yellow-700',
+    danger: 'text-red-700'
+  },
+  sunsetSoft: {
+    name: 'sunsetSoft',
+    displayName: 'Coucher de soleil Doux',
+    bg: 'bg-gradient-to-br from-orange-50 to-pink-100',
+    card: 'bg-white border-orange-200 text-gray-900 shadow-lg',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-600',
+    border: 'border-orange-200',
+    input: 'bg-white text-gray-900 border-orange-300 focus:border-orange-500',
+    primary: 'text-orange-600',
+    secondary: 'text-gray-500',
+    success: 'text-green-600',
+    warning: 'text-yellow-600',
+    danger: 'text-red-600'
+  },
+  purple: {
+    name: 'purple',
+    displayName: 'Violet',
+    bg: 'bg-gradient-to-br from-purple-200 to-indigo-300',
+    card: 'bg-white border-purple-300 text-gray-900 shadow-lg',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-700',
+    border: 'border-purple-300',
+    input: 'bg-white text-gray-900 border-purple-400 focus:border-purple-600',
+    primary: 'text-purple-700',
+    secondary: 'text-gray-600',
+    success: 'text-green-700',
+    warning: 'text-yellow-700',
+    danger: 'text-red-700'
+  },
+  purpleSoft: {
+    name: 'purpleSoft',
+    displayName: 'Violet Doux',
+    bg: 'bg-gradient-to-br from-purple-50 to-indigo-100',
+    card: 'bg-white border-purple-200 text-gray-900 shadow-lg',
+    text: 'text-gray-900',
+    textSecondary: 'text-gray-600',
+    border: 'border-purple-200',
+    input: 'bg-white text-gray-900 border-purple-300 focus:border-purple-500',
+    primary: 'text-purple-600',
+    secondary: 'text-gray-500',
+    success: 'text-green-600',
+    warning: 'text-yellow-600',
+    danger: 'text-red-600'
+  }
+};
+
 export const initialState = {
   // UI State
   loading: false,
-  darkMode: false,
+  theme: 'light', // Remplace darkMode par theme
   language: 'fr',
   showBalances: true,
   activeTab: 'dashboard',
@@ -131,7 +300,7 @@ export const initialState = {
 
 export const ACTIONS = {
   SET_LOADING: 'SET_LOADING',
-  SET_DARK_MODE: 'SET_DARK_MODE',
+  SET_THEME: 'SET_THEME',
   SET_LANGUAGE: 'SET_LANGUAGE',
   SET_SHOW_BALANCES: 'SET_SHOW_BALANCES',
   SET_ACTIVE_TAB: 'SET_ACTIVE_TAB',
@@ -197,8 +366,8 @@ export const financeReducer = (state, action) => {
   switch (action.type) {
     case ACTIONS.SET_LOADING:
       return { ...state, loading: action.payload };
-    case ACTIONS.SET_DARK_MODE:
-      return { ...state, darkMode: action.payload };
+    case ACTIONS.SET_THEME:
+      return { ...state, theme: action.payload };
     case ACTIONS.SET_LANGUAGE:
       return { ...state, language: action.payload };
     case ACTIONS.SET_SHOW_BALANCES:

@@ -186,9 +186,10 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
     return expenses;
   }, [daysOfWeek, selectedDay, categoryFilterList, searchTermList, weekendOnly]);
 
-  // Onglets pour la navigation (exemple minimal, adapte selon tes besoins)
+  // Onglets pour la navigation
   const widgets = {
-    expenses: { icon: Icons.List, label: t('expenses') }
+    expenses: { icon: Icons.List, label: t('expenses') },
+    recurring: { icon: Icons.Repeat, label: t('recurring') }
   };
 
   return (
@@ -411,79 +412,82 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                         );
                       })}
                     </div>
-                    {/* Liste des opérations du jour sélectionné */}
-                    <div className="space-y-3">
+                    {/* Liste des opérations du jour sélectionné avec défilement */}
+                    <div className="space-y-3 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                       {filteredDayExpenses.length === 0 ? (
                         <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
                           {t('noExpensesMatch')}
                         </div>
                       ) : (
-                        filteredDayExpenses.map(expense => {
-                          const category = state.categories.find(cat => cat.name === expense.category);
-                          const isRecent = (new Date() - new Date(expense.date)) < 24 * 60 * 60 * 1000;
-                          const isToday = new Date(expense.date).toDateString() === new Date().toDateString();
-                          return (
-                            <div key={expense.id} className={`${theme.card} border ${theme.border} rounded-lg p-4 flex justify-between items-center transition-all hover:shadow-md ${
-                              isRecent ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''
-                            } ${isToday ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}>
-                              <div className="flex items-center space-x-4 flex-1">
-                                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: category?.color || '#gray' }} />
-                                <div className="flex-1">
-                                  <p className={`font-medium ${theme.text}`}>{expense.description}</p>
-                                  <div className="flex items-center space-x-2 text-sm">
-                                    <span className={theme.textSecondary}>{expense.category}</span>
-                                    <span className="text-gray-400">•</span>
-                                    <span className={theme.textSecondary}>
-                                      {new Date(expense.date).toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', { 
-                                        weekday: 'short', 
-                                        day: '2-digit', 
-                                        month: '2-digit' 
-                                      })}
-                                    </span>
-                                    {isRecent && (
-                                      <>
-                                        <span className="text-gray-400">•</span>
-                                        <span className="text-blue-600 text-xs font-medium">{t('recent')}</span>
-                                      </>
-                                    )}
-                                    {isToday && (
-                                      <>
-                                        <span className="text-gray-400">•</span>
-                                        <span className="text-green-600 text-xs font-medium">{t('today')}</span>
-                                      </>
-                                    )}
+                        <>
+
+                                                    {filteredDayExpenses.map(expense => {
+                            const category = state.categories.find(cat => cat.name === expense.category);
+                            const isRecent = (new Date() - new Date(expense.date)) < 24 * 60 * 60 * 1000;
+                            const isToday = new Date(expense.date).toDateString() === new Date().toDateString();
+                            return (
+                              <div key={expense.id} className={`${theme.card} border ${theme.border} rounded-lg p-4 flex justify-between items-center transition-all hover:shadow-md ${
+                                isRecent ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''
+                              } ${isToday ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}>
+                                <div className="flex items-center space-x-4 flex-1">
+                                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: category?.color || '#gray' }} />
+                                  <div className="flex-1">
+                                    <p className={`font-medium ${theme.text}`}>{expense.description}</p>
+                                    <div className="flex items-center space-x-2 text-sm">
+                                      <span className={theme.textSecondary}>{expense.category}</span>
+                                      <span className="text-gray-400">•</span>
+                                      <span className={theme.textSecondary}>
+                                        {new Date(expense.date).toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', { 
+                                          weekday: 'short', 
+                                          day: '2-digit', 
+                                          month: '2-digit' 
+                                        })}
+                                      </span>
+                                      {isRecent && (
+                                        <>
+                                          <span className="text-gray-400">•</span>
+                                          <span className="text-blue-600 text-xs font-medium">{t('recent')}</span>
+                                        </>
+                                      )}
+                                      {isToday && (
+                                        <>
+                                          <span className="text-gray-400">•</span>
+                                          <span className="text-green-600 text-xs font-medium">{t('today')}</span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                  <span className={`font-bold text-lg ${theme.text}`}>
+                                    {state.showBalances ? formatCurrency(expense.amount) : '•••'}
+                                  </span>
+                                  <div className="flex items-center space-x-1">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        actions.setEditingItem(expense);
+                                        actions.toggleModal('editExpense', true);
+                                      }}
+                                      className="p-2"
+                                    >
+                                      <Icons.Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => actions.deleteExpense(expense.id)}
+                                      className="p-2 text-red-500 hover:text-red-700"
+                                    >
+                                      <Icons.Trash2 className="h-4 w-4" />
+                                    </Button>
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-3">
-                                <span className={`font-bold text-lg ${theme.text}`}>
-                                  {state.showBalances ? formatCurrency(expense.amount) : '•••'}
-                                </span>
-                                <div className="flex items-center space-x-1">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      actions.setEditingItem(expense);
-                                      actions.toggleModal('editExpense', true);
-                                    }}
-                                    className="p-2"
-                                  >
-                                    <Icons.Edit2 className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => actions.deleteExpense(expense.id)}
-                                    className="p-2 text-red-500 hover:text-red-700"
-                                  >
-                                    <Icons.Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })
+                            );
+                          })}
+                        </>
                       )}
                     </div>
                   </>
@@ -495,6 +499,136 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                 onPageChange={actions.setPage}
                 t={t}
               />
+            </div>
+          </div>
+        )}
+
+        {/* Contenu de l'onglet Récurrent */}
+        {expensesTab === 'recurring' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('newRecurringExpense')}</h3>
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (actions.addRecurringExpense(state.newRecurring)) {
+                    actions.resetForm('newRecurring');
+                  }
+                }}
+                className="space-y-4"
+              >
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('category')} <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={state.newRecurring.category}
+                    onChange={(e) => actions.updateForm('newRecurring', { category: e.target.value })}
+                    className={`w-full px-3 py-2 text-base border rounded-lg ${theme.input} ${state.errors.category ? 'border-red-500' : ''}`}
+                    required
+                  >
+                    <option value="">{t('selectCategory')}</option>
+                    {state.categories.map(cat => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <Input
+                  label={t('amount')}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={state.newRecurring.amount}
+                  onChange={(value) => actions.updateForm('newRecurring', { amount: value })}
+                  error={state.errors.amount}
+                  required
+                />
+                <Input
+                  label={t('description')}
+                  type="text"
+                  value={state.newRecurring.description}
+                  onChange={(value) => actions.updateForm('newRecurring', { description: value })}
+                  error={state.errors.description}
+                  required
+                  minLength={3}
+                  maxLength={100}
+                />
+                <Input
+                  label={t('dayOfMonth')}
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={state.newRecurring.dayOfMonth}
+                  onChange={(value) => actions.updateForm('newRecurring', { dayOfMonth: value })}
+                  error={state.errors.dayOfMonth}
+                  required
+                />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={state.loading}
+                  loading={state.loading}
+                >
+                  {t('addRecurringExpense')}
+                </Button>
+              </form>
+            </div>
+            <div className="lg:col-span-2">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`text-lg font-semibold ${theme.text}`}>{t('recurringExpenses')} ({state.recurringExpenses?.length || 0})</h3>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                {state.recurringExpenses && state.recurringExpenses.length > 0 ? (
+                  state.recurringExpenses.map(recurring => {
+                    const category = state.categories.find(cat => cat.name === recurring.category);
+                    return (
+                      <div key={recurring.id} className={`${theme.card} border ${theme.border} rounded-lg p-4 flex justify-between items-center transition-all hover:shadow-md`}>
+                        <div className="flex items-center space-x-4 flex-1">
+                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: category?.color || '#gray' }} />
+                          <div className="flex-1">
+                            <p className={`font-medium ${theme.text}`}>{recurring.description}</p>
+                            <div className="flex items-center space-x-2 text-sm">
+                              <span className={theme.textSecondary}>{recurring.category}</span>
+                              <span className="text-gray-400">•</span>
+                              <span className={theme.textSecondary}>{t('dayOfMonth')}: {recurring.dayOfMonth}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <span className={`font-bold text-lg ${theme.text}`}>
+                            {state.showBalances ? formatCurrency(recurring.amount) : '•••'}
+                          </span>
+                          <div className="flex items-center space-x-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                actions.setEditingItem(recurring);
+                                actions.toggleModal('editRecurring', true);
+                              }}
+                              className="p-2"
+                            >
+                              <Icons.Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => actions.deleteRecurringExpense(recurring.id)}
+                              className="p-2 text-red-500 hover:text-red-700"
+                            >
+                              <Icons.Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
+                    {t('noRecurringExpenses')}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

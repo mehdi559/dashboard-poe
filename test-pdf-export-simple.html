@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Export PDF Simple</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 2rem; }
+        .test-button { background: #3b82f6; color: white; border: none; padding: 1rem 2rem; border-radius: 8px; cursor: pointer; margin: 1rem; }
+        .test-button:hover { background: #2563eb; }
+        .result { margin: 1rem; padding: 1rem; border-radius: 8px; }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <h1>Test Export PDF Simple</h1>
+    <button class="test-button" onclick="testPDFExport()">📄 Tester Export PDF</button>
+    <div id="result"></div>
+
+    <script>
+        async function testPDFExport() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">🔄 Test en cours...</div>';
+            
+            try {
+                // Test simple avec html2pdf.js
+                const { html2pdf } = await import('html2pdf.js');
+                
+                const testHTML = `
+                    <div style="padding: 2rem; font-family: Arial, sans-serif;">
+                        <h1>Test Export PDF</h1>
+                        <p>Ceci est un test de l'export PDF.</p>
+                        <p>Date: ${new Date().toLocaleDateString('fr-FR')}</p>
+                    </div>
+                `;
+                
+                const element = document.createElement('div');
+                element.innerHTML = testHTML;
+                element.style.position = 'absolute';
+                element.style.left = '-9999px';
+                element.style.top = '-9999px';
+                document.body.appendChild(element);
+                
+                const opt = {
+                    margin: 1,
+                    filename: 'test-pdf-export.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                };
+                
+                await html2pdf().set(opt).from(element).save();
+                
+                document.body.removeChild(element);
+                
+                resultDiv.innerHTML = '<div class="result success">✅ Export PDF réussi !</div>';
+                
+            } catch (error) {
+                console.error('Erreur test PDF:', error);
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 

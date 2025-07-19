@@ -1,9 +1,11 @@
 import React, { memo, useMemo, useState } from 'react';
 import * as Icons from 'lucide-react';
+import ThemeSelector from '../ui/ThemeSelector';
 
 const DashboardHeader = memo(({ financeManager, theme, t }) => {
   const { state, actions, getMonthNavigation, getMonthDisplayName } = financeManager;
   const [showSettings, setShowSettings] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
   // Hooks pour l'édition du nom utilisateur
   const [showUserEdit, setShowUserEdit] = useState(false);
   const [userInput, setUserInput] = useState(state.userName || '');
@@ -21,9 +23,9 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
 
   return (
     <header className={`fixed top-0 ${state.sidebarCollapsed ? 'left-16' : 'left-64'} right-0 h-20 z-20 backdrop-blur-xl ${
-      state.darkMode 
+      theme.name === 'dark'
         ? 'bg-gradient-to-r from-slate-900/95 via-gray-900/95 to-slate-800/95 border-gray-700/50' 
-        : 'bg-gradient-to-r from-white/95 via-gray-50/95 to-gray-100/95 border-gray-200/50'
+        : theme.bg.replace('bg-', 'bg-').replace('gradient-to-br', 'gradient-to-r') + '/95 border-gray-200/50'
     } border-b shadow-2xl transition-all duration-500`}>
       <div className="flex items-center justify-between h-full px-8">
         {/* Section gauche - Salutation et navigation temporelle */}
@@ -40,14 +42,10 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
             </div>
             
             <div>
-              <h1 className={`text-xl font-bold ${
-                state.darkMode 
-                  ? 'bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent'
-                  : 'bg-gradient-to-r from-gray-800 via-blue-600 to-purple-600 bg-clip-text text-transparent'
-              }`}>
+              <h1 className={`text-xl font-bold ${theme.text}`}>
                 {greeting}, {state.userName || t('user')} !
               </h1>
-              <p className={`text-sm ${state.darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{t('manageFinancesSmart')}</p>
+              <p className={`text-sm ${theme.textSecondary}`}>{t('manageFinancesSmart')}</p>
             </div>
           </div>
           
@@ -56,32 +54,28 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
             <button
               onClick={() => actions.setSelectedMonth(monthNav.previous)}
               className={`p-2 rounded-xl ${
-                state.darkMode 
+                theme.name === 'dark'
                   ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-blue-400' 
-                  : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-blue-600'
+                  : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:' + theme.primary
               } transition-all duration-300 hover:scale-110 group`}
               title={t('previousMonth')}
             >
               <Icons.ChevronLeft className="h-5 w-5 group-hover:scale-110 transition-transform" />
             </button>
             
-            <div className={`px-6 py-3 backdrop-blur-sm rounded-2xl border shadow-lg group hover:shadow-blue-500/25 transition-all duration-300 ${
-              state.darkMode 
+            <div className={`px-6 py-3 backdrop-blur-sm rounded-2xl border shadow-lg group hover:shadow-${theme.primary.replace('text-', '')}-500/25 transition-all duration-300 ${
+              theme.name === 'dark'
                 ? 'bg-gradient-to-r from-blue-900/30 to-purple-900/30 border-blue-500/20' 
-                : 'bg-gradient-to-r from-blue-50/80 to-purple-50/80 border-blue-300/30'
+                : 'bg-gradient-to-r from-' + theme.primary.replace('text-', '') + '-50/80 to-' + theme.primary.replace('text-', '') + '-100/80 border-' + theme.primary.replace('text-', '') + '-300/30'
             }`}>
-              <div className={`text-sm font-bold group-hover:scale-105 transform duration-200 ${
-                state.darkMode ? 'text-white' : 'text-gray-800'
-              }`}>
+              <div className={`text-sm font-bold group-hover:scale-105 transform duration-200 ${theme.text}`}>
                 {/* Mois avec majuscule */}
                 {(() => {
                   const month = getMonthDisplayName(state.selectedMonth);
                   return month.charAt(0).toUpperCase() + month.slice(1);
                 })()}
               </div>
-              <div className={`text-xs mt-1 ${
-                state.darkMode ? 'text-blue-300' : 'text-blue-600'
-              }`}>
+              <div className={`text-xs mt-1 ${theme.primary}`}>
                 {monthNav.isCurrentMonth ? t('currentMonth') : 
                  monthNav.isPastMonth ? t('pastMonth') : t('futureMonth')}
               </div>
@@ -91,9 +85,9 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
               onClick={() => actions.setSelectedMonth(monthNav.next)}
               disabled={monthNav.isFutureMonth}
               className={`p-2 rounded-xl ${
-                state.darkMode 
+                theme.name === 'dark'
                   ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-blue-400' 
-                  : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-blue-600'
+                  : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:' + theme.primary
               } transition-all duration-300 hover:scale-110 group disabled:opacity-50 disabled:cursor-not-allowed`}
               title={t('nextMonth')}
             >
@@ -120,10 +114,10 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
             onClick={() => actions.setShowBalances(!state.showBalances)}
             className={`p-3 rounded-xl transition-all duration-300 hover:scale-110 group ${
               state.showBalances 
-                ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-400 shadow-lg shadow-blue-500/25' 
-                : state.darkMode 
-                  ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-blue-400'
-                  : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-blue-600'
+                ? 'bg-gradient-to-r from-' + theme.primary.replace('text-', '') + '-500/20 to-cyan-500/20 ' + theme.primary + ' shadow-lg shadow-' + theme.primary.replace('text-', '') + '-500/25' 
+                : theme.name === 'dark'
+                  ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:' + theme.primary
+                  : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:' + theme.primary
             }`}
             title={state.showBalances ? t('hideAmounts') : t('showAmounts')}
           >
@@ -133,27 +127,44 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
             }
           </button>
 
-          {/* Mode sombre/clair */}
+          {/* Sélecteur de thèmes */}
           <button
-            onClick={() => actions.setDarkMode(!state.darkMode)}
+            onClick={() => setShowThemeSelector(!showThemeSelector)}
             className={`p-3 rounded-xl transition-all duration-300 hover:scale-110 group ${
-              state.darkMode 
-                ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 shadow-lg shadow-yellow-500/25' 
-                : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-yellow-600'
+              showThemeSelector 
+                ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 shadow-lg shadow-purple-500/25' 
+                : 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-400 shadow-lg shadow-indigo-500/25'
             }`}
-            title={state.darkMode ? t('lightMode') : t('darkMode')}
+            title={t('selectTheme') || 'Sélectionner un thème'}
           >
-            {state.darkMode ? 
-              <Icons.Sun className="h-5 w-5 group-hover:rotate-180 transition-transform duration-500" /> : 
-              <Icons.Moon className="h-5 w-5 group-hover:rotate-12 transition-transform" />
-            }
+            <Icons.Palette className="h-5 w-5 group-hover:rotate-12 transition-transform" />
           </button>
+          
+          {/* Menu déroulant des thèmes */}
+          {showThemeSelector && (
+            <>
+              <div 
+                className="fixed inset-0 z-10"
+                onClick={() => setShowThemeSelector(false)}
+              />
+              <div className="absolute right-0 top-full mt-3 w-80 max-h-96 rounded-2xl shadow-2xl border border-gray-700/50 bg-white dark:bg-gray-900 backdrop-blur-xl z-20 overflow-hidden">
+                <ThemeSelector 
+                  currentTheme={state.theme} 
+                  onThemeChange={(theme) => {
+                    actions.setTheme(theme);
+                    setShowThemeSelector(false);
+                  }}
+                  t={t}
+                />
+              </div>
+            </>
+          )}
 
           {/* Import/Export + Paramètres */}
           <div className="relative flex items-center space-x-2">
             {/* Import/Export */}
             <button
-              onClick={() => actions.toggleModal('import', true)}
+              onClick={() => actions.toggleModal('export', true)}
               className={`p-3 rounded-xl transition-all duration-300 hover:scale-110 group bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 shadow-lg shadow-blue-500/25`}
               title={t('importExport')}
             >
@@ -165,7 +176,7 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
               className={`p-3 rounded-xl transition-all duration-300 hover:scale-110 group ${
                 showSettings 
                   ? 'bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 shadow-lg shadow-purple-500/25' 
-                  : state.darkMode 
+                  : theme.name === 'dark'
                     ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-purple-400'
                     : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 hover:text-purple-600'
               }`}
@@ -265,7 +276,7 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
 
           {/* Heure actuelle */}
           <div className={`hidden lg:flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors duration-200 ${
-            state.darkMode ? 'bg-gray-800/50 text-blue-200' : 'bg-gray-100/50 text-gray-600'
+            theme.darkMode ? 'bg-gray-800/50 text-blue-200' : 'bg-gray-100/50 ' + theme.textSecondary
           }`}>
             <Icons.Clock className="h-4 w-4" />
             <span className="text-sm">
