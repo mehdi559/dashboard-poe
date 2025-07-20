@@ -145,7 +145,7 @@ const TypingIndicator = ({ t }) => (
           <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full typing-dot" style={{animationDelay: '0.3s'}}></div>
           <div className="w-3 h-3 bg-gradient-to-r from-pink-500 to-red-500 rounded-full typing-dot" style={{animationDelay: '0.6s'}}></div>
         </div>
-        <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">IA réfléchit...</span>
+        <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">{t('chatbot.assistantThinking')}</span>
       </div>
     </div>
   </div>
@@ -192,15 +192,13 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
 
   // Initialiser les messages avec le message de bienvenue
   useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([{
-        id: 1,
-        from: 'bot',
-        text: getWelcomeMessage(),
-        suggestions: getMainSuggestions()
-      }]);
-    }
-  }, []);
+    setMessages([{
+      id: 1,
+      from: 'bot',
+      text: getWelcomeMessage(),
+      suggestions: getMainSuggestions()
+    }]);
+  }, [t]);
 
   // Auto-scroll
   useEffect(() => {
@@ -234,52 +232,56 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
   // Messages de bienvenue contextuels
   const getWelcomeMessage = () => {
     const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-    
-    return `${greeting} ! 👋\n\n🤖 **Assistant IA Financier**\n\nJe suis votre assistant personnel pour gérer vos finances. Je peux vous aider à :\n\n💸 **Gérer vos dépenses** - Ajouter, analyser, optimiser\n💎 **Gérer votre épargne** - Objectifs, progression, conseils\n💰 **Gérer vos revenus** - Sources, suivi, évolution\n📊 **Analyser vos finances** - Rapports, tendances, conseils\n\nQue souhaitez-vous faire aujourd'hui ?`;
+    let greetingKey = 'greetingEvening';
+    if (hour < 12) greetingKey = 'greetingMorning';
+    else if (hour < 18) greetingKey = 'greetingAfternoon';
+    return t('chatbot.welcomeMessage', {
+      greeting: t(`chatbot.${greetingKey}`),
+      assistantName: t('chatbot.assistantName')
+    });
   };
 
   // Suggestions principales
   const getMainSuggestions = () => [
-    { text: '💸 Dépenses', action: 'goto_expenses', icon: 'CreditCard', color: 'from-red-500 to-pink-500' },
-    { text: '💎 Épargne', action: 'goto_savings', icon: 'PiggyBank', color: 'from-green-500 to-emerald-500' },
-    { text: '💰 Revenus', action: 'goto_income', icon: 'DollarSign', color: 'from-yellow-500 to-orange-500' },
-    { text: '📊 Analyse', action: 'goto_analysis', icon: 'BarChart3', color: 'from-blue-500 to-cyan-500' }
+    { text: t('chatbot.suggestionExpenses'), action: 'goto_expenses', icon: 'CreditCard', color: 'from-red-500 to-pink-500' },
+    { text: t('chatbot.suggestionSavings'), action: 'goto_savings', icon: 'PiggyBank', color: 'from-green-500 to-emerald-500' },
+    { text: t('chatbot.suggestionIncome'), action: 'goto_income', icon: 'DollarSign', color: 'from-yellow-500 to-orange-500' },
+    { text: t('chatbot.suggestionAnalysis'), action: 'goto_analysis', icon: 'BarChart3', color: 'from-blue-500 to-cyan-500' }
   ];
 
   // Suggestions pour les dépenses
   const getExpensesSuggestions = () => [
-    { text: '➕ Ajouter dépense', action: 'add_expense', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
-    { text: '📊 Voir mes dépenses', action: 'view_expenses', icon: 'List', color: 'from-blue-500 to-cyan-500' },
-    { text: '📂 Gérer catégories', action: 'manage_categories', icon: 'FolderPlus', color: 'from-purple-500 to-violet-500' },
-    { text: '📈 Analyse dépenses', action: 'analyze_expenses', icon: 'TrendingUp', color: 'from-orange-500 to-red-500' },
-    { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+    { text: t('chatbot.suggestionAddExpense'), action: 'add_expense', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
+    { text: t('chatbot.suggestionViewExpenses'), action: 'view_expenses', icon: 'List', color: 'from-blue-500 to-cyan-500' },
+    { text: t('chatbot.suggestionManageCategories'), action: 'manage_categories', icon: 'FolderPlus', color: 'from-purple-500 to-violet-500' },
+    { text: t('chatbot.suggestionAnalyzeExpenses'), action: 'analyze_expenses', icon: 'TrendingUp', color: 'from-orange-500 to-red-500' },
+    { text: t('chatbot.suggestionMainMenu'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
   ];
 
   // Suggestions pour l'épargne
   const getSavingsSuggestions = () => [
-    { text: '🎯 Mes objectifs', action: 'view_goals', icon: 'Target', color: 'from-indigo-500 to-blue-500' },
-    { text: '➕ Nouvel objectif', action: 'add_goal', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
-    { text: '💰 Ajouter épargne', action: 'add_savings', icon: 'PiggyBank', color: 'from-emerald-500 to-green-500' },
-    { text: '📈 Progression', action: 'savings_progress', icon: 'TrendingUp', color: 'from-purple-500 to-violet-500' },
-    { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+    { text: t('chatbot.suggestionViewGoals'), action: 'view_goals', icon: 'Target', color: 'from-indigo-500 to-blue-500' },
+    { text: t('chatbot.suggestionAddGoal'), action: 'add_goal', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
+    { text: t('chatbot.suggestionAddSavings'), action: 'add_savings', icon: 'PiggyBank', color: 'from-emerald-500 to-green-500' },
+    { text: t('chatbot.suggestionSavingsProgress'), action: 'savings_progress', icon: 'TrendingUp', color: 'from-purple-500 to-violet-500' },
+    { text: t('chatbot.suggestionMainMenu'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
   ];
 
   // Suggestions pour les revenus
   const getIncomeSuggestions = () => [
-    { text: '💵 Revenus actuels', action: 'view_income', icon: 'DollarSign', color: 'from-yellow-500 to-orange-500' },
-    { text: '➕ Nouvelle source', action: 'add_income_source', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
-    { text: '📈 Évolution', action: 'income_evolution', icon: 'TrendingUp', color: 'from-purple-500 to-violet-500' },
-    { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+    { text: t('chatbot.suggestionViewIncome'), action: 'view_income', icon: 'DollarSign', color: 'from-yellow-500 to-orange-500' },
+    { text: t('chatbot.suggestionAddIncomeSource'), action: 'add_income_source', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
+    { text: t('chatbot.suggestionIncomeEvolution'), action: 'income_evolution', icon: 'TrendingUp', color: 'from-purple-500 to-violet-500' },
+    { text: t('chatbot.suggestionMainMenu'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
   ];
 
   // Suggestions pour l'analyse
   const getAnalysisSuggestions = () => [
-    { text: '📊 Analyse complète', action: 'full_analysis', icon: 'BarChart3', color: 'from-blue-500 to-cyan-500' },
-    { text: '🔮 Prédictions', action: 'predictions', icon: 'Crystal', color: 'from-purple-500 to-violet-500' },
-    { text: '💡 Conseils', action: 'get_advice', icon: 'Lightbulb', color: 'from-yellow-500 to-orange-500' },
-    { text: '📈 Tendances', action: 'view_trends', icon: 'TrendingUp', color: 'from-green-500 to-emerald-500' },
-    { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+    { text: t('chatbot.suggestionFullAnalysis'), action: 'full_analysis', icon: 'BarChart3', color: 'from-blue-500 to-cyan-500' },
+    { text: t('chatbot.suggestionPredictions'), action: 'predictions', icon: 'Crystal', color: 'from-purple-500 to-violet-500' },
+    { text: t('chatbot.suggestionAdvice'), action: 'get_advice', icon: 'Lightbulb', color: 'from-yellow-500 to-orange-500' },
+    { text: t('chatbot.suggestionTrends'), action: 'view_trends', icon: 'TrendingUp', color: 'from-green-500 to-emerald-500' },
+    { text: t('chatbot.suggestionMainMenu'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
   ];
 
   // FONCTIONS D'ANALYSE DES DONNÉES
@@ -288,30 +290,29 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
     const totalSpent = computedValues?.totalSpent || 0;
     const totalBudget = computedValues?.totalBudget || 1;
     const pieData = computedValues?.pieChartData || [];
-    const biggestCategory = pieData.reduce((a, b) => (a.value > b.value ? a : b), { name: 'Aucune', value: 0 });
+    const biggestCategory = pieData.reduce((a, b) => (a.value > b.value ? a : b), { name: t('chatbot.none'), value: 0 });
     
-    let analysis = `📊 **Analyse de vos dépenses**\n\n`;
-    analysis += `💰 **Total dépensé ce mois :** ${formatCurrency(totalSpent)}\n`;
-    analysis += `📊 **Budget utilisé :** ${((totalSpent / totalBudget) * 100).toFixed(1)}%\n`;
+    let analysis = t('chatbot.expensesAnalysisTitle') + '\n\n';
+    analysis += t('chatbot.expensesTotal', { amount: formatCurrency(totalSpent) }) + '\n';
+    analysis += t('chatbot.expensesBudgetUsed', { percent: ((totalSpent / totalBudget) * 100).toFixed(1) }) + '\n';
     
-    if (biggestCategory.name !== 'Aucune') {
+    if (biggestCategory.name !== t('chatbot.none')) {
       const percentage = ((biggestCategory.value / totalSpent) * 100).toFixed(1);
-      analysis += `🎯 **Plus grosse catégorie :** ${biggestCategory.name} (${formatCurrency(biggestCategory.value)} - ${percentage}%)\n\n`;
+      analysis += t('chatbot.expensesBiggestCategory', { name: biggestCategory.name, amount: formatCurrency(biggestCategory.value), percent: percentage }) + '\n\n';
     }
     
     if (pieData.length > 0) {
-      analysis += `**Répartition par catégorie :**\n`;
+      analysis += t('chatbot.expensesBreakdown') + '\n';
       pieData.forEach(cat => {
         const percentage = ((cat.value / totalSpent) * 100).toFixed(1);
-        analysis += `• ${cat.name} : ${formatCurrency(cat.value)} (${percentage}%)\n`;
+        analysis += t('chatbot.expensesCategoryItem', { name: cat.name, amount: formatCurrency(cat.value), percent: percentage }) + '\n';
       });
     }
     
-    // Conseils
     if (totalSpent > totalBudget) {
-      analysis += `\n⚠️ **Attention !** Vous avez dépassé votre budget de ${formatCurrency(totalSpent - totalBudget)}.`;
+      analysis += '\n' + t('chatbot.expensesOverBudget', { amount: formatCurrency(totalSpent - totalBudget) });
     } else {
-      analysis += `\n✅ **Bien !** Il vous reste ${formatCurrency(totalBudget - totalSpent)} sur votre budget.`;
+      analysis += '\n' + t('chatbot.expensesUnderBudget', { amount: formatCurrency(totalBudget - totalSpent) });
     }
     
     return analysis;
@@ -322,24 +323,29 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
     const totalSavings = computedValues?.totalSavings || 0;
     const goals = state.savingsGoals || [];
     
-    let analysis = `💎 **Analyse de votre épargne**\n\n`;
-    analysis += `📊 **Taux d'épargne :** ${savingsRate.toFixed(1)}%\n`;
-    analysis += `💰 **Total épargné :** ${formatCurrency(totalSavings)}\n`;
-    analysis += `🎯 **Nombre d'objectifs :** ${goals.length}\n\n`;
+    let analysis = t('chatbot.savingsAnalysisTitle') + '\n\n';
+    analysis += t('chatbot.savingsRate', { rate: savingsRate.toFixed(1) }) + '\n';
+    analysis += t('chatbot.totalSavings', { amount: formatCurrency(totalSavings) }) + '\n';
+    analysis += t('chatbot.goalsNumber', { count: goals.length }) + '\n\n';
     
     if (goals.length > 0) {
-      analysis += `**Vos objectifs :**\n`;
+      analysis += t('chatbot.yourGoals') + '\n';
       goals.forEach(goal => {
         const progress = ((goal.currentAmount / goal.targetAmount) * 100).toFixed(1);
-        analysis += `• ${goal.name} : ${progress}% (${formatCurrency(goal.currentAmount)}/${formatCurrency(goal.targetAmount)})\n`;
+        analysis += t('chatbot.goalProgress', { 
+          name: goal.name, 
+          progress: progress, 
+          current: formatCurrency(goal.currentAmount), 
+          target: formatCurrency(goal.targetAmount) 
+        }) + '\n';
       });
     }
     
     // Conseils
     if (savingsRate < 10) {
-      analysis += `\n💡 **Conseil :** Essayez d'épargner au moins 10% de vos revenus.`;
+      analysis += '\n' + t('chatbot.savingsAdviceLow');
     } else if (savingsRate >= 20) {
-      analysis += `\n🎉 **Excellent !** Votre taux d'épargne est très bon.`;
+      analysis += '\n' + t('chatbot.savingsAdviceGood');
     }
     
     return analysis;
@@ -352,21 +358,21 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
     const monthlyIncome = state.monthlyIncome || 0;
     const currentSavings = monthlyIncome - totalSpent;
     
-    let analysis = `📊 **Analyse financière complète**\n\n`;
-    analysis += `💰 **Revenus :** ${formatCurrency(monthlyIncome)}\n`;
-    analysis += `💸 **Dépenses :** ${formatCurrency(totalSpent)} (${((totalSpent / totalBudget) * 100).toFixed(1)}% du budget)\n`;
-    analysis += `💎 **Épargne :** ${formatCurrency(currentSavings)} (${savingsRate.toFixed(1)}%)\n\n`;
+    let analysis = t('chatbot.fullAnalysisTitle') + '\n\n';
+    analysis += t('chatbot.income') + ': ' + formatCurrency(monthlyIncome) + '\n';
+    analysis += t('chatbot.expenses') + ': ' + formatCurrency(totalSpent) + ' (' + ((totalSpent / totalBudget) * 100).toFixed(1) + t('chatbot.percentBudget') + ')\n';
+    analysis += t('chatbot.savings') + ': ' + formatCurrency(currentSavings) + ' (' + savingsRate.toFixed(1) + '%)\n\n';
     
     // Évaluation globale
     let evaluation = '';
     if (savingsRate >= 20) {
-      evaluation = '🎉 **Excellent !** Votre situation financière est très saine.';
+      evaluation = t('chatbot.excellentFinances');
     } else if (savingsRate >= 10) {
-      evaluation = '👍 **Bien !** Votre situation financière est correcte.';
+      evaluation = t('chatbot.goodFinances');
     } else if (savingsRate >= 0) {
-      evaluation = '⚠️ **À surveiller !** Essayez d\'épargner davantage.';
+      evaluation = t('chatbot.warningFinances');
     } else {
-      evaluation = '🚨 **Attention !** Vous dépensez plus que vous ne gagnez.';
+      evaluation = t('chatbot.alertFinances');
     }
     
     analysis += evaluation;
@@ -385,15 +391,15 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
     const projectedSpending = totalSpent + (averageDailySpending * remainingDays);
     const projectedSavings = monthlyIncome - projectedSpending;
     
-    let prediction = `🔮 **Prédictions de fin de mois**\n\n`;
-    prediction += `📅 **Jours restants :** ${remainingDays}\n`;
-    prediction += `💰 **Dépenses projetées :** ${formatCurrency(projectedSpending)}\n`;
-    prediction += `💎 **Épargne projetée :** ${formatCurrency(projectedSavings)}\n\n`;
+    let prediction = t('chatbot.predictionsTitle') + '\n\n';
+    prediction += t('chatbot.remainingDays', { days: remainingDays }) + '\n';
+    prediction += t('chatbot.projectedSpending', { amount: formatCurrency(projectedSpending) }) + '\n';
+    prediction += t('chatbot.projectedSavings', { amount: formatCurrency(projectedSavings) }) + '\n\n';
     
     if (projectedSavings > 0) {
-      prediction += `✅ **Bonne nouvelle !** Vous devriez finir le mois en positif.`;
+      prediction += t('chatbot.positiveProjection');
     } else {
-      prediction += `⚠️ **Attention !** Vous risquez de dépasser votre budget.`;
+      prediction += t('chatbot.warningProjection');
     }
     
     return prediction;
@@ -405,24 +411,21 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
     const totalBudget = computedValues?.totalBudget || 1;
     const budgetUsage = (totalSpent / totalBudget) * 100;
     
-    let advice = `💡 **Conseils personnalisés**\n\n`;
+    let advice = t('chatbot.adviceTitle') + '\n\n';
     
     if (budgetUsage > 100) {
-      advice += `🚨 **Urgent :** Vous avez dépassé votre budget. Réduisez vos dépenses non essentielles.\n\n`;
+      advice += t('chatbot.urgentAdvice') + '\n\n';
     }
     
     if (savingsRate < 10) {
-      advice += `💰 **Épargne :** Essayez la règle 50-30-20 :\n`;
-      advice += `• 50% pour les besoins essentiels\n`;
-      advice += `• 30% pour les envies\n`;
-      advice += `• 20% pour l'épargne\n\n`;
+      advice += t('chatbot.savingsAdvice') + '\n\n';
     }
     
     if (savingsRate >= 20) {
-      advice += `🎉 **Excellent !** Continuez comme ça ! Pensez à investir votre épargne.\n\n`;
+      advice += t('chatbot.excellentAdvice') + '\n\n';
     }
     
-    advice += `📊 **Astuce :** Surveillez vos plus grosses catégories de dépenses pour optimiser votre budget.`;
+    advice += t('chatbot.generalAdvice');
     
     return advice;
   };
@@ -449,28 +452,28 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
       
         case 'goto_expenses':
           console.log('🔄 Action: goto_expenses');
-          response = `💸 **Gestion des Dépenses**\n\nQue souhaitez-vous faire avec vos dépenses ?\n\n• Ajouter une nouvelle dépense\n• Voir vos dépenses actuelles\n• Gérer vos catégories\n• Analyser vos habitudes de dépenses`;
+          response = t('chatbot.expensesMenu');
           newSuggestions = getExpensesSuggestions();
           newState = 'expenses';
         break;
       
         case 'goto_savings':
           console.log('🔄 Action: goto_savings');
-          response = `💎 **Gestion de l'Épargne**\n\nQue souhaitez-vous faire avec votre épargne ?\n\n• Voir vos objectifs d'épargne\n• Créer un nouvel objectif\n• Ajouter de l'argent à un objectif\n• Suivre votre progression`;
+          response = t('chatbot.savingsMenu');
           newSuggestions = getSavingsSuggestions();
           newState = 'savings';
         break;
       
         case 'goto_income':
           console.log('🔄 Action: goto_income');
-          response = `💰 **Gestion des Revenus**\n\nQue souhaitez-vous faire avec vos revenus ?\n\n• Voir vos sources de revenus\n• Ajouter une nouvelle source\n• Modifier votre revenu mensuel\n• Suivre l'évolution`;
+          response = t('chatbot.incomeMenu');
           newSuggestions = getIncomeSuggestions();
           newState = 'income';
         break;
       
         case 'goto_analysis':
           console.log('🔄 Action: goto_analysis');
-          response = `📊 **Analyse Financière**\n\nQue souhaitez-vous analyser ?\n\n• Analyse complète de votre situation\n• Prédictions de fin de mois\n• Conseils personnalisés\n• Tendances et évolutions`;
+          response = t('chatbot.analysisMenu');
           newSuggestions = getAnalysisSuggestions();
           newState = 'analysis';
         break;
@@ -478,16 +481,16 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         // Actions des dépenses
       case 'add_expense':
           console.log('🔄 Action: add_expense');
-          response = `➕ **Ajouter une dépense**\n\nPour ajouter une dépense, j'ai besoin de :\n\n1️⃣ **Montant** (ex: 25.50)\n2️⃣ **Catégorie** (ex: alimentation)\n3️⃣ **Description** (ex: courses Carrefour)\n\n**Format :** Tapez "25.50 alimentation courses Carrefour"\n\nOu cliquez sur une catégorie ci-dessous :`;
+          response = t('chatbot.addExpensePrompt');
           
           // Utiliser les catégories existantes ou des catégories par défaut
           const availableCategories = (state.categories || []).length > 0 
             ? state.categories 
             : [
-                { id: 1, name: 'Alimentation', budget: 400, color: '#10B981' },
-                { id: 2, name: 'Transport', budget: 200, color: '#F59E0B' },
-                { id: 3, name: 'Loisirs', budget: 150, color: '#8B5CF6' },
-                { id: 4, name: 'Santé', budget: 100, color: '#EF4444' }
+                { id: 1, name: t('chatbot.categoryFood'), budget: 400, color: '#10B981' },
+                { id: 2, name: t('chatbot.categoryTransport'), budget: 200, color: '#F59E0B' },
+                { id: 3, name: t('chatbot.categoryEntertainment'), budget: 150, color: '#8B5CF6' },
+                { id: 4, name: t('chatbot.categoryHealth'), budget: 100, color: '#EF4444' }
               ];
           
           newSuggestions = [
@@ -498,7 +501,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
             icon: 'CreditCard',
             color: 'from-blue-500 to-cyan-500'
           })),
-            { text: '🔙 Retour', action: 'goto_expenses', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.back'), action: 'goto_expenses', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
           ];
           newState = 'adding_expense';
         break;
@@ -506,15 +509,15 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         case 'select_category':
           console.log('🔄 Action: select_category', data);
           newContextData = data;
-          response = `💳 **Catégorie sélectionnée : ${data.name}**\n\nMaintenant, tapez le montant et la description :\n\n**Format :** "25.50 courses Carrefour"\n\nOu utilisez les montants rapides ci-dessous :`;
+          response = t('chatbot.selectCategoryPrompt', { category: data.name });
           
         newSuggestions = [
             { text: '💶 10€', action: 'quick_amount', data: { amount: 10, category: data }, icon: 'Euro', color: 'from-green-500 to-emerald-500' },
             { text: '💶 25€', action: 'quick_amount', data: { amount: 25, category: data }, icon: 'Euro', color: 'from-blue-500 to-cyan-500' },
             { text: '💶 50€', action: 'quick_amount', data: { amount: 50, category: data }, icon: 'Euro', color: 'from-purple-500 to-violet-500' },
             { text: '💶 100€', action: 'quick_amount', data: { amount: 100, category: data }, icon: 'Euro', color: 'from-orange-500 to-red-500' },
-            { text: '✏️ Montant personnalisé', action: 'custom_amount', data: { category: data }, icon: 'Edit', color: 'from-gray-500 to-slate-500' },
-            { text: '🔙 Retour', action: 'add_expense', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.customAmount'), action: 'custom_amount', data: { category: data }, icon: 'Edit', color: 'from-gray-500 to-slate-500' },
+            { text: t('chatbot.back'), action: 'add_expense', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
           ];
           newState = 'selecting_amount';
         break;
@@ -526,7 +529,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
             date: new Date().toISOString().split('T')[0],
             category: category.name,
             amount: expenseAmount,
-            description: `Dépense ${category.name} - ${formatCurrency(expenseAmount)} ajoutée via assistant IA`
+            description: t('chatbot.expenseDescription', { category: category.name, amount: formatCurrency(expenseAmount) })
           };
           
           console.log('📝 Tentative d\'ajout de dépense:', expense);
@@ -534,17 +537,21 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           console.log('✅ Résultat ajout dépense:', success);
           
           if (success) {
-            response = `✅ **Dépense ajoutée avec succès !**\n\n💰 **Montant :** ${formatCurrency(expenseAmount)}\n📂 **Catégorie :** ${category.name}\n📅 **Date :** ${new Date().toLocaleDateString('fr-FR')}\n\nQue voulez-vous faire maintenant ?`;
+            response = t('chatbot.expenseAddedSuccess', { 
+              amount: formatCurrency(expenseAmount), 
+              category: category.name, 
+              date: new Date().toLocaleDateString(t('chatbot.locale'))
+            });
         newSuggestions = [
-              { text: '➕ Autre dépense', action: 'add_expense', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
-              { text: '📊 Voir dépenses', action: 'view_expenses', icon: 'List', color: 'from-blue-500 to-cyan-500' },
-              { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.addAnother'), action: 'add_expense', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
+              { text: t('chatbot.viewExpenses'), action: 'view_expenses', icon: 'List', color: 'from-blue-500 to-cyan-500' },
+              { text: t('chatbot.home'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
             ];
           } else {
-            response = `❌ **Erreur** lors de l'ajout de la dépense. Veuillez réessayer.`;
+            response = t('chatbot.expenseAddedError');
         newSuggestions = [
-              { text: '🔄 Réessayer', action: 'add_expense', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
-              { text: '🔙 Retour', action: 'goto_expenses', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.retry'), action: 'add_expense', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
+              { text: t('chatbot.back'), action: 'goto_expenses', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
             ];
           }
           newState = 'expenses';
@@ -553,10 +560,10 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
       
         case 'custom_amount':
           newContextData = data;
-          response = `✏️ **Montant personnalisé**\n\nTapez le montant que vous souhaitez ajouter :`;
+          response = t('chatbot.customAmountPrompt');
           
         newSuggestions = [
-            { text: '🔙 Retour', action: 'select_category', data: data, icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.back'), action: 'select_category', data: data, icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
         ];
           newState = 'custom_amount_input';
         break;
@@ -567,21 +574,26 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
             date: new Date().toISOString().split('T')[0],
             category: customCategory.name,
             amount: customAmount,
-            description: description || `Dépense ${customCategory.name} - ${formatCurrency(customAmount)} ajoutée via assistant IA`
+            description: description || t('chatbot.expenseDescription', { category: customCategory.name, amount: formatCurrency(customAmount) })
           };
           
           if (actions.addExpense(expenseWithDesc)) {
-            response = `✅ **Dépense ajoutée avec succès !**\n\n💰 **Montant :** ${formatCurrency(customAmount)}\n📂 **Catégorie :** ${customCategory.name}\n📝 **Description :** ${description || `Dépense ${customCategory.name} - ${formatCurrency(customAmount)}`}\n📅 **Date :** ${new Date().toLocaleDateString('fr-FR')}\n\nQue voulez-vous faire maintenant ?`;
+            response = t('chatbot.expenseAddedSuccessWithDesc', { 
+              amount: formatCurrency(customAmount), 
+              category: customCategory.name, 
+              description: description || t('chatbot.expenseDescription', { category: customCategory.name, amount: formatCurrency(customAmount) }),
+              date: new Date().toLocaleDateString(t('chatbot.locale'))
+            });
         newSuggestions = [
-              { text: '➕ Autre dépense', action: 'add_expense', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
-              { text: '📊 Voir dépenses', action: 'view_expenses', icon: 'List', color: 'from-blue-500 to-cyan-500' },
-              { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.addAnother'), action: 'add_expense', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
+              { text: t('chatbot.viewExpenses'), action: 'view_expenses', icon: 'List', color: 'from-blue-500 to-cyan-500' },
+              { text: t('chatbot.home'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
             ];
           } else {
-            response = `❌ **Erreur** lors de l'ajout de la dépense. Veuillez réessayer.`;
+            response = t('chatbot.expenseAddedError');
         newSuggestions = [
-              { text: '🔄 Réessayer', action: 'add_expense', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
-              { text: '🔙 Retour', action: 'goto_expenses', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.retry'), action: 'add_expense', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
+              { text: t('chatbot.back'), action: 'goto_expenses', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
         ];
           }
           newState = 'expenses';
@@ -592,15 +604,21 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           const currentExpenses = computedValues?.currentMonthExpenses || [];
           const totalSpent = computedValues?.totalSpent || 0;
           
-          response = `📊 **Vos dépenses ce mois**\n\n💰 **Total :** ${formatCurrency(totalSpent)}\n📈 **Nombre :** ${currentExpenses.length} dépense(s)\n\n`;
+          response = t('chatbot.viewExpensesTitle') + '\n\n' + 
+                    t('chatbot.viewExpensesTotal', { amount: formatCurrency(totalSpent) }) + '\n' +
+                    t('chatbot.viewExpensesCount', { count: currentExpenses.length }) + '\n\n';
           
           if (currentExpenses.length > 0) {
-            response += `**Dernières dépenses :**\n`;
+            response += t('chatbot.viewExpensesRecent') + '\n';
             currentExpenses.slice(-5).forEach(exp => {
-              response += `• ${exp.description} : ${formatCurrency(exp.amount)} (${exp.category})\n`;
+              response += t('chatbot.expenseItem', { 
+                description: exp.description, 
+                amount: formatCurrency(exp.amount), 
+                category: exp.category 
+              }) + '\n';
             });
         } else {
-            response += `Aucune dépense enregistrée ce mois.`;
+            response += t('chatbot.noExpenses');
         }
           
           newSuggestions = getExpensesSuggestions();
@@ -614,31 +632,32 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         case 'manage_categories':
           console.log('🔄 Action: manage_categories');
           const categories = state.categories || [];
-          response = `📂 **Gestion des Catégories**\n\n📊 **Nombre de catégories :** ${categories.length}\n\n`;
+          response = t('chatbot.manageCategoriesTitle') + '\n\n' + 
+                    t('chatbot.categoriesCount', { count: categories.length }) + '\n\n';
           
           if (categories.length > 0) {
-            response += `**Vos catégories actuelles :**\n`;
+            response += t('chatbot.currentCategories') + '\n';
             categories.forEach(cat => {
-              response += `• ${cat.name} : ${formatCurrency(cat.budget)} de budget\n`;
+              response += t('chatbot.categoryItem', { name: cat.name, budget: formatCurrency(cat.budget) }) + '\n';
             });
           } else {
-            response += `Aucune catégorie définie.\n\nVoulez-vous créer vos premières catégories ?`;
+            response += t('chatbot.noCategories');
           }
           
           newSuggestions = [
-            { text: '➕ Nouvelle catégorie', action: 'add_category', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
-            { text: '✏️ Modifier catégorie', action: 'edit_category', icon: 'Edit', color: 'from-blue-500 to-cyan-500' },
-            { text: '🗑️ Supprimer catégorie', action: 'delete_category', icon: 'Trash2', color: 'from-red-500 to-pink-500' },
-            { text: '🔙 Retour', action: 'goto_expenses', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.newCategory'), action: 'add_category', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
+            { text: t('chatbot.editCategory'), action: 'edit_category', icon: 'Edit', color: 'from-blue-500 to-cyan-500' },
+            { text: t('chatbot.deleteCategory'), action: 'delete_category', icon: 'Trash2', color: 'from-red-500 to-pink-500' },
+            { text: t('chatbot.back'), action: 'goto_expenses', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
           ];
           newState = 'managing_categories';
         break;
       
         case 'add_category':
           console.log('🔄 Action: add_category');
-          response = `➕ **Créer une nouvelle catégorie**\n\nTape le nom et le budget de ta catégorie (ex: Santé 100)`;
+          response = t('chatbot.addCategoryPrompt');
           newSuggestions = [
-            { text: '🔙 Retour', action: 'manage_categories', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.back'), action: 'manage_categories', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
           ];
           newState = 'adding_category';
         break;
@@ -652,17 +671,17 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           };
           
           if (actions.addCategory(categoryData)) {
-            response = `✅ **Catégorie créée avec succès !**\n\n📂 **Nom :** ${categoryName}\n💰 **Budget :** ${formatCurrency(categoryBudget)}\n\nQue voulez-vous faire maintenant ?`;
+            response = t('chatbot.categoryCreatedSuccess', { name: categoryName, budget: formatCurrency(categoryBudget) });
             newSuggestions = [
-              { text: '➕ Autre catégorie', action: 'add_category', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
-              { text: '📂 Gérer catégories', action: 'manage_categories', icon: 'FolderPlus', color: 'from-blue-500 to-cyan-500' },
-              { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.addAnother'), action: 'add_category', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
+              { text: t('chatbot.manageCategories'), action: 'manage_categories', icon: 'FolderPlus', color: 'from-blue-500 to-cyan-500' },
+              { text: t('chatbot.home'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
             ];
           } else {
-            response = `❌ **Erreur** lors de la création de la catégorie. Veuillez réessayer.`;
+            response = t('chatbot.categoryCreatedError');
             newSuggestions = [
-              { text: '🔄 Réessayer', action: 'add_category', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
-              { text: '🔙 Retour', action: 'manage_categories', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.retry'), action: 'add_category', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
+              { text: t('chatbot.back'), action: 'manage_categories', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
             ];
           }
           newState = 'managing_categories';
@@ -671,16 +690,21 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         // Actions de l'épargne
         case 'view_goals':
           const goals = state.savingsGoals || [];
-          response = `🎯 **Vos objectifs d'épargne**\n\n📊 **Nombre d'objectifs :** ${goals.length}\n\n`;
+          response = t('chatbot.viewGoalsTitle') + '\n\n' + 
+                    t('chatbot.goalsCount', { count: goals.length }) + '\n\n';
           
           if (goals.length > 0) {
             goals.forEach(goal => {
               const progress = ((goal.currentAmount / goal.targetAmount) * 100).toFixed(1);
-              response += `💎 **${goal.name}**\n`;
-              response += `   💰 ${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)} (${progress}%)\n\n`;
+              response += t('chatbot.goalItem', { 
+                name: goal.name, 
+                current: formatCurrency(goal.currentAmount), 
+                target: formatCurrency(goal.targetAmount), 
+                progress: progress 
+              }) + '\n\n';
             });
         } else {
-            response += `Aucun objectif d'épargne défini.\nCommencez par créer votre premier objectif !`;
+            response += t('chatbot.noGoals');
         }
           
           newSuggestions = getSavingsSuggestions();
@@ -688,9 +712,9 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         break;
       
         case 'add_goal':
-          response = `🎯 **Créer un nouvel objectif**\n\nTape le nom et le montant de ton objectif (ex: Vacances 2000)`;
+          response = t('chatbot.addGoalPrompt');
           newSuggestions = [
-            { text: '🔙 Retour', action: 'goto_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.back'), action: 'goto_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
           ];
           newState = 'adding_goal';
         break;
@@ -704,17 +728,17 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           };
           
           if (actions.addSavingsGoal(goalData)) {
-            response = `✅ **Objectif créé avec succès !**\n\n🎯 **Nom :** ${name}\n💰 **Objectif :** ${formatCurrency(goalAmount)}\n📈 **Progression :** 0%\n\nVoulez-vous ajouter de l'argent maintenant ?`;
+            response = t('chatbot.goalCreatedSuccess', { name: name, amount: formatCurrency(goalAmount) });
             newSuggestions = [
-              { text: '💰 Oui', action: 'add_savings', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
-              { text: '❌ Non', action: 'view_goals', icon: 'Target', color: 'from-blue-500 to-cyan-500' }
+              { text: t('chatbot.yes'), action: 'add_savings', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
+              { text: t('chatbot.no'), action: 'view_goals', icon: 'Target', color: 'from-blue-500 to-cyan-500' }
             ];
             newState = 'goal_created';
           } else {
-            response = `❌ **Erreur** lors de la création de l'objectif. Veuillez réessayer.`;
+            response = t('chatbot.goalCreatedError');
             newSuggestions = [
-              { text: '🔄 Réessayer', action: 'add_goal', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
-              { text: '🔙 Retour', action: 'goto_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.retry'), action: 'add_goal', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
+              { text: t('chatbot.back'), action: 'goto_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
             ];
             newState = 'savings';
           }
@@ -723,13 +747,13 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         case 'add_savings':
           const availableGoals = state.savingsGoals || [];
           if (availableGoals.length === 0) {
-            response = `❌ **Aucun objectif d'épargne**\n\nVous devez d'abord créer un objectif avant d'y ajouter de l'argent.`;
+            response = t('chatbot.noGoalsForSavings');
         newSuggestions = [
-              { text: '🎯 Créer objectif', action: 'add_goal', icon: 'Target', color: 'from-green-500 to-emerald-500' },
-              { text: '🔙 Retour', action: 'goto_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.createGoal'), action: 'add_goal', icon: 'Target', color: 'from-green-500 to-emerald-500' },
+              { text: t('chatbot.back'), action: 'goto_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
             ];
           } else {
-            response = `💰 **Ajouter de l'épargne**\n\nSélectionnez l'objectif auquel ajouter de l'argent :`;
+            response = t('chatbot.selectGoalPrompt');
         newSuggestions = [
               ...availableGoals.map(goal => ({
                 text: `🎯 ${goal.name}`,
@@ -738,7 +762,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
                 icon: 'Target',
                 color: 'from-green-500 to-emerald-500'
               })),
-              { text: '🔙 Retour', action: 'goto_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.back'), action: 'goto_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
             ];
           }
           newState = 'selecting_goal';
@@ -747,14 +771,19 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         case 'select_goal_for_savings':
           newContextData = data;
           const remaining = data.targetAmount - data.currentAmount;
-          response = `🎯 **Objectif sélectionné : ${data.name}**\n\n💰 **Progression :** ${formatCurrency(data.currentAmount)} / ${formatCurrency(data.targetAmount)}\n📊 **Restant :** ${formatCurrency(remaining)}\n\nCombien voulez-vous ajouter ?\n\nTapez le montant (ex: 100) ou utilisez les montants rapides :`;
+          response = t('chatbot.goalSelectedPrompt', { 
+            name: data.name, 
+            current: formatCurrency(data.currentAmount), 
+            target: formatCurrency(data.targetAmount), 
+            remaining: formatCurrency(remaining) 
+          });
           
         newSuggestions = [
             { text: '💶 50€', action: 'add_to_goal', data: { goal: data, amount: 50 }, icon: 'Euro', color: 'from-green-500 to-emerald-500' },
             { text: '💶 100€', action: 'add_to_goal', data: { goal: data, amount: 100 }, icon: 'Euro', color: 'from-blue-500 to-cyan-500' },
             { text: '💶 200€', action: 'add_to_goal', data: { goal: data, amount: 200 }, icon: 'Euro', color: 'from-purple-500 to-violet-500' },
             { text: '💶 500€', action: 'add_to_goal', data: { goal: data, amount: 500 }, icon: 'Euro', color: 'from-orange-500 to-red-500' },
-            { text: '🔙 Retour', action: 'add_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.back'), action: 'add_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
           ];
           newState = 'adding_to_goal';
         break;
@@ -763,7 +792,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           const { goal, amount: savingsAmount } = data;
           const transactionData = {
             amount: savingsAmount,
-            description: `Ajout via assistant IA - ${formatCurrency(savingsAmount)}`,
+            description: t('chatbot.savingsDescription', { amount: formatCurrency(savingsAmount) }),
             type: 'add',
             date: new Date().toISOString().split('T')[0]
           };
@@ -772,18 +801,24 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
             const newTotal = Math.min(goal.currentAmount + savingsAmount, goal.targetAmount);
             const newProgress = ((newTotal / goal.targetAmount) * 100).toFixed(1);
             
-            response = `✅ **Épargne ajoutée avec succès !**\n\n🎯 **Objectif :** ${goal.name}\n💰 **Ajouté :** ${formatCurrency(savingsAmount)}\n📊 **Nouveau total :** ${formatCurrency(newTotal)} / ${formatCurrency(goal.targetAmount)} (${newProgress}%)\n\nBravo pour votre effort d'épargne ! 🎉`;
+            response = t('chatbot.savingsAddedSuccess', { 
+              goal: goal.name, 
+              amount: formatCurrency(savingsAmount), 
+              total: formatCurrency(newTotal), 
+              target: formatCurrency(goal.targetAmount), 
+              progress: newProgress 
+            });
             
         newSuggestions = [
-              { text: '💰 Ajouter encore', action: 'add_savings', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
-              { text: '🎯 Voir objectifs', action: 'view_goals', icon: 'Target', color: 'from-blue-500 to-cyan-500' },
-              { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.addMore'), action: 'add_savings', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
+              { text: t('chatbot.viewGoals'), action: 'view_goals', icon: 'Target', color: 'from-blue-500 to-cyan-500' },
+              { text: t('chatbot.home'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
             ];
           } else {
-            response = `❌ **Erreur** lors de l'ajout de l'épargne. Veuillez réessayer.`;
+            response = t('chatbot.savingsAddedError');
         newSuggestions = [
-              { text: '🔄 Réessayer', action: 'add_savings', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
-              { text: '🔙 Retour', action: 'goto_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.retry'), action: 'add_savings', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
+              { text: t('chatbot.back'), action: 'goto_savings', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
         ];
           }
           newState = 'savings';
@@ -801,30 +836,38 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
           const revenues = state.revenues || [];
           const totalRevenues = revenues.reduce((sum, rev) => sum + rev.amount, 0);
           
-          response = `💰 **Vos revenus**\n\n💵 **Revenu mensuel :** ${formatCurrency(monthlyIncome)}\n📊 **Sources actives :** ${revenues.filter(r => r.active).length}\n💼 **Total sources :** ${formatCurrency(totalRevenues)}\n\n`;
+          response = t('chatbot.viewIncomeTitle') + '\n\n' + 
+                    t('chatbot.monthlyIncome', { amount: formatCurrency(monthlyIncome) }) + '\n' +
+                    t('chatbot.activeSources', { count: revenues.filter(r => r.active).length }) + '\n' +
+                    t('chatbot.totalSources', { amount: formatCurrency(totalRevenues) }) + '\n\n';
           
           if (revenues.length > 0) {
-            response += `**Vos sources de revenus :**\n`;
+            response += t('chatbot.incomeSources') + '\n';
             revenues.forEach(rev => {
               const status = rev.active ? '✅' : '❌';
-              response += `${status} ${rev.name} : ${formatCurrency(rev.amount)} (${rev.frequency})\n`;
+              response += t('chatbot.incomeSourceItem', { 
+                status: status, 
+                name: rev.name, 
+                amount: formatCurrency(rev.amount), 
+                frequency: rev.frequency 
+              }) + '\n';
             });
         } else {
-            response += `Aucune source de revenus définie.`;
+            response += t('chatbot.noIncomeSources');
           }
           
           newSuggestions = getIncomeSuggestions();
         break;
       
         case 'set_monthly_income':
-          response = `💰 **Définir votre revenu mensuel**\n\nActuel : ${formatCurrency(state.monthlyIncome || 0)}\n\nTapez votre nouveau revenu mensuel (ex: 3500) ou utilisez les montants rapides :`;
+          response = t('chatbot.setIncomePrompt', { current: formatCurrency(state.monthlyIncome || 0) });
           
         newSuggestions = [
             { text: '💶 2000€', action: 'set_income_amount', data: 2000, icon: 'Euro', color: 'from-green-500 to-emerald-500' },
             { text: '💶 3000€', action: 'set_income_amount', data: 3000, icon: 'Euro', color: 'from-blue-500 to-cyan-500' },
             { text: '💶 4000€', action: 'set_income_amount', data: 4000, icon: 'Euro', color: 'from-purple-500 to-violet-500' },
             { text: '💶 5000€', action: 'set_income_amount', data: 5000, icon: 'Euro', color: 'from-orange-500 to-red-500' },
-            { text: '🔙 Retour', action: 'goto_income', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.back'), action: 'goto_income', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
           ];
           newState = 'setting_income';
         break;
@@ -832,12 +875,12 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         case 'set_income_amount':
           const newIncome = data;
           actions.setMonthlyIncome(newIncome);
-          response = `✅ **Revenu mensuel mis à jour !**\n\n💰 **Nouveau revenu :** ${formatCurrency(newIncome)}\n\nVotre budget va être recalculé automatiquement.`;
+          response = t('chatbot.incomeUpdatedSuccess', { amount: formatCurrency(newIncome) });
           
         newSuggestions = [
-            { text: '📊 Voir revenus', action: 'view_income', icon: 'DollarSign', color: 'from-yellow-500 to-orange-500' },
-            { text: '📈 Analyse complète', action: 'full_analysis', icon: 'BarChart3', color: 'from-blue-500 to-cyan-500' },
-            { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.viewIncome'), action: 'view_income', icon: 'DollarSign', color: 'from-yellow-500 to-orange-500' },
+            { text: t('chatbot.fullAnalysis'), action: 'full_analysis', icon: 'BarChart3', color: 'from-blue-500 to-cyan-500' },
+            { text: t('chatbot.home'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
         ];
           newState = 'income';
         break;
@@ -860,38 +903,29 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
       
         case 'view_trends':
           const monthlyData = computedValues?.monthlyData || [];
-          response = `📈 **Tendances financières**\n\n📊 **Évolution sur 6 mois :**\n\n`;
+          response = t('chatbot.trendsTitle') + '\n\n' + t('chatbot.evolutionSixMonths') + '\n\n';
           
           monthlyData.forEach(month => {
-            response += `📅 **${month.month}** : Revenus ${formatCurrency(month.income)}, Dépenses ${formatCurrency(month.expenses)}\n`;
+            response += t('chatbot.monthData', { 
+              month: month.month, 
+              income: formatCurrency(month.income), 
+              expenses: formatCurrency(month.expenses) 
+            }) + '\n';
           });
           
-          response += `\n💡 **Conseil :** Surveillez l'évolution de vos dépenses pour identifier les tendances.`;
+          response += '\n' + t('chatbot.trendsAdvice');
           newSuggestions = getAnalysisSuggestions();
-        break;
-      
-        case 'set_monthly_income':
-          response = `💰 **Définir votre revenu mensuel**\n\nActuel : ${formatCurrency(state.monthlyIncome || 0)}\n\nTapez votre nouveau revenu mensuel (ex: 3500) ou utilisez les montants rapides :`;
-          
-        newSuggestions = [
-            { text: '💶 2000€', action: 'set_income_amount', data: 2000, icon: 'Euro', color: 'from-green-500 to-emerald-500' },
-            { text: '💶 3000€', action: 'set_income_amount', data: 3000, icon: 'Euro', color: 'from-blue-500 to-cyan-500' },
-            { text: '💶 4000€', action: 'set_income_amount', data: 4000, icon: 'Euro', color: 'from-purple-500 to-violet-500' },
-            { text: '💶 5000€', action: 'set_income_amount', data: 5000, icon: 'Euro', color: 'from-orange-500 to-red-500' },
-            { text: '🔙 Retour', action: 'goto_income', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
-          ];
-          newState = 'setting_income';
         break;
       
         case 'delete_category':
           const categoriesToDelete = state.categories || [];
           if (categoriesToDelete.length === 0) {
-            response = `❌ **Aucune catégorie à supprimer.**`;
+            response = t('chatbot.noCategoriesDelete');
             newSuggestions = [
-              { text: '🔙 Retour', action: 'manage_categories', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.back'), action: 'manage_categories', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
             ];
           } else {
-            response = `🗑️ **Supprimer une catégorie**\n\nClique sur la catégorie à supprimer :`;
+            response = t('chatbot.deleteCategoryPrompt');
             newSuggestions = [
               ...categoriesToDelete.map(cat => ({
                 text: `🗑️ ${cat.name}`,
@@ -900,38 +934,38 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
                 icon: 'Trash2',
                 color: 'from-red-500 to-pink-500'
               })),
-              { text: '🔙 Retour', action: 'manage_categories', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.back'), action: 'manage_categories', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
             ];
           }
           newState = 'deleting_category';
         break;
 
         case 'ask_confirm_delete_category':
-          response = `❓ **Confirmer la suppression de la catégorie : ${data.name} ?**`;
+          response = t('chatbot.confirmDeleteCategory', { name: data.name });
           newSuggestions = [
-            { text: '✅ Confirmer', action: 'confirm_delete_category', data: data, icon: 'Check', color: 'from-green-500 to-emerald-500' },
-            { text: '❌ Annuler', action: 'delete_category', icon: 'X', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.confirm'), action: 'confirm_delete_category', data: data, icon: 'Check', color: 'from-green-500 to-emerald-500' },
+            { text: t('chatbot.cancel'), action: 'delete_category', icon: 'X', color: 'from-gray-500 to-slate-500' }
           ];
           newState = 'confirming_delete_category';
         break;
 
         case 'confirm_delete_category':
           if (actions.deleteCategory(data.id) !== false) {
-            response = `✅ **Catégorie supprimée !**\n\n${data.name} a été retirée.`;
+            response = t('chatbot.categoryDeletedSuccess', { name: data.name });
           } else {
-            response = `❌ **Erreur lors de la suppression.**`;
+            response = t('chatbot.categoryDeletedError');
           }
           newSuggestions = [
-            { text: '📂 Gérer catégories', action: 'manage_categories', icon: 'FolderPlus', color: 'from-blue-500 to-cyan-500' },
-            { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.manageCategories'), action: 'manage_categories', icon: 'FolderPlus', color: 'from-blue-500 to-cyan-500' },
+            { text: t('chatbot.home'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
           ];
           newState = 'managing_categories';
         break;
       
         case 'add_income_source':
-          response = `➕ **Ajouter une source de revenu**\n\nTape le nom et le montant de la source (ex: Freelance 500)`;
+          response = t('chatbot.addIncomeSourcePrompt');
           newSuggestions = [
-            { text: '🔙 Retour', action: 'goto_income', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+            { text: t('chatbot.back'), action: 'goto_income', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
           ];
           newState = 'adding_income_source';
         break;
@@ -944,34 +978,34 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
             frequency: 'monthly',
             description: ''
           })) {
-            response = `✅ **Source de revenu ajoutée !**\n\n💵 **Nom :** ${data.name}\n💰 **Montant :** ${formatCurrency(data.amount)}`;
+            response = t('chatbot.incomeSourceCreatedSuccess', { name: data.name, amount: formatCurrency(data.amount) });
             newSuggestions = getIncomeSuggestions();
             newState = 'income';
           } else {
-            response = `❌ **Erreur** lors de l'ajout de la source. Veuillez réessayer.`;
+            response = t('chatbot.incomeSourceCreatedError');
             newSuggestions = [
-              { text: '🔄 Réessayer', action: 'add_income_source', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
-              { text: '🔙 Retour', action: 'goto_income', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+              { text: t('chatbot.retry'), action: 'add_income_source', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
+              { text: t('chatbot.back'), action: 'goto_income', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
             ];
             newState = 'income';
           }
         break;
       
         case 'income_evolution':
-          response = `📈 **Évolution des revenus**\n\nCette fonctionnalité affichera bientôt l'évolution de vos revenus sur plusieurs mois.`;
+          response = t('chatbot.incomeEvolutionMessage');
           newSuggestions = getIncomeSuggestions();
           newState = 'income';
         break;
       
       default:
-          response = `❓ **Action non reconnue**\n\nJe ne comprends pas cette action. Que souhaitez-vous faire ?`;
+          response = t('chatbot.actionNotRecognized');
           newSuggestions = getMainSuggestions();
           newState = 'welcome';
         break;
       }
     } catch (error) {
       console.error('Erreur lors de l\'exécution de l\'action:', error);
-      response = `❌ **Erreur**\n\nUne erreur s'est produite. Veuillez réessayer.`;
+      response = t('chatbot.errorOccurred');
       newSuggestions = getMainSuggestions();
       newState = 'welcome';
     }
@@ -1027,7 +1061,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         data: {
           amount: parseFloat(text),
           category: contextData.category,
-          description: `Dépense ${contextData.category.name} - ${formatCurrency(parseFloat(text))} ajoutée via assistant IA`
+          description: t('chatbot.expenseDescription', { category: contextData.category.name, amount: formatCurrency(parseFloat(text)) })
         }
       };
     }
@@ -1077,29 +1111,29 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
       };
     }
 
-    // Messages génériques
-    if (lowerText.includes('bonjour') || lowerText.includes('salut') || lowerText.includes('hello')) {
+    // Messages génériques avec traduction
+    if (lowerText.includes(t('chatbot.helloKeywords')) || lowerText.includes('hello')) {
       return { action: 'goto_main' };
     }
 
-    if (lowerText.includes('dépense')) {
+    if (lowerText.includes(t('chatbot.expenseKeywords'))) {
       return { action: 'goto_expenses' };
     }
 
-    if (lowerText.includes('épargne') || lowerText.includes('epargne')) {
+    if (lowerText.includes(t('chatbot.savingsKeywords'))) {
       return { action: 'goto_savings' };
     }
 
-    if (lowerText.includes('revenu') || lowerText.includes('salaire')) {
+    if (lowerText.includes(t('chatbot.incomeKeywords'))) {
       return { action: 'goto_income' };
     }
 
-    if (lowerText.includes('analyse') || lowerText.includes('bilan')) {
+    if (lowerText.includes(t('chatbot.analysisKeywords'))) {
       return { action: 'full_analysis' };
     }
 
-    // Ajout dans parseTextMessage : reconnaissance de 'oui' ou 'yes' après création d'un objectif
-    if (chatState === 'goal_created' && (lowerText === 'oui' || lowerText === 'yes')) {
+    // Reconnaissance de 'oui' ou 'yes' après création d'un objectif
+    if (chatState === 'goal_created' && (lowerText === t('chatbot.yesKeyword') || lowerText === 'yes')) {
       return { action: 'add_savings' };
     }
 
@@ -1127,24 +1161,29 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
       date: new Date().toISOString().split('T')[0],
       category: category.name,
       amount: amount,
-      description: description || `Dépense ${category.name} - ${formatCurrency(amount)} ajoutée via assistant IA`
+      description: description || t('chatbot.expenseDescription', { category: category.name, amount: formatCurrency(amount) })
     };
     
     if (actions.addExpense(expense)) {
       return {
-        response: `✅ **Dépense ajoutée avec succès !**\n\n💰 **Montant :** ${formatCurrency(amount)}\n📂 **Catégorie :** ${category.name}\n📝 **Description :** ${description}\n📅 **Date :** ${new Date().toLocaleDateString('fr-FR')}\n\nQue voulez-vous faire maintenant ?`,
+        response: t('chatbot.expenseAddedSuccessWithDesc', { 
+          amount: formatCurrency(amount), 
+          category: category.name, 
+          description: description,
+          date: new Date().toLocaleDateString(t('chatbot.locale'))
+        }),
         suggestions: [
-          { text: '➕ Autre dépense', action: 'add_expense', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
-          { text: '📊 Voir dépenses', action: 'view_expenses', icon: 'List', color: 'from-blue-500 to-cyan-500' },
-          { text: '🏠 Menu principal', action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
+          { text: t('chatbot.addAnother'), action: 'add_expense', icon: 'Plus', color: 'from-green-500 to-emerald-500' },
+          { text: t('chatbot.viewExpenses'), action: 'view_expenses', icon: 'List', color: 'from-blue-500 to-cyan-500' },
+          { text: t('chatbot.home'), action: 'goto_main', icon: 'Home', color: 'from-gray-500 to-slate-500' }
         ]
       };
     } else {
       return {
-        response: `❌ **Erreur** lors de l'ajout de la dépense. Veuillez réessayer.`,
+        response: t('chatbot.expenseAddedError'),
         suggestions: [
-          { text: '🔄 Réessayer', action: 'add_expense', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
-          { text: '🔙 Retour', action: 'goto_expenses', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
+          { text: t('chatbot.retry'), action: 'add_expense', icon: 'RotateCcw', color: 'from-blue-500 to-cyan-500' },
+          { text: t('chatbot.back'), action: 'goto_expenses', icon: 'ArrowLeft', color: 'from-gray-500 to-slate-500' }
         ]
       };
     }
@@ -1228,7 +1267,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         <button
           onClick={() => setIsOpen(true)}
           className="relative w-16 h-16 rounded-full bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group overflow-hidden"
-          aria-label="Ouvrir l'assistant IA"
+          aria-label={t('chatbot.openAssistant')}
         >
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 gradient-animate opacity-75 group-hover:opacity-100 transition-opacity"></div>
           <Icons.Bot className="h-6 w-6 relative z-10 group-hover:scale-110 transition-transform duration-300" />
@@ -1266,22 +1305,22 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
                   <Icons.Bot className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm">Assistant IA</h3>
-                  <p className="text-xs text-white/80">Cliquez pour agrandir</p>
+                  <h3 className="font-bold text-sm">{t('chatbot.aiAssistant')}</h3>
+                  <p className="text-xs text-white/80">{t('chatbot.clickToExpand')}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-1">
                 <button
                   onClick={() => setIsMinimized(false)}
                   className="text-white/80 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10 backdrop-blur-sm"
-                  aria-label="Agrandir l'assistant"
+                  aria-label={t('chatbot.expandAssistant')}
                 >
                   <Icons.Maximize2 className="h-3 w-3" />
                 </button>
                 <button
                   onClick={() => setIsOpen(false)} 
                   className="text-white/80 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10 backdrop-blur-sm"
-                  aria-label="Fermer l'assistant"
+                  aria-label={t('chatbot.closeAssistant')}
                 >
                   <Icons.X className="h-3 w-3" />
                 </button>
@@ -1318,22 +1357,22 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
                 <Icons.Bot className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-bold text-base">Assistant IA</h3>
-                <p className="text-xs text-white/80">Intelligence Artificielle • En ligne</p>
+                <h3 className="font-bold text-base">{t('chatbot.aiAssistant')}</h3>
+                <p className="text-xs text-white/80">{t('chatbot.onlineStatus')}</p>
               </div>
             </div>
             <div className="flex items-center space-x-1">
               <button
                 onClick={() => setIsMinimized(!isMinimized)}
                 className="text-white/80 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10 backdrop-blur-sm"
-                aria-label="Réduire l'assistant"
+                aria-label={t('chatbot.minimizeAssistant')}
               >
                 <Icons.Minimize2 className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setIsOpen(false)} 
                 className="text-white/80 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10 backdrop-blur-sm"
-                aria-label="Fermer l'assistant"
+                aria-label={t('chatbot.closeAssistant')}
               >
                 <Icons.X className="h-4 w-4" />
               </button>
@@ -1346,7 +1385,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
         {messages.length > 0 && messages[messages.length - 1].suggestions && !isTyping && chatState !== 'goal_created' && (
           <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 border-b border-gray-200 dark:border-gray-700">
             <div className="text-xs text-gray-500 dark:text-gray-400 font-medium text-center mb-2">
-              ✨ Actions rapides
+              ✨ {t('chatbot.quickActions')}
             </div>
             <div className="grid grid-cols-2 gap-2">
               {messages[messages.length - 1].suggestions.map((suggestion, index) => {
@@ -1383,7 +1422,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
                     <div className="w-6 h-6 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mr-2">
                       <Icons.Brain className="h-3 w-3 text-white" />
                     </div>
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Assistant IA</span>
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{t('chatbot.aiAssistant')}</span>
                   </div>
                 )}
                 
@@ -1408,7 +1447,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
                 {msg.from === 'bot' && msg.suggestions && chatState === 'goal_created' && (
                   <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <div className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-2">
-                      Répondez :
+                      {t('chatbot.respond')}:
                     </div>
                     <div className="flex space-x-2">
                       {msg.suggestions.map((suggestion, index) => {
@@ -1448,7 +1487,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
             <div className="flex-1 relative">
               <input
                 className="w-full bg-white/80 dark:bg-gray-800/80 px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none text-sm rounded-xl border-2 border-gray-200/50 dark:border-gray-700/50 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 backdrop-blur-sm"
-                placeholder="Tapez votre message..."
+                placeholder={t('chatbot.typeMessage')}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 disabled={isTyping}
@@ -1468,7 +1507,7 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
               type="submit"
               disabled={!input.trim() || isTyping}
               className="relative p-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50 group overflow-hidden"
-              aria-label="Envoyer le message"
+              aria-label={t('chatbot.sendMessage')}
             >
               <Icons.Send className="h-4 w-4 group-hover:scale-110 group-hover:translate-x-1 transition-transform duration-300 relative z-10" />
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 shimmer-effect rounded-xl"></div>
@@ -1480,4 +1519,4 @@ const Chatbot = memo(({ financeManager, theme, t }) => {
   );
 });
 
-export default Chatbot; 
+export default Chatbot;
