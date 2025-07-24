@@ -22,7 +22,9 @@ const NotificationContainer = memo(({ notifications }) => {
           ) : (
             <Icons.CheckCircle className="h-5 w-5 flex-shrink-0" />
           )}
-          <span className="text-sm">{notification.message}</span>
+          {notification.message && (
+            <span className="text-sm">{notification.message}</span>
+          )}
         </div>
       ))}
     </div>

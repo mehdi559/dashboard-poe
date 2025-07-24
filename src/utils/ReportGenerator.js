@@ -908,7 +908,6 @@ class ReportGenerator {
             printWindow.print();
             printWindow.close();
           }, 1000);
-        }
       } catch (error) {
         console.error('Erreur avec html2pdf.js, utilisation du fallback:', error);
         

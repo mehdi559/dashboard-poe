@@ -344,7 +344,10 @@ const useFinanceManager = () => {
 
   const getMonthDisplayName = useCallback((monthStr) => {
     const date = new Date(monthStr + '-01');
-    return date.toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', { 
+    let locale = 'en-US';
+    if (state.language === 'fr') locale = 'fr-FR';
+    else if (state.language === 'es') locale = 'es-ES';
+    return date.toLocaleDateString(locale, { 
       month: 'long', 
       year: 'numeric' 
     });
@@ -832,6 +835,81 @@ const useFinanceManager = () => {
       return true;
     },
 
+    deletePayment: (debtId, paymentId) => {
+      const debt = state.debts.find(d => d.id === debtId);
+      if (!debt) {
+        showNotification(t('debtNotFound'), 'error');
+        return false;
+      }
+
+      const payment = debt.paymentHistory.find(p => p.id === paymentId);
+      if (!payment) {
+        showNotification(t('paymentNotFound'), 'error');
+        return false;
+      }
+
+      if (window.confirm(t('confirmDeletePayment'))) {
+        dispatch({ 
+          type: ACTIONS.DELETE_PAYMENT, 
+          payload: { 
+            debtId, 
+            paymentId, 
+            amount: payment.amount 
+          } 
+        });
+        showNotification(t('paymentDeleted'));
+        return true;
+      }
+      return false;
+    },
+
+    updatePayment: (debtId, paymentId, paymentData) => {
+      const debt = state.debts.find(d => d.id === debtId);
+      if (!debt) {
+        showNotification(t('debtNotFound'), 'error');
+        return false;
+      }
+
+      const payment = debt.paymentHistory.find(p => p.id === paymentId);
+      if (!payment) {
+        showNotification(t('paymentNotFound'), 'error');
+        return false;
+      }
+
+      const rules = {
+        amount: [
+          { validator: validators.required, message: t('amountRequired') },
+          { validator: validators.positiveNumber, message: t('amountPositive') }
+        ],
+        date: [
+          { validator: validators.required, message: t('dateRequired') }
+        ]
+      };
+
+      const { isValid, errors } = validateForm(paymentData, rules);
+      
+      if (!isValid) {
+        Object.entries(errors).forEach(([field, message]) => setError(field, message));
+        return false;
+      }
+
+      const newAmount = sanitizers.currency(paymentData.amount);
+      
+      dispatch({ 
+        type: ACTIONS.UPDATE_PAYMENT, 
+        payload: { 
+          debtId, 
+          paymentId, 
+          oldAmount: payment.amount,
+          newAmount,
+          date: paymentData.date,
+          description: sanitizers.text(paymentData.description || 'Paiement')
+        } 
+      });
+      showNotification(t('paymentUpdated'));
+      return true;
+    },
+
     toggleAutoDebit: (debtId) => {
       const debt = state.debts.find(d => d.id === debtId);
       if (!debt) {
@@ -1007,6 +1085,21 @@ const useFinanceManager = () => {
       dataUtils.exportToJSON(exportData);
       showNotification('Données exportées avec succès');
     },
+    saveData: () => {
+      const saveData = {
+        userName: state.userName,
+        categories: state.categories,
+        expenses: state.expenses,
+        savingsGoals: state.savingsGoals,
+        recurringExpenses: state.recurringExpenses,
+        debts: state.debts,
+        monthlyIncome: state.monthlyIncome,
+        selectedCurrency: state.selectedCurrency,
+        initialBalance: state.initialBalance
+      };
+      dataUtils.exportToJSON(saveData, 'sauvegarde');
+      showNotification('', 'success'); // Affiche uniquement l'icône verte
+    },
 
     exportExpensesToCSV: () => {
       dataUtils.exportToCSV(state.expenses, 'expenses');
@@ -1069,6 +1162,7 @@ const useFinanceManager = () => {
   return {
     state,
     actions,
+    dispatch,
     computedValues,
     filteredAndSortedExpenses,
     paginatedExpenses,
