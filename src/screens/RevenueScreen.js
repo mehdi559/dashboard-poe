@@ -183,13 +183,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
             </h1>
             
             <div className="flex items-center space-x-2">
-              <Button
-                onClick={() => actions.toggleModal('revenue', true)}
-                className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
-              >
-                <Icons.Plus className="h-4 w-4" />
-                <span>{t('addRevenue')}</span>
-              </Button>
+              {/* Bouton 'Ajouter des revenus' supprimé */}
             </div>
           </div>
           
@@ -619,7 +613,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                 </div>
                 <div className="lg:col-span-2">
                   <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('goalsWithImpact')}</h3>
-                  <div className="space-y-4">
+                  <div className="max-h-[20rem] overflow-y-auto space-y-4">
                     {computedValues.savingsForSelectedMonth.map(goal => {
                       const progress = (goal.currentAmount / goal.targetAmount) * 100;
                       const segments = 10;
@@ -836,76 +830,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
               </div>
             </div>
 
-            {/* Suggestions d'allocation */}
-            <div className={`${theme.card} rounded-xl border ${theme.border} p-6`}>
-              <h3 className={`text-xl font-bold ${theme.text} mb-4 flex items-center`}>
-                <Icons.PieChart className="h-6 w-6 mr-2 text-indigo-500" />
-                {t('recommendedAllocation')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  {
-                    key: 'emergency',
-                    name: t('emergencyFund'),
-                    recommended: state.monthlyIncome * 6,
-                    current: state.savingsGoals.find(g => g.name.toLowerCase().includes('urgence'))?.currentAmount || 0,
-                    priority: 1
-                  },
-                  {
-                    key: 'vacation',
-                    name: t('vacation'),
-                    recommended: state.monthlyIncome * 0.1 * 12,
-                    current: state.savingsGoals.find(g => g.name.toLowerCase().includes('vacances'))?.currentAmount || 0,
-                    priority: 3
-                  },
-                  {
-                    key: 'retirement',
-                    name: t('retirement'),
-                    recommended: state.monthlyIncome * 0.15 * 12,
-                    current: state.savingsGoals.find(g => g.name.toLowerCase().includes('retraite'))?.currentAmount || 0,
-                    priority: 2
-                  }
-                ].map((allocation) => {
-                  const completionRate = (allocation.current / allocation.recommended) * 100;
-                  return (
-                    <div key={allocation.key} className={`p-4 rounded-lg ${theme.bg} border ${theme.border}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className={`font-semibold ${theme.text}`}>{allocation.name}</h4>
-                        <div className={`px-2 py-1 rounded-full text-xs font-bold ${
-                          allocation.priority === 1 ? 'bg-red-100 text-red-800' :
-                          allocation.priority === 2 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {t('priority')} {allocation.priority}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className={theme.textSecondary}>{t('current')}</span>
-                          <span className={theme.text}>{formatCurrency(allocation.current)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className={theme.textSecondary}>{t('recommended')}</span>
-                          <span className={theme.text}>{formatCurrency(allocation.recommended)}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${
-                              completionRate >= 100 ? 'bg-green-500' :
-                              completionRate >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${Math.min(completionRate, 100)}%` }}
-                          ></div>
-                        </div>
-                        <p className={`text-xs ${theme.textSecondary}`}>
-                          {completionRate.toFixed(1)}% {t('completed')}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+
             
             {state.savingsGoals.length === 0 && (
               <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>

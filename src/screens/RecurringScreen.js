@@ -223,7 +223,7 @@ const RecurringScreen = memo(({ financeManager, theme, t }) => {
                 disabled={state.loading}
                 loading={state.loading}
               >
-                {state.editingItem ? t('update') : t('add')}
+                {t('add')}
               </Button>
               {state.editingItem && (
                 <Button

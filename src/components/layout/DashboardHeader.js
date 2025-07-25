@@ -1,6 +1,8 @@
 import React, { memo, useMemo, useState } from 'react';
 import * as Icons from 'lucide-react';
 import ThemeSelector from '../ui/ThemeSelector';
+import ResetAppModal from '../modals/ResetAppModal';
+import { StepButtons } from '../ui/Button';
 
 const DashboardHeader = memo(({ financeManager, theme, t }) => {
   const { state, actions, getMonthNavigation, getMonthDisplayName } = financeManager;
@@ -9,6 +11,11 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
   // Hooks pour l'édition du nom utilisateur
   const [showUserEdit, setShowUserEdit] = useState(false);
   const [userInput, setUserInput] = useState(state.userName || '');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
   // Fonction pour forcer la majuscule sur la première lettre
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
   
@@ -20,6 +27,71 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
     if (state.language === 'es') return 'Hola';
     return 'Hello';
   }, [state.language]);
+
+  // Mois en français
+  const months = [
+    'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin',
+    'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'
+  ];
+
+  // Générer les jours du mois sélectionné
+  const getDaysInMonth = (year, month) => {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const days = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(i);
+    }
+    return days;
+  };
+
+  const days = getDaysInMonth(selectedYear, selectedMonth);
+
+  const handleMonthSelect = (month) => {
+    setSelectedMonth(month);
+    const monthStr = month.toString().padStart(2, '0');
+    actions.setSelectedMonth(`${selectedYear}-${monthStr}`);
+  };
+
+  const handleDaySelect = (day) => {
+    const monthStr = selectedMonth.toString().padStart(2, '0');
+    const dayStr = day.toString().padStart(2, '0');
+    // Ici tu peux ajouter la logique pour sélectionner un jour spécifique
+    // actions.setSelectedDate(`${selectedYear}-${monthStr}-${dayStr}`);
+    // Le calendrier reste ouvert - pas de setShowDatePicker(false)
+  };
+
+  const handleYearChange = (direction) => {
+    const newYear = selectedYear + direction;
+    setSelectedYear(newYear);
+    const monthStr = selectedMonth.toString().padStart(2, '0');
+    actions.setSelectedMonth(`${newYear}-${monthStr}`);
+  };
+
+  // Fermer le calendrier avec Échap
+  React.useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && showDatePicker) {
+        setShowDatePicker(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [showDatePicker]);
+
+  // Fermer en cliquant en dehors
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showDatePicker && !e.target.closest('.date-picker-container')) {
+        setShowDatePicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDatePicker]);
+
+  console.log('LANG:', state.language, 'resetAppTitle:', t('resetAppTitle'), 'currency:', t('currency'));
 
   return (
     <header className={`fixed top-0 ${state.sidebarCollapsed ? 'left-16' : 'left-64'} right-0 h-20 z-20 backdrop-blur-xl ${
@@ -63,11 +135,15 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
               <Icons.ChevronLeft className="h-5 w-5 group-hover:scale-110 transition-transform" />
             </button>
             
-            <div className={`px-6 py-3 backdrop-blur-sm rounded-2xl border shadow-lg group hover:shadow-${theme.primary.replace('text-', '')}-500/25 transition-all duration-300 ${
-              theme.name === 'dark'
-                ? 'bg-gradient-to-r from-blue-900/30 to-purple-900/30 border-blue-500/20' 
-                : 'bg-gradient-to-r from-' + theme.primary.replace('text-', '') + '-50/80 to-' + theme.primary.replace('text-', '') + '-100/80 border-' + theme.primary.replace('text-', '') + '-300/30'
-            }`}>
+            <div 
+              className={`px-6 py-3 backdrop-blur-sm rounded-2xl border shadow-lg group hover:shadow-${theme.primary.replace('text-', '')}-500/25 transition-all duration-300 cursor-pointer ${
+                theme.name === 'dark'
+                  ? 'bg-gradient-to-r from-blue-900/30 to-purple-900/30 border-blue-500/20' 
+                  : 'bg-gradient-to-r from-' + theme.primary.replace('text-', '') + '-50/80 to-' + theme.primary.replace('text-', '') + '-100/80 border-' + theme.primary.replace('text-', '') + '-300/30'
+              }`}
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              style={{ position: 'relative' }}
+            >
               <div className={`text-sm font-bold group-hover:scale-105 transform duration-200 ${theme.text}`}>
                 {/* Mois avec majuscule */}
                 {(() => {
@@ -79,6 +155,69 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
                 {monthNav.isCurrentMonth ? t('currentMonth') : 
                  monthNav.isPastMonth ? t('pastMonth') : t('futureMonth')}
               </div>
+              
+              {showDatePicker && (
+                <div 
+                  className="date-picker-container absolute top-full left-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Année avec flèches */}
+                  <div className={`p-4 border-b border-gray-200 dark:border-gray-700 ${
+                    theme.name === 'dark' ? 'bg-gray-800' : 'bg-gray-50'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => handleYearChange(-1)}
+                        className={`p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
+                          theme.name === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`}
+                      >
+                        <Icons.ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <h3 className={`font-semibold text-lg ${theme.text}`}>{selectedYear}</h3>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleYearChange(1)}
+                          className={`p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
+                            theme.name === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                          }`}
+                        >
+                          <Icons.ChevronRight className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setShowDatePicker(false)}
+                          className={`p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors ${
+                            theme.name === 'dark' ? 'text-gray-300 hover:text-red-400' : 'text-gray-600 hover:text-red-500'
+                          }`}
+                          title="Fermer"
+                        >
+                          <Icons.X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Mois horizontalement */}
+                  <div className="p-4">
+                    <div className="grid grid-cols-6 gap-1">
+                      {months.map((month, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleMonthSelect(index + 1)}
+                          className={`px-2 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            selectedMonth === index + 1
+                              ? 'bg-blue-500 text-white'
+                              : theme.name === 'dark'
+                                ? 'text-gray-300 hover:bg-gray-700'
+                                : 'text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {month}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             <button
@@ -104,6 +243,15 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
                 {t('today')}
               </button>
             )}
+          </div>
+          {/* Boutons Précédent/Suivant */}
+          <div className="ml-4">
+            <StepButtons 
+              onPrev={() => financeManager.dispatch({ type: 'UNDO' })}
+              onNext={() => financeManager.dispatch({ type: 'REDO' })}
+              disabledPrev={(financeManager.state.undoStack || []).length === 0}
+              disabledNext={(financeManager.state.redoStack || []).length === 0}
+            />
           </div>
         </div>
 
@@ -230,6 +378,31 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
                         <div className="text-xs text-gray-500">{t('manageCurrencies')}</div>
                       </div>
                     </button>
+                    {/* Sauvegarder */}
+                    <button
+                      onClick={actions.saveData}
+                      className="w-full text-left px-4 py-3 rounded-xl text-sm hover:bg-blue-800/50 text-blue-400 hover:text-white transition-all duration-200 group flex items-center space-x-3"
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
+                        <Icons.Save className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{t('saveData')}</div>
+                      </div>
+                    </button>
+                    {/* Réinitialiser l'application */}
+                    <button
+                      onClick={() => { setShowResetModal(true); setShowSettings(false); }}
+                      className="w-full text-left px-4 py-3 rounded-xl text-sm hover:bg-red-800/50 text-red-400 hover:text-white transition-all duration-200 group flex items-center space-x-3"
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-pink-600 rounded-lg flex items-center justify-center">
+                        <Icons.RefreshCw className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{t('resetAppTitle')}</div>
+                        <div className="text-xs text-gray-500">{t('resetAppMessage')}</div>
+                      </div>
+                    </button>
                   </div>
                 </div>
               </>
@@ -285,6 +458,33 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
           </div>
         </div>
       </div>
+      {/* Affichage global de la modale de réinitialisation */}
+      <ResetAppModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onConfirm={() => {
+          localStorage.clear();
+          if (window.indexedDB) {
+            const dbs = [];
+            const req = window.indexedDB.webkitGetDatabaseNames ? window.indexedDB.webkitGetDatabaseNames() : window.indexedDB.databases();
+            (req.then ? req : new Promise((resolve) => { req.onsuccess = () => resolve(req.result); })).then((names) => {
+              (names || []).forEach((dbInfo) => {
+                const name = dbInfo.name || dbInfo;
+                window.indexedDB.deleteDatabase(name);
+              });
+              setShowResetModal(false);
+              window.location.reload();
+            });
+          } else {
+            setShowResetModal(false);
+            window.location.reload();
+          }
+        }}
+        title={t('resetAppTitle')}
+        message={t('resetAppMessage')}
+        cancelLabel={t('resetAppCancel')}
+        confirmLabel={t('resetAppConfirm')}
+      />
     </header>
   );
 });

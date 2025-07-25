@@ -569,7 +569,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                   disabled={state.loading}
                   loading={state.loading}
                 >
-                  {t('addRecurringExpense')}
+                  {t('add')}
                 </Button>
               </form>
             </div>

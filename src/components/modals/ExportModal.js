@@ -3,7 +3,7 @@ import * as Icons from 'lucide-react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import ReportGenerator from '../../utils/ReportGenerator';
-import ExcelExportEngine from '../../utils/ExcelExportEngine';
+import { ExcelExportEngine } from '../../utils/ExcelExportEngine';
 import { testExcelExport } from '../../utils/testExcelExport';
 
 const ExportModal = memo(({ financeManager, theme, t }) => {
@@ -13,6 +13,10 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  // 🔧 NOUVEAUX ÉTATS POUR EXCEL v3.0
+  const [selectedTemplate, setSelectedTemplate] = useState('comprehensive');
+  const [selectedChartTypes, setSelectedChartTypes] = useState(['pie', 'column', 'line']);
+  const [selectedTheme, setSelectedTheme] = useState('green');
 
   // Régénérer l'aperçu quand le type de rapport change
   useEffect(() => {
@@ -243,29 +247,35 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
       };
 
       if (selectedReport === 'excel') {
-        // Export Excel Premium avec toutes les données importantes
+        // Données complètes pour v3.0
         const excelData = {
           expenses: reportData.data.currentMonthExpenses,
           categories: reportData.data.categories,
           totalBudget: reportData.data.totalBudget,
           totalSpent: reportData.data.totalSpent,
           selectedMonth: reportData.data.selectedMonth,
-          userName: reportData.data.userName,
-          language: reportData.data.language,
-          // ✅ AJOUT : Données importantes manquantes
-          monthlyIncome: state.monthlyIncome,
+          userName: reportData.data.userName || 'Utilisateur',
+          language: reportData.data.language || 'fr',
+          monthlyIncome: state.monthlyIncome || 0,
           savingsRate: reportData.data.savingsRate,
-          computedValues: computedValues,
-          savingsGoals: state.savingsGoals,
-          debts: state.debts,
-          recurringExpenses: state.recurringExpenses
+          savingsGoals: state.savingsGoals || [],
+          debts: state.debts || [],
+          recurringExpenses: state.recurringExpenses || []
         };
-        
-        const result = await ExcelExportEngine.exportProfessionalBudget(excelData);
+        // Options avancées v3.0
+        const options = {
+          template: selectedTemplate,
+          chartTypes: selectedChartTypes,
+          theme: selectedTheme,
+          language: state.language, // Utilise la langue de l'interface
+          enableCache: false  // 🔧 Désactivé temporairement pour éviter le cache
+        };
+        console.log('LANGUE PASSEE A L EXPORT EXCEL :', options.language);
+        const result = await ExcelExportEngine.exportProfessionalBudget(excelData, options);
         if (result.success) {
-          showNotification(`Export Excel réussi: ${result.fileName}`, 'success');
+          showNotification(`✅ Export Excel réussi: ${result.fileName}`, 'success');
         } else {
-          showNotification('Erreur lors de l\'export Excel', 'error');
+          showNotification(`❌ Erreur export Excel: ${result.error}`, 'error');
         }
       } else if (selectedFormat === 'html') {
         const htmlResult = await ReportGenerator.exportHTML(reportData);
@@ -420,24 +430,104 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
 
         {/* Info Excel Premium */}
         {selectedReport === 'excel' && (
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center space-x-2 mb-2">
-              <Icons.FileSpreadsheet className="h-5 w-5 text-blue-600" />
-              <h4 className="font-medium text-blue-800 dark:text-blue-200">{t('exportExcelPremium')}</h4>
+          <>
+            <div className="mb-4">
+              <h4 className={`font-medium ${theme.text} mb-3`}>{t('excelTemplate')}</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  { key: 'comprehensive', name: t('excelComplet'), desc: t('excelCompletDesc') }
+                ].map((template) => (
+                  <button
+                    key={template.key}
+                    onClick={() => setSelectedTemplate(template.key)}
+                    className={`p-3 rounded-lg border text-left transition-all ${
+                      selectedTemplate === template.key
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <div className="font-medium">{template.name}</div>
+                    <div className="text-sm text-gray-500 mt-1">{template.desc}</div>
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              {t('excelReportIncludes')}
-            </p>
-            <ul className="text-xs text-blue-600 dark:text-blue-400 mt-2 space-y-1">
-              <li>• {t('excelSheet1')}</li>
-              <li>• {t('excelSheet2')}</li>
-              <li>• {t('excelSheet3')}</li>
-              <li>• {t('excelSheet4')}</li>
-              <li>• {t('excelSheet5')}</li>
-            </ul>
-            
-
-          </div>
+            <div className="mb-4">
+              <h4 className={`font-medium ${theme.text} mb-3`}>{t('excelTypesOfCharts')}</h4>
+              <div className="flex flex-wrap gap-3">
+                {[
+                  { key: 'pie', label: t('excelChartPie') },
+                  { key: 'column', label: t('excelChartColumn') },
+                  { key: 'line', label: t('excelChartLine') }
+                ].map(chart => (
+                  <label key={chart.key} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedChartTypes.includes(chart.key)}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setSelectedChartTypes([...selectedChartTypes, chart.key]);
+                        } else {
+                          setSelectedChartTypes(selectedChartTypes.filter(t => t !== chart.key));
+                        }
+                      }}
+                      className="accent-blue-600"
+                    />
+                    <span>{chart.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="mb-4">
+              <h4 className={`font-medium ${theme.text} mb-3`}>{t('excelThemeColor')}</h4>
+              <select
+                value={selectedTheme}
+                onChange={e => setSelectedTheme(e.target.value)}
+                className="p-2 rounded border border-gray-300 dark:border-gray-700"
+              >
+                <option value="green">🟢</option>
+                <option value="blue">🔵</option>
+                <option value="purple">🟣</option>
+                <option value="orange">🟠</option>
+              </select>
+            </div>
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center space-x-2 mb-2">
+                <Icons.FileSpreadsheet className="h-5 w-5 text-blue-600" />
+                <h4 className="font-medium text-blue-800 dark:text-blue-200">
+                  {t('excelTemplatesTitle')}
+                </h4>
+              </div>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                {t('excelTemplatesDesc')}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                    {t('excelFeaturesTitle')}
+                  </div>
+                  <ul className="text-blue-600 dark:text-blue-400 space-y-1">
+                    <li>• {t('excelFeatureDesign')}</li>
+                    <li>• {t('excelFeatureCharts')}</li>
+                    <li>• {t('excelFeatureFormulas')}</li>
+                    <li>• {t('excelFeatureAI')}</li>
+                  </ul>
+                </div>
+                <div>
+                  <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                    {t('excelAvailableTemplates')}
+                  </div>
+                  <ul className="text-blue-600 dark:text-blue-400 space-y-1">
+                    <li>• {t('excelStandard')} (recommandé)</li>
+                    <li>• {t('excelMinimal')}</li>
+                    <li>• {t('excelAnalytique')}</li>
+                    <li>• {t('excelComplet')}</li>
+                    <li>• {t('excelExecutif')}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
         {/* Actions */}

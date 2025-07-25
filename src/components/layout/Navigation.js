@@ -10,7 +10,7 @@ const Navigation = memo(({ financeManager, theme, t }) => {
     { id: 'dashboard', name: t('dashboard'), icon: Icons.Home, gradient: 'from-blue-500 to-cyan-500', notifications: 0 },
     { id: 'budget', name: t('budget'), icon: Icons.Target, gradient: 'from-purple-500 to-pink-500', notifications: 0 },
     { id: 'expenses', name: t('expenses'), icon: Icons.CreditCard, gradient: 'from-red-500 to-orange-500', notifications: 3 },
-    { id: 'revenue', name: t('revenue'), icon: Icons.DollarSign, gradient: 'from-emerald-500 to-teal-500', notifications: 0 },
+    { id: 'revenue', name: t('revenue'), icon: Icons.Coins, gradient: 'from-emerald-500 to-teal-500', notifications: 0 },
     { id: 'calendar', name: t('calendar'), icon: Icons.Calendar, gradient: 'from-indigo-500 to-purple-500', notifications: 1 },
     { id: 'debts', name: t('debts'), icon: Icons.AlertCircle, gradient: 'from-yellow-500 to-red-500', notifications: 2 },
     { id: 'tools', name: t('tools'), icon: Icons.Calculator, gradient: 'from-orange-500 to-red-500', notifications: 0 },

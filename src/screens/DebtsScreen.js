@@ -372,8 +372,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                       <div className="mb-3">
                         <div className="flex justify-between text-sm mb-1">
                           <span className={theme.textSecondary}>{t('repaymentProgress')}</span>
-                          <span className={`font-medium text-green-600`}>{progress.toFixed(1)}%</span>
-                        </div>
+                          <span className={`font-medium text-green-600`}>{(progress || 0).toFixed(1)}%</span>                        </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                           <div
                             className="bg-green-500 h-2 rounded-full transition-all"
@@ -405,8 +404,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                           />
                         </div>
                         <p className={`text-xs ${theme.textSecondary} mt-1`}>
-                          {debt.monthProgress.toFixed(1)}% {t('ofMinimumPayment')}
-                        </p>
+                        {(debt?.monthProgress ?? 0).toFixed(1)}% {t('ofMinimumPayment')}                        </p>
                       </div>
                     )}
                     
@@ -621,8 +619,7 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
             <div>
               <span className={theme.textSecondary}>{t('debtToIncomeRatio')}</span>
               <div className={`font-bold ${healthScore.debtToIncomeRatio > 36 ? 'text-red-600' : 'text-green-600'}`}>
-                {healthScore.debtToIncomeRatio.toFixed(1)}%
-              </div>
+              {(healthScore?.debtToIncomeRatio ?? 0).toFixed(1)}%              </div>
             </div>
             <div>
               <span className={theme.textSecondary}>{t('numberOfDebts')}</span>

@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import LoadingSpinner from './LoadingSpinner';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Button Component
 const Button = memo(({
@@ -44,5 +45,19 @@ const Button = memo(({
     </button>
   );
 });
+
+// Composant pour les boutons Avant et Après
+export function StepButtons({ onPrev, onNext, disabledPrev, disabledNext }) {
+  return (
+    <div className="flex space-x-2">
+      <Button onClick={onPrev} disabled={disabledPrev} variant="outline" aria-label="Précédent">
+        <ChevronLeft className="h-5 w-5" />
+      </Button>
+      <Button onClick={onNext} disabled={disabledNext} variant="primary" aria-label="Suivant">
+        <ChevronRight className="h-5 w-5" />
+      </Button>
+    </div>
+  );
+}
 
 export default Button; 

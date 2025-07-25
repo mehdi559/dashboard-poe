@@ -836,115 +836,176 @@ class ReportGenerator {
       
       console.log('📄 HTML généré:', html.substring(0, 200) + '...');
       
-      // Utiliser une approche simple avec window.print() comme fallback
-      console.log('📄 Tentative d\'export PDF...');
-      
       const timestamp = new Date().toISOString().split('T')[0];
       const fileName = `Rapport-${reportData.type}-${timestamp}.pdf`;
       
-      console.log('📄 Configuration PDF...');
+      // === MÉTHODE 1: Charger html2pdf.js dynamiquement ===
+      if (typeof window.html2pdf === 'undefined') {
+        console.log('📦 Chargement de html2pdf.js...');
+        
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        document.head.appendChild(script);
+        
+        // Attendre que html2pdf soit chargé
+        await new Promise((resolve, reject) => {
+          script.onload = () => {
+            console.log('✅ html2pdf.js chargé avec succès');
+            resolve();
+          };
+          script.onerror = () => {
+            console.warn('⚠️ Échec du chargement html2pdf.js');
+            reject(new Error('html2pdf.js non disponible'));
+          };
+        });
+      }
       
-      // Créer un élément temporaire pour le HTML
+      // Créer élément temporaire
       const element = document.createElement('div');
       element.innerHTML = html;
       element.style.position = 'absolute';
       element.style.left = '-9999px';
-      element.style.top = '-9999px';
       element.style.width = '210mm';
-      element.style.height = 'auto';
       element.style.backgroundColor = 'white';
       element.style.padding = '20px';
+      element.style.fontFamily = 'Arial, sans-serif';
       document.body.appendChild(element);
       
-      console.log('📄 Génération PDF en cours...');
+      // Attendre le rendu
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Attendre que l'élément soit complètement rendu
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Essayer d'abord avec html2pdf.js si disponible
       try {
-        if (typeof window.html2pdf !== 'undefined') {
-          console.log('📄 Utilisation de html2pdf.js...');
-          await window.html2pdf().set({
-            margin: [0.5, 0.5, 0.5, 0.5],
-            filename: fileName,
-            image: { type: 'jpeg', quality: 1 },
-            html2canvas: { 
-              scale: 2,
-              useCORS: true,
-              allowTaint: true,
-              backgroundColor: '#ffffff'
-            },
-            jsPDF: { 
-              unit: 'mm', 
-              format: 'a4', 
-              orientation: 'portrait',
-              compress: true
-            }
-          }).from(element).save();
-        } else {
-          // Fallback: ouvrir dans une nouvelle fenêtre pour impression
-          console.log('📄 Utilisation du fallback print...');
-          const printWindow = window.open('', '_blank');
-          printWindow.document.write(`
-            <html>
-              <head>
-                <title>${fileName}</title>
-                <style>
-                  @media print {
-                    body { margin: 0; padding: 0; }
-                    .container { max-width: none; margin: 0; padding: 1rem; }
-                  }
-                </style>
-              </head>
-              <body>${html}</body>
-            </html>
-          `);
-          printWindow.document.close();
-          printWindow.focus();
-          
-          // Attendre que la page soit chargée puis imprimer
-          setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-          }, 1000);
-      } catch (error) {
-        console.error('Erreur avec html2pdf.js, utilisation du fallback:', error);
+        console.log('📄 Génération PDF avec html2pdf.js...');
         
-        // Fallback: ouvrir dans une nouvelle fenêtre pour impression
-        const printWindow = window.open('', '_blank');
+        await window.html2pdf().set({
+          margin: [10, 10, 10, 10],
+          filename: fileName,
+          image: { 
+            type: 'jpeg', 
+            quality: 0.98 
+          },
+          html2canvas: { 
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            letterRendering: true,
+            logging: false
+          },
+          jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'portrait',
+            compress: true
+          },
+          pagebreak: { 
+            mode: ['avoid-all', 'css', 'legacy'] 
+          }
+        }).from(element).save();
+        
+        console.log('✅ PDF généré avec html2pdf.js');
+        document.body.removeChild(element);
+        return { success: true, fileName };
+        
+      } catch (pdfError) {
+        console.warn('⚠️ html2pdf.js a échoué:', pdfError);
+        
+        // === MÉTHODE 2: Fallback window.print() ===
+        console.log('📄 Utilisation du fallback print...');
+        
+        const printWindow = window.open('', '_blank', 'width=1200,height=800');
+        
+        if (!printWindow) {
+          throw new Error("Popup blocked");
+        }
+        
         printWindow.document.write(`
+          <!DOCTYPE html>
           <html>
             <head>
+              <meta charset="UTF-8">
               <title>${fileName}</title>
               <style>
+                @page { 
+                  margin: 0.5in; 
+                  size: A4;
+                }
+                body { 
+                  font-family: Arial, sans-serif;
+                  margin: 0;
+                  padding: 0;
+                  line-height: 1.4;
+                }
+                .container { 
+                  max-width: none; 
+                  margin: 0; 
+                  padding: 0;
+                }
                 @media print {
-                  body { margin: 0; padding: 0; }
-                  .container { max-width: none; margin: 0; padding: 1rem; }
+                  body { 
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                  }
                 }
               </style>
             </head>
-            <body>${html}</body>
+            <body>
+              ${html}
+              <script>
+                window.onload = function() {
+                  setTimeout(function() {
+                    window.print();
+                    setTimeout(function() {
+                      window.close();
+                    }, 1000);
+                  }, 500);
+                };
+              </script>
+            </body>
           </html>
         `);
+        
         printWindow.document.close();
         printWindow.focus();
         
-        // Attendre que la page soit chargée puis imprimer
-        setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
-        }, 1000);
+        console.log('✅ Fenêtre d\'impression ouverte');
+        document.body.removeChild(element);
+        return { success: true, fileName };
       }
       
-      // Nettoyer
-      document.body.removeChild(element);
-      
-      console.log('✅ Export PDF réussi:', fileName);
-      return { success: true, fileName };
     } catch (error) {
       console.error('❌ Erreur export PDF:', error);
-      return { success: false, error: error.message };
+      
+      // === MÉTHODE 3: Dernière tentative avec jsPDF ===
+      try {
+        if (typeof window.jsPDF !== 'undefined') {
+          console.log('📄 Tentative avec jsPDF...');
+          
+          const { jsPDF } = window.jsPDF;
+          const doc = new jsPDF('p', 'mm', 'a4');
+          
+         // Texte simple si tout le reste échoue
+doc.setFontSize(16);
+doc.text('Rapport Budget', 20, 30);
+doc.setFontSize(12);
+doc.text('Rapport généré le ' + new Date().toLocaleDateString(), 20, 50);
+doc.text('Erreur lors de la génération HTML complète', 20, 70);
+doc.text('Veuillez utiliser l\'export HTML pour un rapport complet', 20, 90);
+
+const fallbackFileName = `Rapport-${reportData.type}-${new Date().toISOString().split('T')[0]}.pdf`;
+doc.save(fallbackFileName);
+
+console.log('✅ PDF de secours généré avec jsPDF');
+return { success: true, fileName: fallbackFileName };
+} 
+} catch (jsPdfError) {
+console.error('❌ jsPDF aussi a échoué:', jsPdfError);
+} 
+      
+      return { 
+        success: false, 
+        error: 'PDF impossible - essayez d\'autoriser les popups ou utilisez Export HTML' 
+      };
     }
   }
 

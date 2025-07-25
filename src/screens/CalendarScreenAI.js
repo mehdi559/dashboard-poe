@@ -437,7 +437,6 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
   // Définition des vues disponibles
   const views = {
     calendar: { icon: Icons.Calendar, label: t('calendar') },
-    heatmap: { icon: Icons.Activity, label: t('heatmap') },
     predictions: { icon: Icons.Brain, label: t('predictions') },
     planner: { icon: Icons.Target, label: t('planner') }
   };
@@ -679,182 +678,6 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
           </div>
         )}
 
-        {activeView === 'heatmap' && (
-          <div className={`${theme?.card || ''} rounded-xl border ${theme?.border || ''} p-3 md:p-4 animate-slide-in-right`}>
-            <h3 className={`text-base md:text-lg font-semibold ${theme?.text || ''} mb-3 md:mb-4 flex items-center animate-fade-in`}>
-              <Icons.Activity className="h-4 w-4 md:h-5 md:w-5 mr-2 text-purple-500 animate-pulse" />
-              <span className="hidden sm:inline">{t('heatmapTitle')}</span>
-              <span className="sm:hidden">{t('heatmapShort')}</span>
-            </h3>
-            
-            {/* Heatmap 24h/7j complète avec animations - Responsive */}
-            <div className="space-y-3 md:space-y-4 animate-slide-up" style={{ animationDelay: '200ms' }}>
-              {/* En-têtes des heures - Responsive */}
-              <div className="grid grid-cols-8 gap-1 animate-slide-down overflow-x-auto">
-                <div className="text-xs font-medium text-gray-500 p-1 md:p-2 min-w-[60px]">{t('dayHour')}</div>
-                {Array.from({ length: 24 }, (_, i) => (
-                  <div key={i} className="text-xs font-medium text-gray-500 p-1 text-center animate-fade-in min-w-[30px] md:min-w-[40px]"
-                       style={{ animationDelay: `${300 + i * 10}ms` }}>
-                    {i.toString().padStart(2, '0')}h
-                  </div>
-                ))}
-              </div>
-              
-              {/* Grille de la heatmap avec animations - Responsive */}
-              <div className="space-y-1 overflow-x-auto">
-                {[t('monday'), t('tuesday'), t('wednesday'), t('thursday'), t('friday'), t('saturday'), t('sunday')].map((dayName, dayIndex) => {
-                  const dayKey = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][dayIndex];
-                  const dayData = aiAnalysis.dailyPatterns[dayKey];
-                  
-                  return (
-                    <div key={dayName} className="grid grid-cols-8 gap-1 animate-slide-in-left min-w-[600px]"
-                         style={{ animationDelay: `${400 + dayIndex * 100}ms` }}>
-                      <div className="text-xs font-medium text-gray-600 p-1 md:p-2 flex items-center animate-fade-in min-w-[60px]">
-                        {dayName}
-                      </div>
-                      {Array.from({ length: 24 }, (_, hour) => {
-                        // Simuler des données d'heures basées sur les patterns du jour
-                        const baseIntensity = dayData ? dayData.average / 100 : 0;
-                        const hourMultiplier = (() => {
-                          // Patterns typiques : pics le matin (8-10h), midi (12-14h), soir (18-20h)
-                          if (hour >= 8 && hour <= 10) return 1.5; // Matin
-                          if (hour >= 12 && hour <= 14) return 1.8; // Midi
-                          if (hour >= 18 && hour <= 20) return 2.0; // Soir
-                          if (hour >= 22 || hour <= 6) return 0.3; // Nuit
-                          return 1.0; // Autres heures
-                        })();
-                        
-                        const intensity = Math.min(baseIntensity * hourMultiplier, 1);
-                        const amount = dayData ? dayData.average * hourMultiplier : 0;
-                        
-                        return (
-                          <div
-                            key={hour}
-                            className={`h-6 md:h-8 rounded transition-all duration-300 cursor-pointer hover:scale-110 hover:shadow-lg min-w-[30px] md:min-w-[40px] ${
-                              intensity > 0.7 ? 'bg-red-500' :
-                              intensity > 0.4 ? 'bg-orange-400' :
-                              intensity > 0.2 ? 'bg-yellow-400' :
-                              intensity > 0.05 ? 'bg-green-400' :
-                              'bg-gray-100'
-                            }`}
-                            style={{ 
-                              opacity: intensity > 0 ? 0.3 + (intensity * 0.7) : 0.1,
-                              animationDelay: `${500 + dayIndex * 100 + hour * 5}ms`
-                            }}
-                            title={`${dayName} ${hour.toString().padStart(2, '0')}h: ${formatCurrency ? formatCurrency(amount) : `${amount.toFixed(0)}€`}`}
-                          />
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {/* Légende avec animation - Responsive */}
-              <div className="flex items-center justify-center space-x-2 md:space-x-4 mt-3 md:mt-4 animate-slide-up text-xs">
-                <div className="flex items-center space-x-1 animate-fade-in">
-                  <div className="w-3 h-3 bg-gray-100 rounded"></div>
-                  <span className="hidden sm:inline">{t('noActivity')}</span>
-                  <span className="sm:hidden">{t('none')}</span>
-                </div>
-                <div className="flex items-center space-x-1 animate-fade-in" style={{ animationDelay: '100ms' }}>
-                  <div className="w-3 h-3 bg-green-400 rounded"></div>
-                  <span className="hidden sm:inline">{t('low')}</span>
-                  <span className="sm:hidden">{t('low')}</span>
-                </div>
-                <div className="flex items-center space-x-1 animate-fade-in" style={{ animationDelay: '200ms' }}>
-                  <div className="w-3 h-3 bg-yellow-400 rounded"></div>
-                  <span className="hidden sm:inline">{t('moderate')}</span>
-                  <span className="sm:hidden">{t('moderate')}</span>
-                </div>
-                <div className="flex items-center space-x-1 animate-fade-in" style={{ animationDelay: '300ms' }}>
-                  <div className="w-3 h-3 bg-orange-400 rounded"></div>
-                  <span className="hidden sm:inline">{t('high')}</span>
-                  <span className="sm:hidden">{t('high')}</span>
-                </div>
-                <div className="flex items-center space-x-1 animate-fade-in" style={{ animationDelay: '400ms' }}>
-                  <div className="w-3 h-3 bg-red-500 rounded"></div>
-                  <span className="hidden sm:inline">{t('veryHigh')}</span>
-                  <span className="sm:hidden">{t('veryHigh')}</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Statistiques de la heatmap avec animations - Responsive */}
-            <div className="mt-4 md:mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 animate-slide-up" style={{ animationDelay: '600ms' }}>
-              {/* Heures de pointe */}
-              <div className={`p-2 md:p-3 rounded-lg border ${theme?.border || ''} bg-blue-50 dark:bg-blue-900/20 animate-fade-in hover:scale-105 transition-transform duration-300`}>
-                <h4 className="font-medium text-xs md:text-sm mb-2 flex items-center">
-                  <Icons.Clock className="h-3 w-3 md:h-4 md:w-4 mr-1 text-blue-500 animate-pulse" />
-                  {t('peakHours')}
-                </h4>
-                <div className="space-y-1">
-                  <div className="text-xs animate-fade-in" style={{ animationDelay: '100ms' }}>
-                    <span className="font-medium">{t('morning')}:</span> 8h-10h
-                  </div>
-                  <div className="text-xs animate-fade-in" style={{ animationDelay: '200ms' }}>
-                    <span className="font-medium">{t('noon')}:</span> 12h-14h
-                  </div>
-                  <div className="text-xs animate-fade-in" style={{ animationDelay: '300ms' }}>
-                    <span className="font-medium">{t('evening')}:</span> 18h-20h
-                  </div>
-                </div>
-              </div>
-              
-              {/* Jours les plus actifs */}
-              <div className={`p-2 md:p-3 rounded-lg border ${theme?.border || ''} bg-purple-50 dark:bg-purple-900/20 animate-fade-in hover:scale-105 transition-transform duration-300`}
-                   style={{ animationDelay: '200ms' }}>
-                <h4 className="font-medium text-xs md:text-sm mb-2 flex items-center">
-                  <Icons.Calendar className="h-3 w-3 md:h-4 md:w-4 mr-1 text-purple-500 animate-pulse" />
-                  {t('mostActiveDays')}
-                </h4>
-                <div className="space-y-1">
-                  {(() => {
-                    const sortedDays = Object.entries(aiAnalysis.dailyPatterns)
-                      .filter(([, data]) => data.average > 0)
-                      .sort(([, a], [, b]) => b.average - a.average)
-                      .slice(0, 3);
-                    
-                    return sortedDays.map(([day, data], index) => {
-                      const dayNames = [t('monday'), t('tuesday'), t('wednesday'), t('thursday'), t('friday'), t('saturday'), t('sunday')];
-                      const dayIndex = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].indexOf(day);
-                      return (
-                        <div key={day} className="text-xs flex justify-between animate-fade-in"
-                             style={{ animationDelay: `${300 + index * 100}ms` }}>
-                          <span className="truncate">{dayNames[dayIndex]}</span>
-                          <span className="font-medium ml-2">
-                            {formatCurrency ? formatCurrency(data.average) : `${data.average.toFixed(0)}€`}
-                          </span>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-              
-              {/* Recommandations */}
-              <div className={`p-2 md:p-3 rounded-lg border ${theme?.border || ''} bg-green-50 dark:bg-green-900/20 animate-fade-in hover:scale-105 transition-transform duration-300`}
-                   style={{ animationDelay: '400ms' }}>
-                <h4 className="font-medium text-xs md:text-sm mb-2 flex items-center">
-                  <Icons.Lightbulb className="h-3 w-3 md:h-4 md:w-4 mr-1 text-green-500 animate-pulse" />
-                  {t('recommendations')}
-                </h4>
-                <div className="space-y-1">
-                  <div className="text-xs animate-fade-in" style={{ animationDelay: '100ms' }}>
-                    • {t('avoidEveningPurchases')}
-                  </div>
-                  <div className="text-xs animate-fade-in" style={{ animationDelay: '200ms' }}>
-                    • {t('planMorningShopping')}
-                  </div>
-                  <div className="text-xs animate-fade-in" style={{ animationDelay: '300ms' }}>
-                    • {t('monitorWeekendSpending')}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {activeView === 'predictions' && (
           <div className={`${theme?.card || ''} rounded-xl border ${theme?.border || ''} p-3 md:p-4 animate-slide-in-right`}>
             <h3 className={`text-base md:text-lg font-semibold ${theme?.text || ''} mb-3 md:mb-4 flex items-center`}>
@@ -887,21 +710,21 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
                         return (
                           <div key={label} className="flex-1 flex flex-col items-center">
                             <div className="text-xs text-gray-600 mb-2">{label}</div>
-                            <div className="relative w-full">
+                            <div className="relative w-full flex items-end justify-center">
                               <div 
                                 className={`w-full rounded-t transition-all ${
                                   isPositive ? 'bg-green-500' : 'bg-red-500'
                                 }`}
                                 style={{ height: `${height}%` }}
                               ></div>
-                              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium">
-                                {formatCurrency ? formatCurrency(data.current) : `${data.current.toFixed(0)}€`}
-                              </div>
                             </div>
-                            <div className={`text-xs mt-1 ${
-                              isPositive ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {isPositive ? '+' : ''}{data.change.toFixed(1)}%
+                            <div className="flex flex-col items-center mt-2">
+                              <span className="text-xs font-medium text-gray-800 dark:text-gray-100">
+                                {formatCurrency ? formatCurrency(data.current) : `${data.current.toFixed(0)}€`}
+                              </span>
+                              <span className={`text-xs ${isPositive ? 'text-green-600' : 'text-red-600'} mt-0.5`}>
+                                {isPositive ? '+' : ''}{data.change.toFixed(1)}%
+                              </span>
                             </div>
                           </div>
                         );

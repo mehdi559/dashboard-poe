@@ -1,0 +1,84 @@
+{
+  "productInfo": {
+    "name": "Dashboard POE - Gestionnaire Financier avec IA",
+    "description": "Application de gestion financière personnelle moderne avec intelligence artificielle intégrée. Parfait pour suivre vos dépenses, revenus, dettes et épargnes avec des analyses avancées.",
+    "features": [
+      "📊 Dashboard financier complet et intuitif",
+      "💰 Gestion des dépenses et revenus en temps réel",
+      "📈 Rapports et analyses détaillés",
+      "🤖 Intelligence artificielle pour l'analyse financière",
+      "📅 Calendrier financier interactif",
+      "💳 Gestion des dettes et épargnes",
+      "📊 Export de rapports en PDF/Excel",
+      "🎨 Interface moderne et responsive",
+      "🌙 Mode sombre/clair",
+      "📱 Compatible macOS, Windows et Linux"
+    ],
+    "targetAudience": [
+      "Particuliers souhaitant gérer leurs finances",
+      "Freelances et entrepreneurs",
+      "Étudiants gérant leur budget",
+      "Familles organisant leurs finances"
+    ],
+    "benefits": [
+      "Gain de temps dans la gestion financière",
+      "Vue d'ensemble claire de vos finances",
+      "Prise de décisions éclairées",
+      "Réduction du stress financier",
+      "Atteinte d'objectifs financiers"
+    ],
+    "technicalSpecs": {
+      "platforms": ["macOS", "Windows", "Linux"],
+      "languages": ["Français", "Anglais"],
+      "fileSize": "~50MB",
+      "requirements": {
+        "macOS": "10.14+",
+        "Windows": "Windows 10+",
+        "Linux": "Ubuntu 18.04+"
+      }
+    },
+    "pricing": {
+      "suggestedPrice": "$19.99",
+      "currency": "USD",
+      "discounts": {
+        "bundle": "20% off for 3+ licenses"
+      }
+    },
+    "support": {
+      "email": "support@dashboardpoe.com",
+      "responseTime": "24-48 hours",
+      "updates": "Free lifetime updates",
+      "documentation": "Included"
+    }
+  },
+  "etsyListing": {
+    "title": "Dashboard POE - Gestionnaire Financier avec IA | macOS Windows Linux",
+    "tags": [
+      "gestionnaire financier",
+      "budget",
+      "finances personnelles",
+      "dashboard",
+      "intelligence artificielle",
+      "macos",
+      "windows",
+      "linux",
+      "application",
+      "logiciel",
+      "gestion d'argent",
+      "épargne",
+      "dépenses",
+      "revenus"
+    ],
+    "category": "Digital Downloads > Software",
+    "shipping": {
+      "type": "Digital Download",
+      "processingTime": "1-2 hours"
+    },
+    "images": [
+      "dashboard-main.png",
+      "reports-view.png",
+      "calendar-view.png",
+      "mobile-responsive.png"
+    ]
+  }
+} 

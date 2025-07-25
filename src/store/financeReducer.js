@@ -261,6 +261,7 @@ export const initialState = {
     editExpense: false,
     editDebt: false,
     payment: false,
+    editPayment: false,
     category: false,
     import: false,
     export: false,
@@ -329,6 +330,8 @@ export const ACTIONS = {
   UPDATE_DEBT: 'UPDATE_DEBT',
   DELETE_DEBT: 'DELETE_DEBT',
   RECORD_PAYMENT: 'RECORD_PAYMENT',
+  DELETE_PAYMENT: 'DELETE_PAYMENT',
+  UPDATE_PAYMENT: 'UPDATE_PAYMENT',
   TOGGLE_AUTO_DEBIT: 'TOGGLE_AUTO_DEBIT',
   TOGGLE_MODAL: 'TOGGLE_MODAL',
   SET_EDITING_ITEM: 'SET_EDITING_ITEM',
@@ -359,10 +362,57 @@ export const ACTIONS = {
   UPDATE_MONTHLY_INCOME: 'UPDATE_MONTHLY_INCOME',
   // Ajout : Action pour automatiser les revenus fixes
   PROCESS_RECURRING_REVENUES: 'PROCESS_RECURRING_REVENUES',
-  SET_INITIAL_BALANCE: 'SET_INITIAL_BALANCE'
+  SET_INITIAL_BALANCE: 'SET_INITIAL_BALANCE',
+  UNDO: 'UNDO',
+  REDO: 'REDO'
 };
 
+function isUndoableAction(type) {
+  // Liste des actions qui modifient les données (hors UI, notifications, etc.)
+  const nonUndoable = [
+    ACTIONS.ADD_NOTIFICATION, ACTIONS.REMOVE_NOTIFICATION,
+    ACTIONS.SET_LOADING, ACTIONS.SET_THEME, ACTIONS.SET_LANGUAGE, ACTIONS.SET_SHOW_BALANCES,
+    ACTIONS.SET_ACTIVE_TAB, ACTIONS.SET_SELECTED_MONTH, ACTIONS.SET_SELECTED_YEAR, ACTIONS.SET_SIDEBAR_COLLAPSED,
+    ACTIONS.TOGGLE_MODAL, ACTIONS.SET_EDITING_ITEM, ACTIONS.SET_SEARCH_TERM, ACTIONS.SET_CATEGORY_FILTER,
+    ACTIONS.SET_DATE_FILTER, ACTIONS.SET_SORT, ACTIONS.SET_PAGE, ACTIONS.UPDATE_FORM, ACTIONS.RESET_FORM,
+    ACTIONS.SET_ERROR, ACTIONS.CLEAR_ERROR
+  ];
+  return !nonUndoable.includes(type);
+}
+
 export const financeReducer = (state, action) => {
+  // Gestion UNDO/REDO
+  if (action.type === ACTIONS.UNDO) {
+    if (state.undoStack.length === 0) return state;
+    const prev = state.undoStack[state.undoStack.length - 1];
+    return {
+      ...prev,
+      redoStack: [...state.redoStack, { ...state, undoStack: state.undoStack.slice(0, -1) }].slice(-5),
+      undoStack: state.undoStack.slice(0, -1)
+    };
+  }
+  if (action.type === ACTIONS.REDO) {
+    if (state.redoStack.length === 0) return state;
+    const next = state.redoStack[state.redoStack.length - 1];
+    return {
+      ...next,
+      undoStack: [...state.undoStack, { ...state, redoStack: state.redoStack.slice(0, -1) }].slice(-5),
+      redoStack: state.redoStack.slice(0, -1)
+    };
+  }
+
+  // Pour chaque action métier, on sauvegarde l'état courant dans undoStack (max 5)
+  if (isUndoableAction(action.type)) {
+    const newUndoStack = [...(state.undoStack || []), { ...state, undoStack: undefined, redoStack: undefined }].slice(-5);
+    const newState = reducerCore({ ...state, undoStack: newUndoStack, redoStack: [] }, action);
+    return newState;
+  }
+  // Sinon, on traite normalement
+  return reducerCore(state, action);
+};
+
+// Séparation du coeur du reducer pour éviter la récursivité
+function reducerCore(state, action) {
   switch (action.type) {
     case ACTIONS.SET_LOADING:
       return { ...state, loading: action.payload };
@@ -774,6 +824,41 @@ export const financeReducer = (state, action) => {
                   amount: action.payload.amount,
                   description: action.payload.description || 'Paiement'
                 }]
+              }
+            : debt
+        )
+      };
+    case ACTIONS.DELETE_PAYMENT:
+      return {
+        ...state,
+        debts: state.debts.map(debt =>
+          debt.id === action.payload.debtId
+            ? {
+                ...debt,
+                balance: debt.balance + action.payload.amount, // Rembourser le paiement
+                paymentHistory: debt.paymentHistory.filter(payment => payment.id !== action.payload.paymentId)
+              }
+            : debt
+        )
+      };
+    case ACTIONS.UPDATE_PAYMENT:
+      return {
+        ...state,
+        debts: state.debts.map(debt =>
+          debt.id === action.payload.debtId
+            ? {
+                ...debt,
+                balance: debt.balance + action.payload.oldAmount - action.payload.newAmount, // Ajuster le solde
+                paymentHistory: debt.paymentHistory.map(payment =>
+                  payment.id === action.payload.paymentId
+                    ? {
+                        ...payment,
+                        amount: action.payload.newAmount,
+                        date: action.payload.date,
+                        description: action.payload.description
+                      }
+                    : payment
+                )
               }
             : debt
         )

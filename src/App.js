@@ -30,6 +30,7 @@ import DebtsScreen from './screens/DebtsScreen';
 import RevenueScreen from './screens/RevenueScreen';
 import ToolsScreen from './screens/ToolsScreen';
 import CalendarScreenAI from './screens/CalendarScreenAI';
+import WelcomeScreen from './screens/WelcomeScreen';
 
 // Import des modals
 import IncomeModal from './components/modals/IncomeModal';
@@ -38,6 +39,7 @@ import CategoryModal from './components/modals/CategoryModal';
 import EditExpenseModal from './components/modals/EditExpenseModal';
 import EditSavingModal from './components/modals/EditSavingModal';
 import PaymentModal from './components/modals/PaymentModal';
+import EditPaymentModal from './components/modals/EditPaymentModal';
 import EditDebtModal from './components/modals/EditDebtModal';
 import ExportModal from './components/modals/ExportModal';
 
@@ -108,6 +110,12 @@ import Chatbot from './components/Chatbot';
 const App = () => {
   const financeManager = useFinanceManager();
   const { state, actions } = financeManager;
+
+  // Splash screen state
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  // Fonction pour quitter le welcome screen
+  const handleStart = () => setShowWelcome(false);
 
   // Helper pour les traductions
   const t = useCallback((key, params = {}) => {
@@ -186,6 +194,10 @@ const App = () => {
     }
   }, [state.activeTab, financeManager, theme, t]);
 
+  if (showWelcome) {
+    return <WelcomeScreen financeManager={financeManager} theme={theme} t={t} onStart={handleStart} />;
+  }
+
   return (
     <div className={`min-h-screen ${theme.bg} transition-colors duration-300`}>
       {/* Loading Overlay */}
@@ -221,6 +233,7 @@ const App = () => {
       {state.modals.editExpense && <EditExpenseModal financeManager={financeManager} theme={theme} t={t} />}
       {state.modals.editSaving && <EditSavingModal financeManager={financeManager} theme={theme} t={t} />}
       {state.modals.payment && <PaymentModal financeManager={financeManager} theme={theme} t={t} />}
+      {state.modals.editPayment && <EditPaymentModal financeManager={financeManager} theme={theme} t={t} />}
       {state.modals.editDebt && <EditDebtModal financeManager={financeManager} theme={theme} t={t} />}
       
       {/* Export Modal */}

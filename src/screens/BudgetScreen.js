@@ -612,38 +612,23 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                       <Icons.Plus className="h-4 w-4" />
                       <span>{t('newCategory')}</span>
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="flex items-center space-x-2"
-                      onClick={() => {
-                        const optimizedBudgets = {};
-                        state.categories.forEach(cat => {
-                          const income = state.monthlyIncome || 3000;
-                          optimizedBudgets[cat.name] = income * 0.15; // 15% par défaut
-                        });
-                        actions.optimizeBudgets(optimizedBudgets);
-                      }}
-                    >
-                      <Icons.Zap className="h-4 w-4" />
-                      <span>{t('optimize')}</span>
-                    </Button>
                   </div>
                 </div>
                 
                 {/* Graphique des budgets */}
                 <div className="space-y-4">
                   {/* Liste détaillée des budgets (d'abord) */}
-                  <div className="space-y-4">
+                  <div className="max-h-[28rem] overflow-y-auto space-y-4">
                     {state.categories.map(category => {
                       const spent = computedValues.currentMonthExpenses
                         .filter(e => e.category === category.name)
                         .reduce((sum, e) => sum + e.amount, 0);
-                      const percentage = (spent / category.budget) * 100;
+                      const percentage = category.budget > 0 ? (spent / category.budget) * 100 : 0;
                       
                       return (
                         <div key={category.id} className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className={`font-medium ${theme.text}`}>{t(category.name)}</span>
+                            <span className={`font-medium ${theme.text}`}>{category.name}</span>
                             <div className="flex items-center space-x-2">
                               {editingCategoryId === category.id ? (
                                 <>
@@ -727,7 +712,7 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                             )}
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className={theme.textSecondary}>{percentage.toFixed(1)}% {t('used')}</span>
+                            <span className={theme.textSecondary}>{typeof percentage === 'number' && !isNaN(percentage) ? percentage.toFixed(1) : '0.0'}% {t('used')}</span>
                             <span className={theme.textSecondary}>
                               {formatCurrency(Math.max(0, category.budget - spent))} {t('remaining')}
                             </span>
@@ -758,13 +743,13 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                             return (
                               <div key={category.id} className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                  <span className={`font-medium text-sm ${theme.text}`}>{t(category.name)}</span>
+                                  <span className={`font-medium text-sm ${theme.text}`}>{category.name}</span>
                                   <div className="flex items-center space-x-2 text-xs">
                                     <span className={theme.textSecondary}>
                                       {formatCurrency(spent)} / {formatCurrency(category.budget)}
                                     </span>
                                     <span className={`font-medium ${percentage > 100 ? 'text-red-600' : percentage > 80 ? 'text-yellow-600' : 'text-green-600'}`}>
-                                      {percentage.toFixed(1)}%
+                                      {typeof percentage === 'number' && !isNaN(percentage) ? percentage.toFixed(1) : '0.0'}%
                                     </span>
                                   </div>
                                 </div>
@@ -883,11 +868,11 @@ const BudgetScreen = memo(({ financeManager, theme, t }) => {
                                     className="w-3 h-3 rounded-full" 
                                     style={{ backgroundColor: colors[index % colors.length] }}
                                   />
-                                  <span className={`font-medium ${theme.text}`}>{t(category.name)}</span>
+                                  <span className={`font-medium ${theme.text}`}>{category.name}</span>
                                 </div>
                                 <div className="text-right">
                                   <div className={`font-medium ${percentage > 100 ? 'text-red-600' : theme.text}`}>
-                                    {percentage.toFixed(1)}%
+                                    {typeof percentage === 'number' && !isNaN(percentage) ? percentage.toFixed(1) : '0.0'}%
                                   </div>
                                   <div className={`text-xs ${theme.textSecondary}`}>
                                     {formatCurrency(spent)}
