@@ -271,37 +271,37 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
         console.log('LANGUE PASSEE A L EXPORT EXCEL :', options.language);
         const result = await ExcelExportEngine.exportProfessionalBudget(excelData, options);
         if (result.success) {
-          // Export normal (navigateur)
-          const blob = new Blob([result.buffer], { 
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-          });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = result.fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          showNotification(`✅ Export Excel réussi: ${result.fileName}`, 'success');
+            // Export normal (navigateur)
+            const blob = new Blob([result.buffer], { 
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = result.fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showNotification(`✅ Export Excel réussi: ${result.fileName}`, 'success');
         } else {
           showNotification(`❌ Erreur export Excel: ${result.error}`, 'error');
         }
       } else if (selectedFormat === 'html') {
         const htmlResult = await ReportGenerator.exportHTML(reportData);
         if (htmlResult.success) {
-          // Export normal (navigateur)
-          // Télécharger le fichier HTML normalement
-          const blob = new Blob([htmlResult.html], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = htmlResult.fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
+            // Export normal (navigateur)
+            // Télécharger le fichier HTML normalement
+            const blob = new Blob([htmlResult.html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = htmlResult.fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
         } else {
           showNotification('Erreur lors de l\'export HTML', 'error');
         }
@@ -309,18 +309,18 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
         console.log('🔄 Tentative d\'export PDF...');
         const pdfResult = await ReportGenerator.exportPDF(reportData);
         if (pdfResult.success) {
-          // Export normal (navigateur)
-          // Télécharger le fichier PDF normalement
-          const blob = new Blob([pdfResult.buffer], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = pdfResult.fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          showNotification(`Export PDF réussi: ${pdfResult.fileName}`, 'success');
+            // Export normal (navigateur)
+            // Télécharger le fichier PDF normalement
+            const blob = new Blob([pdfResult.buffer], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = pdfResult.fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showNotification(`Export PDF réussi: ${pdfResult.fileName}`, 'success');
         } else {
           console.error('Erreur export PDF:', pdfResult.error);
           showNotification(`Erreur export PDF: ${pdfResult.error}`, 'error');
@@ -329,17 +329,17 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
           if (window.confirm('L\'export PDF a échoué. Voulez-vous essayer l\'export HTML à la place ?')) {
             const htmlResult = await ReportGenerator.exportHTML(reportData);
             if (htmlResult.success) {
-              // Télécharger le fichier HTML normalement (fallback)
-              const blob = new Blob([htmlResult.html], { type: 'text/html' });
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = htmlResult.fileName;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-              showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
+                // Télécharger le fichier HTML normalement (fallback)
+                const blob = new Blob([htmlResult.html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = htmlResult.fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
             } else {
               showNotification('Erreur lors de l\'export HTML', 'error');
             }
