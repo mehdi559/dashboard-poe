@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest]
+        platform: [ubuntu-latest, windows-latest, macos-latest]
 
     runs-on: ${{ matrix.platform }}
 
@@ -59,6 +59,8 @@ jobs:
           zip -r "My-Wallet-Windows-v0.1.0.zip" msi/
         elif [ "${{ matrix.platform }}" = "ubuntu-latest" ]; then
           zip -r "My-Wallet-Linux-v0.1.0.zip" appimage/
+        elif [ "${{ matrix.platform }}" = "macos-latest" ]; then
+          zip -r "My-Wallet-Mac-v0.1.0.zip" dmg/
         fi
 
     - name: Upload release ZIP
