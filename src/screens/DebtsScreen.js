@@ -523,116 +523,33 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                     
                     {/* Actions et paiements (affichés seulement si développé) */}
                     {expandedDebts.has(debt.id) && (
-                      <>
-                        <div className={`p-2 rounded-lg ${theme.bg} border ${theme.border} mb-3`}>
-                          <h5 className={`text-xs font-medium ${theme.text} mb-2`}>{t('actions') || 'Actions'}</h5>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="success"
-                              className="flex-1"
-                              onClick={() => {
-                                actions.setEditingItem(debt);
-                                actions.toggleModal('payment', true);
-                              }}
-                            >
-                              <Icons.CreditCard className="h-4 w-4 mr-2" />
-                              {t('recordPayment')}
-                            </Button>
-                            {debt.remainingBalance > 0 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  // Calculer un paiement optimal (10% du solde)
-                                  const optimalPayment = Math.min(debt.remainingBalance, debt.remainingBalance * 0.1);
-                                  actions.recordPayment(debt.id, optimalPayment);
-                                }}
-                                title={t('suggestedPayment')}
-                              >
-                                <Icons.Zap className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Paiements du mois sélectionné */}
-                        {(() => {
-                          const monthPayments = debt.paymentHistory?.filter(payment => 
-                            payment.date.startsWith(state.selectedMonth)
-                          ) || [];
-                          
-                          if (monthPayments.length > 0) {
-                            return (
-                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                <p className={`text-sm font-medium ${theme.text} mb-2`}>{t('paymentsThisMonth') || 'Paiements de ce mois'}</p>
-                                <div className="space-y-2">
-                                  {monthPayments.map((payment, index) => (
-                                    <div key={payment.id || index} className={`flex justify-between items-center text-xs p-2 rounded border-2 border-green-300 dark:border-green-700 shadow-sm bg-green-50 dark:bg-green-900/20`}>
-                                      <div className="flex items-center space-x-2">
-                                        <Icons.Circle className="h-2 w-2 text-green-500" />
-                                        <span className={`font-medium text-green-700 dark:text-green-300`}>
-                                          -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
-                                        </span>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className={`text-xs ${theme.textSecondary}`}>
-                                          {new Date(payment.date).toLocaleDateString(state.language === 'fr' ? 'fr-FR' : state.language === 'es' ? 'es-ES' : 'en-US', {
-                                            day: '2-digit',
-                                            month: '2-digit'
-                                          })}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-                        
-                        {/* Historique complet des paiements */}
-                        {debt.paymentHistory && debt.paymentHistory.length > 0 && (
-                          <div className={`p-2 rounded-lg ${theme.bg} border ${theme.border} mb-3`}>
-                            <h5 className={`text-xs font-medium ${theme.text} mb-2`}>{t('paymentHistory') || 'Historique complet'}</h5>
-                            {(() => {
-                              return (
-                                <div className="relative">
-                                  {/* Zone de défilement avec hauteur fixe pour plus de paiements */}
-                                  <div 
-                                    className={`max-h-60 overflow-y-auto pr-2 ${theme.name === 'dark' ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
-                                    style={{
-                                      scrollbarWidth: 'auto',
-                                      scrollbarColor: theme.name === 'dark' ? '#6B7280' : '#9CA3AF'
-                                    }}
-                                  >
-                                    <div className="space-y-2">
-                                      {debt.paymentHistory.map((payment, index) => (
-                                        <div key={payment.id || index} className={`flex justify-between items-center text-xs p-2 rounded border-2 border-green-300 dark:border-green-700 shadow-sm bg-green-50 dark:bg-green-900/20`}>
-                                          <div className="flex items-center space-x-2">
-                                            <Icons.Circle className="h-2 w-2 text-green-500" />
-                                            <span className={`font-medium text-green-700 dark:text-green-300`}>
-                                              -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
-                                            </span>
-                                          </div>
-                                          <div className="text-right">
-                                            <div className={`text-xs ${theme.textSecondary}`}>
-                                              {new Date(payment.date).toLocaleDateString(state.language === 'fr' ? 'fr-FR' : state.language === 'es' ? 'es-ES' : 'en-US', {
-                                                day: '2-digit',
-                                                month: '2-digit'
-                                              })}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
+                      <div className="flex space-x-2 mb-3">
+                        <Button
+                          variant="success"
+                          className="flex-1"
+                          onClick={() => {
+                            actions.setEditingItem(debt);
+                            actions.toggleModal('payment', true);
+                          }}
+                        >
+                          <Icons.CreditCard className="h-4 w-4 mr-2" />
+                          {t('recordPayment')}
+                        </Button>
+                        {debt.remainingBalance > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Calculer un paiement optimal (10% du solde)
+                              const optimalPayment = Math.min(debt.remainingBalance, debt.remainingBalance * 0.1);
+                              actions.recordPayment(debt.id, optimalPayment);
+                            }}
+                            title={t('suggestedPayment')}
+                          >
+                            <Icons.Zap className="h-4 w-4" />
+                          </Button>
                         )}
-                      </>
+                      </div>
                     )}
                     
                     {/* Bouton pour développer/replier les détails - en bas à gauche */}
