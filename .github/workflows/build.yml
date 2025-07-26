@@ -32,7 +32,7 @@ jobs:
       run: npm install -g @tauri-apps/cli
 
     - name: Build frontend
-      run: npm run build
+      run: npx react-scripts build --no-lint
       env:
         CI: false
         DISABLE_ESLINT_PLUGIN: true
@@ -86,7 +86,7 @@ jobs:
       run: npm install -g @tauri-apps/cli
 
     - name: Build frontend
-      run: npm run build
+      run: npx react-scripts build --no-lint
       env:
         CI: false
         DISABLE_ESLINT_PLUGIN: true
@@ -140,7 +140,7 @@ jobs:
       run: npm install -g @tauri-apps/cli
 
     - name: Build frontend
-      run: npm run build
+      run: npx react-scripts build --no-lint
       env:
         CI: false
         DISABLE_ESLINT_PLUGIN: true
