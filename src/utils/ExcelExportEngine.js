@@ -32,6 +32,9 @@ class TemplateManager {
         await ExcelExportEngine.createRecommendationsSheet(workbook, data, language, theme);
         await ExcelExportEngine.createRawDataSheet(workbook, data, language, theme);
         break;
+      default:
+        console.warn(`Template non reconnu: ${templateType}`);
+        break;
     }
   }
 }
@@ -397,11 +400,13 @@ class ExcelExportEngine {
     const fileName = `${templateName.replace(/[^a-zA-Z0-9]/g, '-')}-${cleanData.selectedMonth || 'current'}-${timestamp}.xlsx`;
     
     const buffer = await workbook.xlsx.writeBuffer();
-    this.downloadFile(buffer, fileName);
+    // Ne pas télécharger automatiquement, laisser l'appelant décider
+    // this.downloadFile(buffer, fileName);
 
     const result = {
       success: true,
       fileName,
+      buffer, // Ajouter le buffer pour le chiffrement
       warnings: validationResult.warnings,
       fileSize: buffer.byteLength,
       template,
@@ -532,7 +537,6 @@ class ExcelExportEngine {
       worksheet.getCell(`E${row}`).numFmt = '0.0%';
 
       // Styling conditionnel
-      const percentage = category.budget > 0 ? actualSpent / category.budget : 0;
       const bgColor = this.getThemeColor(theme, 'background');
       
       for (let col = 1; col <= 5; col++) {

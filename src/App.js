@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo, Suspense, lazy } from 'react';
 import * as Icons from 'lucide-react';
 import './App.css';
 
@@ -19,19 +19,6 @@ import DashboardHeader from './components/layout/DashboardHeader';
 import Navigation from './components/layout/Navigation';
 import ThemeSelector from './components/ui/ThemeSelector';
 
-// Import des écrans
-import DashboardScreen from './screens/DashboardScreen';
-import BudgetScreen from './screens/BudgetScreen';
-import ReportsScreen from './screens/ReportsScreen';
-import ExpensesScreen from './screens/ExpensesScreen';
-import SavingsScreen from './screens/SavingsScreen';
-import RecurringScreen from './screens/RecurringScreen';
-import DebtsScreen from './screens/DebtsScreen';
-import RevenueScreen from './screens/RevenueScreen';
-import ToolsScreen from './screens/ToolsScreen';
-import CalendarScreenAI from './screens/CalendarScreenAI';
-import WelcomeScreen from './screens/WelcomeScreen';
-
 // Import des modals
 import IncomeModal from './components/modals/IncomeModal';
 import CurrencyModal from './components/modals/CurrencyModal';
@@ -45,6 +32,19 @@ import ExportModal from './components/modals/ExportModal';
 
 // Import du chatbot
 import Chatbot from './components/Chatbot';
+
+// Imports dynamiques (code splitting) - juste après les imports classiques
+const DashboardScreen = lazy(() => import('./screens/DashboardScreen'));
+const BudgetScreen = lazy(() => import('./screens/BudgetScreen'));
+const ReportsScreen = lazy(() => import('./screens/ReportsScreen'));
+const ExpensesScreen = lazy(() => import('./screens/ExpensesScreen'));
+const SavingsScreen = lazy(() => import('./screens/SavingsScreen'));
+const RecurringScreen = lazy(() => import('./screens/RecurringScreen'));
+const DebtsScreen = lazy(() => import('./screens/DebtsScreen'));
+const RevenueScreen = lazy(() => import('./screens/RevenueScreen'));
+const ToolsScreen = lazy(() => import('./screens/ToolsScreen'));
+const CalendarScreenAI = lazy(() => import('./screens/CalendarScreenAI'));
+const WelcomeScreen = lazy(() => import('./screens/WelcomeScreen'));
 
 // ============================================================================
 // SYSTÈME DE TRADUCTION COMPLET
@@ -170,32 +170,36 @@ const App = () => {
     
     switch (state.activeTab) {
       case 'dashboard':
-        return <DashboardScreen {...screenProps} />;
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <DashboardScreen {...screenProps} /> </Suspense>;
       case 'budget':
-        return <BudgetScreen {...screenProps} />;
-      case 'expenses':
-        return <ExpensesScreen {...screenProps} />;
-      case 'savings':
-        return <SavingsScreen {...screenProps} />;
-      case 'calendar':
-        return <CalendarScreenAI {...screenProps} />;
-      case 'recurring':
-        return <RecurringScreen {...screenProps} />;
-      case 'debts':
-        return <DebtsScreen {...screenProps} />;
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <BudgetScreen {...screenProps} /> </Suspense>;
       case 'reports':
-        return <ReportsScreen {...screenProps} />;
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <ReportsScreen {...screenProps} /> </Suspense>;
+      case 'expenses':
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <ExpensesScreen {...screenProps} /> </Suspense>;
+      case 'savings':
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <SavingsScreen {...screenProps} /> </Suspense>;
+      case 'recurring':
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <RecurringScreen {...screenProps} /> </Suspense>;
+      case 'debts':
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <DebtsScreen {...screenProps} /> </Suspense>;
       case 'revenue':
-        return <RevenueScreen {...screenProps} />;
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <RevenueScreen {...screenProps} /> </Suspense>;
       case 'tools':
-        return <ToolsScreen {...screenProps} />;
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <ToolsScreen {...screenProps} /> </Suspense>;
+      case 'calendar':
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <CalendarScreenAI {...screenProps} /> </Suspense>;
       default:
-        return <DashboardScreen {...screenProps} />;
+        return <Suspense fallback={<LoadingSpinner size="lg" />}> <DashboardScreen {...screenProps} /> </Suspense>;
     }
   }, [state.activeTab, financeManager, theme, t]);
 
   if (showWelcome) {
-    return <WelcomeScreen financeManager={financeManager} theme={theme} t={t} onStart={handleStart} />;
+    return (
+      <Suspense fallback={<LoadingSpinner size="lg" />}>
+        <WelcomeScreen financeManager={financeManager} theme={theme} t={t} onStart={handleStart} />
+      </Suspense>
+    );
   }
 
   return (

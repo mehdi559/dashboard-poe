@@ -320,6 +320,8 @@ export const ACTIONS = {
   UPDATE_SAVINGS_GOAL: 'UPDATE_SAVINGS_GOAL',
   DELETE_SAVINGS_GOAL: 'DELETE_SAVINGS_GOAL',
   ADD_SAVINGS_TRANSACTION: 'ADD_SAVINGS_TRANSACTION',
+  DELETE_SAVINGS_TRANSACTION: 'DELETE_SAVINGS_TRANSACTION',
+  UPDATE_SAVINGS_TRANSACTION: 'UPDATE_SAVINGS_TRANSACTION',
   ADD_RECURRING: 'ADD_RECURRING',
   DELETE_RECURRING: 'DELETE_RECURRING',
   TOGGLE_RECURRING: 'TOGGLE_RECURRING',
@@ -333,6 +335,7 @@ export const ACTIONS = {
   DELETE_PAYMENT: 'DELETE_PAYMENT',
   UPDATE_PAYMENT: 'UPDATE_PAYMENT',
   TOGGLE_AUTO_DEBIT: 'TOGGLE_AUTO_DEBIT',
+  TOGGLE_SAVINGS_AUTO_DEBIT: 'TOGGLE_SAVINGS_AUTO_DEBIT',
   TOGGLE_MODAL: 'TOGGLE_MODAL',
   SET_EDITING_ITEM: 'SET_EDITING_ITEM',
   SET_SEARCH_TERM: 'SET_SEARCH_TERM',
@@ -363,6 +366,10 @@ export const ACTIONS = {
   // Ajout : Action pour automatiser les revenus fixes
   PROCESS_RECURRING_REVENUES: 'PROCESS_RECURRING_REVENUES',
   SET_INITIAL_BALANCE: 'SET_INITIAL_BALANCE',
+  // Planned expenses actions
+  ADD_PLANNED_EXPENSE: 'ADD_PLANNED_EXPENSE',
+  DELETE_PLANNED_EXPENSE: 'DELETE_PLANNED_EXPENSE',
+  UPDATE_PLANNED_EXPENSE: 'UPDATE_PLANNED_EXPENSE',
   UNDO: 'UNDO',
   REDO: 'REDO'
 };
@@ -462,6 +469,23 @@ function reducerCore(state, action) {
         ...state,
         expenses: state.expenses.filter(expense => expense.id !== action.payload)
       };
+    case ACTIONS.ADD_PLANNED_EXPENSE:
+      return {
+        ...state,
+        plannedExpenses: [...(state.plannedExpenses || []), action.payload]
+      };
+    case ACTIONS.DELETE_PLANNED_EXPENSE:
+      return {
+        ...state,
+        plannedExpenses: (state.plannedExpenses || []).filter(expense => expense.id !== action.payload)
+      };
+    case ACTIONS.UPDATE_PLANNED_EXPENSE:
+      return {
+        ...state,
+        plannedExpenses: (state.plannedExpenses || []).map(expense =>
+          expense.id === action.payload.id ? action.payload : expense
+        )
+      };
     case ACTIONS.ADD_CATEGORY:
       return {
         ...state,
@@ -487,7 +511,9 @@ function reducerCore(state, action) {
           ...action.payload,
           id: Date.now(),
           color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`,
-          transactions: []
+          transactions: [],
+          autoDebit: false,
+          autoDebitAmount: action.payload.autoDebitAmount || 0
         }]
       };
     case ACTIONS.ADD_SAVINGS_TRANSACTION:
@@ -509,6 +535,42 @@ function reducerCore(state, action) {
                   type: action.payload.type,
                   description: action.payload.description
                 }]
+              }
+            : goal
+        )
+      };
+    case ACTIONS.DELETE_SAVINGS_TRANSACTION:
+      return {
+        ...state,
+        savingsGoals: state.savingsGoals.map(goal =>
+          goal.id === action.payload.goalId
+            ? {
+                ...goal,
+                currentAmount: action.payload.transaction.type === 'add' 
+                  ? Math.max(0, goal.currentAmount - action.payload.transaction.amount)
+                  : goal.currentAmount + action.payload.transaction.amount,
+                transactions: goal.transactions.filter(t => t.id !== action.payload.transactionId)
+              }
+            : goal
+        )
+      };
+    case ACTIONS.UPDATE_SAVINGS_TRANSACTION:
+      const { goalId, transactionId, updatedTransaction } = action.payload;
+      const goalToUpdate = state.savingsGoals.find(g => g.id === goalId);
+      const oldTransaction = goalToUpdate.transactions.find(t => t.id === transactionId);
+      
+      return {
+        ...state,
+        savingsGoals: state.savingsGoals.map(goal =>
+          goal.id === goalId
+            ? {
+                ...goal,
+                currentAmount: goal.currentAmount - (oldTransaction.type === 'add' ? oldTransaction.amount : -oldTransaction.amount) + (updatedTransaction.type === 'add' ? updatedTransaction.amount : -updatedTransaction.amount),
+                transactions: goal.transactions.map(t =>
+                  t.id === transactionId
+                    ? { ...t, ...updatedTransaction }
+                    : t
+                )
               }
             : goal
         )
@@ -807,6 +869,80 @@ function reducerCore(state, action) {
           ),
           expenses: state.expenses.filter(exp => 
             !exp.linkedDebtId || exp.linkedDebtId !== action.payload
+          )
+        };
+      }
+    case ACTIONS.TOGGLE_SAVINGS_AUTO_DEBIT:
+      const savingsGoal = state.savingsGoals.find(s => s.id === action.payload.goalId);
+      const newSavingsAutoDebitState = !savingsGoal.autoDebit;
+      
+      if (newSavingsAutoDebitState) {
+        // Activer l'auto-débit - créer une dépense récurrente ET une transaction d'épargne immédiate
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        const paymentDate = new Date(currentYear, currentMonth, 15);
+        
+        // Si le 15 du mois est déjà passé, utiliser la date d'aujourd'hui
+        const expenseDate = paymentDate <= today ? today : paymentDate;
+        const autoDebitAmount = action.payload.amount || 100; // Montant par défaut
+        
+        const recurringExpense = {
+          id: Date.now(),
+          description: `Épargne automatique - ${savingsGoal.name}`,
+          category: 'savings',
+          amount: autoDebitAmount,
+          dayOfMonth: 15, // Épargne le 15 de chaque mois
+          active: true,
+          linkedSavingsGoalId: savingsGoal.id,
+          lastProcessed: expenseDate.toISOString().split('T')[0]
+        };
+        
+        const immediateExpense = {
+          id: Date.now() + 1,
+          date: expenseDate.toISOString().split('T')[0],
+          category: 'savings',
+          amount: autoDebitAmount,
+          description: `Épargne automatique - ${savingsGoal.name} (récurrente)`,
+          linkedSavingsGoalId: savingsGoal.id
+        };
+        
+        const immediateTransaction = {
+          id: Date.now() + 2,
+          date: expenseDate.toISOString().split('T')[0],
+          amount: autoDebitAmount,
+          type: 'add',
+          description: 'Épargne automatique'
+        };
+        
+        return {
+          ...state,
+          savingsGoals: state.savingsGoals.map(s =>
+            s.id === action.payload.goalId 
+              ? { 
+                  ...s, 
+                  autoDebit: true, 
+                  autoDebitAmount: autoDebitAmount,
+                  currentAmount: Math.min(s.currentAmount + autoDebitAmount, s.targetAmount),
+                  transactions: [...(s.transactions || []), immediateTransaction]
+                } 
+              : s
+          ),
+          recurringExpenses: [...state.recurringExpenses, recurringExpense],
+          expenses: [...state.expenses, immediateExpense]
+        };
+      } else {
+        // Désactiver l'auto-débit - supprimer la dépense récurrente ET les dépenses normales liées
+        return {
+          ...state,
+          savingsGoals: state.savingsGoals.map(s =>
+            s.id === action.payload.goalId ? { ...s, autoDebit: false, autoDebitAmount: 0 } : s
+          ),
+          recurringExpenses: state.recurringExpenses.filter(exp => 
+            !exp.linkedSavingsGoalId || exp.linkedSavingsGoalId !== action.payload.goalId
+          ),
+          expenses: state.expenses.filter(exp => 
+            !exp.linkedSavingsGoalId || exp.linkedSavingsGoalId !== action.payload.goalId
           )
         };
       }

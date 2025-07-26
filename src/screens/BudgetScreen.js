@@ -483,7 +483,26 @@ const AIInsights = memo(({ expenses, categories, theme, t, formatCurrency }) => 
                         {t('overspendingDetected', { count: overspentCategories.length })}
                       </span>
                     </div>
-                    <p className={`text-sm ${theme.textSecondary}`}>{t('categoriesExceededBudget')}</p>
+                    <p className={`text-sm ${theme.textSecondary} mb-3`}>{t('categoriesExceededBudget')}</p>
+                    
+                    {/* Liste des catégories en dépassement */}
+                    <div className="space-y-2">
+                      {overspentCategories.map((category, index) => (
+                        <div key={index} className="flex justify-between items-center text-sm">
+                          <span className="font-medium text-red-800 dark:text-red-200">
+                            {category.name}
+                          </span>
+                          <div className="text-right">
+                            <span className="text-red-800 dark:text-red-200">
+                              {formatCurrency(category.spent)} / {formatCurrency(category.budget)}
+                            </span>
+                            <span className="ml-2 text-xs text-red-600">
+                              ({category.percentage.toFixed(1)}%)
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

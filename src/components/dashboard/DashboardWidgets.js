@@ -419,16 +419,16 @@ export const BudgetOverview = memo(({ state, computedValues, formatCurrency, the
 });
 
 // Comparaison Semaine vs Semaine Précédente
-export const WeekComparison = memo(({ computedValues, formatCurrency, theme, t }) => {
+export const WeekComparison = memo(({ computedValues, formatCurrency, theme, t, state }) => {
   // Simulation données semaine actuelle vs précédente
   const weekData = useMemo(() => {
-    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    const days = [t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat'), t('sun')];
     return days.map(day => ({
       day,
       thisWeek: Math.floor(Math.random() * 100) + 20,
       lastWeek: Math.floor(Math.random() * 100) + 20
     }));
-  }, []);
+  }, [t]);
 
   const thisWeekTotal = weekData.reduce((sum, d) => sum + d.thisWeek, 0);
   const lastWeekTotal = weekData.reduce((sum, d) => sum + d.lastWeek, 0);

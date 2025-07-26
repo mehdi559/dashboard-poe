@@ -1,5 +1,6 @@
 // CalendarScreen.js - Version IA enrichie COMPLÈTE
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import * as Icons from 'lucide-react';
 
 // Moteur IA pour l'analyse du calendrier
@@ -238,9 +239,12 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
-  const [plannedExpenses, setPlannedExpenses] = useState([]);
+  // Utiliser le state global pour les dépenses planifiées
+  const plannedExpenses = state.plannedExpenses || [];
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  // État pour gérer l'édition des dépenses planifiées
+  const [editingPlannedExpense, setEditingPlannedExpense] = useState(null);
 
   // Calcul du nombre de jours dans le mois sélectionné
   const daysInMonth = useMemo(() => {
@@ -315,7 +319,7 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
         .sort(([, a], [, b]) => b.preferredDays[0][1] - a.preferredDays[0][1])[0];
       
       if (topCategory) {
-        const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+        const dayNames = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
         const preferredDay = dayNames[topCategory[1].preferredDays[0][0]];
         
         newNotifications.push({
@@ -323,7 +327,7 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
           type: 'success',
           title: t('categoryOptimization'),
           message: t('bestDayForCategory', { 
-            category: topCategory[0], 
+            category: topCategory[0] || t('thisCategory'), 
             day: preferredDay, 
             amount: formatCurrency ? formatCurrency(20) : '20€' 
           }),
@@ -408,8 +412,9 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
       status: 'planned'
     };
     
-    setPlannedExpenses(prev => [...prev, newPlannedExpense]);
-  }, []);
+    console.log('DEBUG - Adding planned expense:', newPlannedExpense);
+    actions.addPlannedExpense(newPlannedExpense);
+  }, [actions]);
 
   // Fonction pour marquer une dépense planifiée comme payée
   const markPlannedAsPaid = useCallback((plannedExpense) => {
@@ -426,13 +431,27 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
     actions.addExpense(realExpense);
     
     // Supprimer de la liste des planifiées
-    setPlannedExpenses(prev => prev.filter(exp => exp.id !== plannedExpense.id));
+    actions.deletePlannedExpense(plannedExpense.id);
   }, [actions]);
 
   // Fonction pour supprimer une dépense planifiée
   const deletePlannedExpense = useCallback((plannedExpenseId) => {
-    setPlannedExpenses(prev => prev.filter(exp => exp.id !== plannedExpenseId));
-  }, []);
+    actions.deletePlannedExpense(plannedExpenseId);
+  }, [actions]);
+
+  // Fonction pour modifier une dépense planifiée
+  const updatePlannedExpense = useCallback((plannedExpenseId, updatedData) => {
+    const updatedExpense = {
+      id: plannedExpenseId,
+      description: updatedData.description,
+      amount: parseFloat(updatedData.amount),
+      category: updatedData.category,
+      plannedDate: updatedData.plannedDate,
+      priority: updatedData.priority,
+      status: 'planned'
+    };
+    actions.updatePlannedExpense(updatedExpense);
+  }, [actions]);
 
   // Définition des vues disponibles
   const views = {
@@ -531,21 +550,30 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
         </div>
       )}
 
+      {/* Modal de modification de dépense planifiée - Responsive */}
+      {editingPlannedExpense && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 w-full max-w-sm md:max-w-md animate-slide-up">
+            <h3 className="text-base md:text-lg font-semibold mb-4">{t('editPlannedExpense')}</h3>
+            <EditPlannedExpenseForm 
+              expense={editingPlannedExpense}
+              onSubmit={(updatedData) => {
+                updatePlannedExpense(editingPlannedExpense.id, updatedData);
+                setEditingPlannedExpense(null);
+              }}
+              onCancel={() => setEditingPlannedExpense(null)}
+              categories={state.categories || []}
+              t={t}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Contenu des vues avec animations - Responsive */}
       <div className="space-y-4 md:space-y-6">
         {activeView === 'calendar' && (
           <div className="animate-slide-in-left">
-            {/* Bouton d'ajout rapide - Responsive */}
-            <div className="mb-4 flex justify-center md:justify-end animate-fade-in">
-              <button
-                onClick={() => setShowAddExpenseModal(true)}
-                className="px-3 md:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm md:text-base"
-              >
-                <Icons.Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('addExpenseQuick')}</span>
-                <span className="sm:hidden">{t('add')}</span>
-              </button>
-            </div>
+
 
             {/* En-têtes des jours - Responsive */}
             <div className="grid grid-cols-7 gap-1 mb-2 md:mb-4 animate-slide-down" style={{ animationDelay: '200ms' }}>
@@ -1053,7 +1081,7 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
                       .sort(([, a], [, b]) => b.preferredDays[0][1] - a.preferredDays[0][1])[0];
                     
                     if (topCategory) {
-                      const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+                      const dayNames = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
                       const preferredDay = dayNames[topCategory[1].preferredDays[0][0]];
                       const avgAmount = topCategory[1].preferredDays[0][1];
                       
@@ -1062,7 +1090,7 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
                         type: 'success',
                         icon: Icons.Calendar,
                         title: t('categoryOptimization'),
-                        description: t('bestDayForCategory', { day: preferredDay, amount: formatCurrency ? formatCurrency(avgAmount) : `${avgAmount.toFixed(0)}€` }),
+                        description: t('bestDayForCategory', { category: topCategory[0] || t('thisCategory'), day: preferredDay, amount: formatCurrency ? formatCurrency(avgAmount) : `${avgAmount.toFixed(0)}€` }),
                         action: t('planForThisDay'),
                         priority: 'high'
                       });
@@ -1099,127 +1127,6 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
                 })()}
               </div>
               
-              {/* Planification Intelligente Avancée */}
-              <div className={`p-3 md:p-4 rounded-lg border ${theme?.border || ''} bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20`}>
-                <h4 className="font-semibold mb-3 md:mb-4 flex items-center">
-                  <Icons.Zap className="h-5 w-5 mr-2 text-green-600" />
-                  {t('advancedSmartPlanning')}
-                </h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Planification automatique */}
-                  <div className="space-y-3">
-                    <h5 className="font-medium text-sm flex items-center">
-                      <Icons.Zap className="h-4 w-4 mr-2 text-blue-500" />
-                      {t('automaticPlanning')}
-                    </h5>
-                    
-                    {(() => {
-                      const autoPlans = [];
-                      
-                      // Plan automatique basé sur les patterns
-                      if (aiAnalysis.behavioralAnalysis && aiAnalysis.behavioralAnalysis.recurringExpenses && aiAnalysis.behavioralAnalysis.recurringExpenses.length > 0) {
-                        const recurring = aiAnalysis.behavioralAnalysis.recurringExpenses[0];
-                        autoPlans.push({
-                          id: 'recurring-plan',
-                          type: 'recurring',
-                          amount: recurring.averageAmount,
-                          description: recurring.description,
-                          frequency: recurring.frequency,
-                          priority: 'high'
-                        });
-                      }
-                      
-                      // Plan automatique basé sur le budget
-                      if (aiAnalysis.predictiveInsights && aiAnalysis.predictiveInsights.length > 0) {
-                        const projection = aiAnalysis.predictiveInsights.find(i => i.type === 'monthly_projection');
-                        if (projection && projection.value > 1000) {
-                          autoPlans.push({
-                            id: 'budget-plan',
-                            type: 'budget',
-                            amount: projection.value * 0.1, // 10% du budget projeté
-                            description: t('monthlyReserve'),
-                            frequency: 'Mensuel',
-                            priority: 'medium'
-                          });
-                        }
-                      }
-                      
-                      return autoPlans.map((plan, index) => (
-                        <div key={plan.id} className="p-3 rounded-lg border bg-green-50 dark:bg-green-900/20 animate-fade-in">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h6 className="font-medium text-sm">{plan.description}</h6>
-                              <p className="text-xs text-gray-600">{t('frequency')}: {plan.frequency}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-medium text-sm">
-                                {formatCurrency ? formatCurrency(plan.amount) : `${plan.amount.toFixed(0)}€`}
-                              </p>
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                plan.priority === 'high' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                              }`}>
-                                {plan.priority === 'high' ? t('highPriority') : t('normalPriority')}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                  
-                  {/* Optimisation du budget */}
-                  <div className="space-y-3">
-                    <h5 className="font-medium text-sm flex items-center">
-                      <Icons.TrendingUp className="h-4 w-4 mr-2 text-green-500" />
-                      {t('budgetOptimization')}
-                    </h5>
-                    
-                    <div className="space-y-2">
-                      {(() => {
-                        const optimizations = [];
-                        
-                        // Optimisation basée sur les catégories
-                        const topCategories = Object.entries(aiAnalysis.categoryTimeCorrelations)
-                          .filter(([, data]) => data.preferredDays.length > 0)
-                          .slice(0, 3);
-                        
-                        topCategories.forEach(([category, data]) => {
-                          const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-                          const preferredDay = dayNames[data.preferredDays[0][0]];
-                          const estimatedSavings = data.preferredDays[0][1] * 10; // Estimation d'économies
-                          
-                          optimizations.push({
-                            category,
-                            day: preferredDay,
-                            savings: estimatedSavings,
-                            frequency: `${data.preferredDays[0][1]} fois/mois`
-                          });
-                        });
-                        
-                        return optimizations.map((opt, index) => (
-                          <div key={index} className={`p-2 rounded-lg border ${theme?.border || ''} bg-white dark:bg-gray-800`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="text-sm font-medium">{opt.category}</div>
-                                <div className="text-xs text-gray-600">{t('optimalDay')}: {opt.day}</div>
-                                <div className="text-xs text-gray-500">{opt.frequency}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-medium text-green-600">
-                                  +{formatCurrency ? formatCurrency(opt.savings) : `${opt.savings.toFixed(0)}€`}
-                                </div>
-                                <div className="text-xs text-gray-500">{t('savings')}</div>
-                              </div>
-                            </div>
-                          </div>
-                        ));
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
               {/* Formulaire d'ajout de dépense future amélioré */}
               <div className={`p-3 md:p-4 rounded-lg border ${theme?.border || ''} bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20`}>
                 <h4 className="font-semibold mb-3 md:mb-4 flex items-center">
@@ -1236,102 +1143,7 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
                 />
               </div>
               
-              {/* Alertes Intelligentes */}
-              <div className="space-y-3">
-                <h5 className="font-medium text-sm flex items-center">
-                  <Icons.AlertTriangle className="h-4 w-4 mr-2 text-orange-500" />
-                  {t('smartAlerts')}
-                </h5>
-                
-                {(() => {
-                  const alerts = [];
-                  
-                  // Alerte de dépenses récurrentes
-                  if (aiAnalysis.behavioralAnalysis && aiAnalysis.behavioralAnalysis.recurringExpenses && aiAnalysis.behavioralAnalysis.recurringExpenses.length > 0) {
-                    const recurring = aiAnalysis.behavioralAnalysis.recurringExpenses[0];
-                    const daysUntilNext = recurring.frequency - (new Date().getDate() % recurring.frequency);
-                    
-                    if (daysUntilNext <= 3) {
-                      alerts.push({
-                        id: 'recurring-alert',
-                        type: 'warning',
-                        title: t('recurringExpenseComing'),
-                        message: t('daysUntilNext', { count: daysUntilNext }),
-                        amount: recurring.averageAmount,
-                        priority: 'high'
-                      });
-                    }
-                  }
-                  
-                  // Alerte de projection mensuelle
-                  if (aiAnalysis.predictiveInsights && aiAnalysis.predictiveInsights.length > 0) {
-                    const projection = aiAnalysis.predictiveInsights.find(i => i.type === 'monthly_projection');
-                    if (projection && projection.value > 1200) {
-                      alerts.push({
-                        id: 'budget-alert',
-                        type: 'danger',
-                        title: t('budgetOverspending'),
-                        message: t('projectionMessage', { amount: formatCurrency ? formatCurrency(projection.value) : `${projection.value.toFixed(0)}€` }),
-                        amount: projection.value,
-                        priority: 'high'
-                      });
-                    }
-                  }
-                  
-                  // Alerte de catégories
-                  if (aiAnalysis.categoryTimeCorrelations) {
-                    const topCategory = Object.entries(aiAnalysis.categoryTimeCorrelations)
-                      .filter(([, data]) => data.preferredDays && data.preferredDays.length > 0)
-                      .sort(([, a], [, b]) => b.preferredDays[0][1] - a.preferredDays[0][1])[0];
-                    
-                    if (topCategory) {
-                      alerts.push({
-                        id: 'category-alert',
-                        type: 'info',
-                        title: t('categoryOptimizationAlert'),
-                        message: t('bestDayForCategory', { category: topCategory[0] }),
-                        amount: topCategory[1].preferredDays[0][1],
-                        priority: 'medium'
-                      });
-                    }
-                  }
-                  
-                  return alerts.length > 0 ? (
-                    <div className="space-y-2">
-                      {alerts.map((alert) => (
-                        <div key={alert.id} className={`p-3 rounded-lg border ${
-                          alert.type === 'danger' ? 'bg-red-50 border-red-200' :
-                          alert.type === 'warning' ? 'bg-yellow-50 border-yellow-200' :
-                          'bg-blue-50 border-blue-200'
-                        } animate-fade-in`}>
-                          <div className="flex items-start space-x-3">
-                            <div className={`w-2 h-2 rounded-full mt-2 ${
-                              alert.type === 'danger' ? 'bg-red-500' :
-                              alert.type === 'warning' ? 'bg-yellow-500' :
-                              'bg-blue-500'
-                            }`}></div>
-                            <div className="flex-1">
-                              <h6 className="font-medium text-sm">{alert.title}</h6>
-                              <p className="text-xs text-gray-600 mt-1">{alert.message}</p>
-                              {alert.amount && (
-                                <p className="text-xs font-medium mt-1">
-                                  {formatCurrency ? formatCurrency(alert.amount) : `${alert.amount.toFixed(0)}€`}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <Icons.CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">{t('noActiveAlerts')}</p>
-                      <p className="text-xs text-gray-400">{t('allGood')}</p>
-                    </div>
-                  );
-                })()}
-              </div>
+
               
               {/* Dépenses planifiées avec IA */}
               <div className={`p-3 md:p-4 rounded-lg border ${theme?.border || ''} bg-yellow-50 dark:bg-yellow-900/20`}>
@@ -1376,7 +1188,10 @@ const CalendarScreenAI = ({ financeManager, theme, t }) => {
                           >
                             {t('markAsPaid')}
                           </button>
-                          <button className="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors">
+                          <button 
+                            onClick={() => setEditingPlannedExpense(expense)}
+                            className="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
+                          >
                             {t('modify')}
                           </button>
                           <button 
@@ -1500,7 +1315,7 @@ const AddExpenseForm = ({ onSubmit, onCancel, categories, selectedDate, t }) => 
 const EditExpenseForm = ({ expense, onSubmit, onCancel, categories, t }) => {
   const [formData, setFormData] = useState({
     description: expense.description,
-    amount: expense.amount.toString(),
+    amount: expense.amount,
     category: expense.category,
     date: expense.date
   });
@@ -1513,25 +1328,25 @@ const EditExpenseForm = ({ expense, onSubmit, onCancel, categories, t }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
         <input
           type="text"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
           required
         />
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t('amount')}</label>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t('amount')}</label>
         <input
           type="number"
           value={formData.amount}
           onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
           step="0.01"
           min="0"
           required
@@ -1539,11 +1354,11 @@ const EditExpenseForm = ({ expense, onSubmit, onCancel, categories, t }) => {
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t('category')}</label>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t('category')}</label>
         <select
           value={formData.category}
           onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
           required
         >
           <option value="">{t('selectCategory')}</option>
@@ -1556,27 +1371,27 @@ const EditExpenseForm = ({ expense, onSubmit, onCancel, categories, t }) => {
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t('date')}</label>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t('date')}</label>
         <input
           type="date"
           value={formData.date}
           onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
           required
         />
       </div>
       
-      <div className="flex space-x-3">
+      <div className="flex space-x-2">
         <button
           type="submit"
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-xs md:text-sm"
         >
-          {t('modify')}
+          {t('save')}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors text-xs md:text-sm"
         >
           {t('cancel')}
         </button>
@@ -1635,7 +1450,7 @@ const SmartExpenseForm = ({ onSubmit, aiAnalysis, categories, formatCurrency, t 
         .sort(([, a], [, b]) => b.average - a.average)[0];
       
       if (bestDay) {
-        const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+        const dayNames = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
         const dayIndex = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].indexOf(bestDay[0]);
         const dayName = dayNames[dayIndex];
         
@@ -1647,7 +1462,7 @@ const SmartExpenseForm = ({ onSubmit, aiAnalysis, categories, formatCurrency, t 
         
         newSuggestions.push({
           type: 'date',
-          label: `Date suggérée: ${nextDate.toLocaleDateString('fr-FR')} (${dayName})`,
+          label: `${t('suggestedDate')}: ${nextDate.toLocaleDateString('fr-FR')} (${dayName})`,
           value: nextDate.toISOString().split('T')[0],
           confidence: 'high'
         });
@@ -1682,29 +1497,6 @@ const SmartExpenseForm = ({ onSubmit, aiAnalysis, categories, formatCurrency, t 
 
   return (
     <div className="space-y-4">
-      {/* Suggestions IA */}
-      {suggestions.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-          <h5 className="font-medium text-sm mb-2 flex items-center">
-            <Icons.Lightbulb className="h-4 w-4 mr-1 text-blue-500" />
-            {t('aiSuggestions')}
-          </h5>
-          <div className="space-y-2">
-            {suggestions.map((suggestion, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
-                <span className="text-xs">{suggestion.label}</span>
-                <button
-                  onClick={() => applySuggestion(suggestion)}
-                  className="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
-                >
-                  {t('apply')}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      
       {/* Formulaire */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1797,11 +1589,127 @@ const SmartExpenseForm = ({ onSubmit, aiAnalysis, categories, formatCurrency, t 
   );
 };
 
+// Composant pour le formulaire d'édition de dépense planifiée
+const EditPlannedExpenseForm = ({ expense, onSubmit, onCancel, categories, t }) => {
+  const [formData, setFormData] = useState({
+    description: expense.description,
+    amount: expense.amount,
+    category: expense.category,
+    plannedDate: expense.plannedDate,
+    priority: expense.priority || 'medium'
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (formData.description && formData.amount && formData.category) {
+      onSubmit(formData);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
+        <input
+          type="text"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          className="w-full px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
+          required
+        />
+      </div>
+      
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t('amount')}</label>
+        <input
+          type="number"
+          value={formData.amount}
+          onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+          className="w-full px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
+          step="0.01"
+          min="0"
+          required
+        />
+      </div>
+      
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t('category')}</label>
+        <select
+          value={formData.category}
+          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+          className="w-full px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
+          required
+        >
+          <option value="">{t('selectCategory')}</option>
+          {(categories || []).map(category => (
+            <option key={category.id} value={category.name}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t('plannedDate')}</label>
+        <input
+          type="date"
+          value={formData.plannedDate}
+          onChange={(e) => setFormData({ ...formData, plannedDate: e.target.value })}
+          className="w-full px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
+          required
+        />
+      </div>
+      
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">{t('priority')}</label>
+        <select
+          value={formData.priority}
+          onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+          className="w-full px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
+          required
+        >
+          <option value="low">{t('low')}</option>
+          <option value="medium">{t('medium')}</option>
+          <option value="high">{t('high')}</option>
+        </select>
+      </div>
+      
+      <div className="flex space-x-2">
+        <button
+          type="submit"
+          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-xs md:text-sm"
+        >
+          {t('save')}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors text-xs md:text-sm"
+        >
+          {t('cancel')}
+        </button>
+      </div>
+    </form>
+  );
+};
+
 // Composant pour le centre de notifications intelligentes
 const NotificationCenter = ({ aiAnalysis, state, formatCurrency, notifications, setNotifications, showNotifications, setShowNotifications, t }) => {
   const dismissNotification = (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
+
+  // Fermer le panneau en cliquant à l'extérieur
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showNotifications && !event.target.closest('.notification-panel')) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showNotifications, setShowNotifications]);
 
   const getNotificationIcon = (type) => {
     switch (type) {
@@ -1841,11 +1749,19 @@ const NotificationCenter = ({ aiAnalysis, state, formatCurrency, notifications, 
       </button>
       
       {/* Panneau de notifications */}
-      {showNotifications && (
-        <div className="absolute top-full right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 animate-slide-in-down">
-          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+      {showNotifications && createPortal(
+        <div className="fixed top-24 right-6 w-72 max-h-80 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[9999] animate-slide-in-down notification-panel">
+          <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div>
             <h3 className="font-semibold text-sm">{t('smartNotifications')}</h3>
             <p className="text-xs text-gray-500">{t('basedOnAIAnalysis')}</p>
+            </div>
+            <button
+              onClick={() => setShowNotifications(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+            >
+              <Icons.X className="h-4 w-4" />
+            </button>
           </div>
           
           <div className="p-2">
@@ -1867,17 +1783,12 @@ const NotificationCenter = ({ aiAnalysis, state, formatCurrency, notifications, 
                             <span className="text-xs text-gray-500">
                               {notification.timestamp.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            <div className="flex space-x-2">
-                              <button className="text-xs font-medium hover:underline">
-                                {notification.action}
-                              </button>
                               <button
                                 onClick={() => dismissNotification(notification.id)}
                                 className="text-xs text-gray-400 hover:text-gray-600"
                               >
                                 ×
                               </button>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -1893,7 +1804,8 @@ const NotificationCenter = ({ aiAnalysis, state, formatCurrency, notifications, 
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

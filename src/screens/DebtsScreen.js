@@ -1,14 +1,39 @@
 // DebtsScreen.js - Version enrichie
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import * as Icons from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import { Search } from 'lucide-react';
 
 const DebtsScreen = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
   const [selectedStrategy, setSelectedStrategy] = useState('snowball');
   const [simulationAmount, setSimulationAmount] = useState('');
   const [expandedDebts, setExpandedDebts] = useState(new Set()); // Pour gérer l'affichage détaillé de chaque dette
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTermList, setSearchTermList] = useState('');
+
+  const ITEMS_PER_LOAD = 20;
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
+  const listRef = useRef(null);
+
+  // Remise à zéro du scroll et du nombre d'éléments visibles lors d'un changement de filtre/mois
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_LOAD);
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [computedValues.debtsForSelectedMonth]);
+
+  // Gestion du scroll pour charger plus d'éléments
+  const handleScroll = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+      setVisibleCount((prev) => Math.min(prev + ITEMS_PER_LOAD, computedValues.debtsForSelectedMonth.length));
+    }
+  }, [computedValues.debtsForSelectedMonth.length]);
+
+  // Liste des dettes à afficher
+  const visibleDebts = useMemo(() => computedValues.debtsForSelectedMonth.slice(0, visibleCount), [computedValues.debtsForSelectedMonth, visibleCount]);
 
   // Stratégies de remboursement
   const getRepaymentStrategies = useMemo(() => {
@@ -313,10 +338,47 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
           </div>
           <div className="lg:col-span-2">
             <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('yourDebtsWithAnalysis')}</h3>
-            <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-              {computedValues.debtsForSelectedMonth.map(debt => {
-                const monthsToPayOff = Math.ceil(debt.remainingBalance / debt.minPayment);
-                const totalInterest = debt.remainingBalance * (debt.rate / 100 / 12) * monthsToPayOff;
+            {/* Barre de recherche stylée */}
+            <form
+              className="flex items-center gap-2 mb-4"
+              onSubmit={e => {
+                e.preventDefault();
+                setSearchTermList(searchInput);
+              }}
+            >
+              <input
+                type="text"
+                value={searchInput}
+                onChange={e => {
+                  setSearchInput(e.target.value);
+                  setSearchTermList(e.target.value); // Recherche en temps réel
+                }}
+                placeholder=""
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none w-full"
+                style={{maxWidth: 300}}
+              />
+              <button
+                type="submit"
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                {t('search')}
+              </button>
+            </form>
+            <div
+              className="space-y-4 max-h-[35rem] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+              ref={listRef}
+              onScroll={handleScroll}
+            >
+              {visibleDebts
+                .filter(debt => debt.name.toLowerCase().includes(searchTermList.toLowerCase()))
+                .map(debt => {
+                // Calcul correct avec intérêts composés
+                const monthlyRate = debt.rate / 100 / 12;
+                const monthsToPayOff = monthlyRate > 0 
+                  ? Math.ceil(Math.log(debt.minPayment / (debt.minPayment - debt.remainingBalance * monthlyRate)) / Math.log(1 + monthlyRate))
+                  : Math.ceil(debt.remainingBalance / debt.minPayment);
+                const totalInterest = debt.remainingBalance * monthlyRate * monthsToPayOff;
                 const progress = debt.initialBalance > 0 ? ((debt.initialBalance - debt.remainingBalance) / debt.initialBalance) * 100 : 100;
                 return (
                   <div key={debt.id} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
@@ -411,44 +473,47 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                     {/* Détails techniques (affichés seulement si développé) */}
                     {expandedDebts.has(debt.id) && (
                       <>
-                        <div className="grid grid-cols-2 gap-4 mb-3">
-                          <div>
-                            <p className={`text-sm ${theme.textSecondary}`}>{t('balance')}</p>
-                            <p className={`font-bold text-red-600`}>
-                              {state.showBalances ? formatCurrency(debt.remainingBalance) : '•••'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className={`text-sm ${theme.textSecondary}`}>{t('paymentMin')}</p>
-                            <p className={`font-medium ${theme.text}`}>
-                              {state.showBalances ? formatCurrency(debt.minPayment) : '•••'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className={`text-sm ${theme.textSecondary}`}>{t('rate')}</p>
-                            <p className={`font-medium ${debt.rate > 15 ? 'text-red-600' : debt.rate > 10 ? 'text-yellow-600' : 'text-green-600'}`}>
-                              {debt.rate}%
-                            </p>
-                          </div>
-                          <div>
-                            <p className={`text-sm ${theme.textSecondary}`}>{t('remainingDuration')}</p>
-                            <p className={`font-medium ${monthsToPayOff > 24 ? 'text-red-600' : 'text-green-600'}`}>
-                              {monthsToPayOff} {t('months')}
-                            </p>
+                        <div className={`p-2 rounded-lg ${theme.bg} border ${theme.border} mb-3`}>
+                          <h5 className={`text-xs font-medium ${theme.text} mb-2`}>{t('technicalDetails') || 'Détails techniques'}</h5>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <span className={theme.textSecondary}>{t('balance')}</span>
+                              <div className={`font-bold text-red-600`}>
+                                {state.showBalances ? formatCurrency(debt.remainingBalance) : '•••'}
+                              </div>
+                            </div>
+                            <div>
+                              <span className={theme.textSecondary}>{t('paymentMin')}</span>
+                              <div className={`font-medium ${theme.text}`}>
+                                {state.showBalances ? formatCurrency(debt.minPayment) : '•••'}
+                              </div>
+                            </div>
+                            <div>
+                              <span className={theme.textSecondary}>{t('rate')}</span>
+                              <div className={`font-medium ${debt.rate > 15 ? 'text-red-600' : debt.rate > 10 ? 'text-yellow-600' : 'text-green-600'}`}>
+                                {debt.rate}%
+                              </div>
+                            </div>
+                            <div>
+                              <span className={theme.textSecondary}>{t('remainingDuration')}</span>
+                              <div className={`font-medium ${monthsToPayOff > 24 ? 'text-red-600' : 'text-green-600'}`}>
+                                {monthsToPayOff} mois
+                              </div>
+                            </div>
                           </div>
                         </div>
                         
                         {state.showBalances && (
-                          <div className={`mb-3 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                            <p className={`text-xs ${theme.textSecondary} mb-1`}>{t('projectionWithMinimumPayments')}</p>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className={`p-2 rounded-lg ${theme.bg} border ${theme.border} mb-3`}>
+                            <h5 className={`text-xs font-medium ${theme.text} mb-2`}>{t('projectionWithMinimumPayments')}</h5>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
                               <div>
                                 <span className={theme.textSecondary}>{t('totalInterest')}</span>
-                                <span className="font-medium text-red-600 ml-2">{formatCurrency(totalInterest)}</span>
+                                <div className="font-medium text-red-600">{formatCurrency(totalInterest)}</div>
                               </div>
                               <div>
                                 <span className={theme.textSecondary}>{t('totalCost')}</span>
-                                <span className="font-medium ml-2">{formatCurrency(debt.remainingBalance + totalInterest)}</span>
+                                <div className="font-medium">{formatCurrency(debt.remainingBalance + totalInterest)}</div>
                               </div>
                             </div>
                           </div>
@@ -459,32 +524,35 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                     {/* Actions et paiements (affichés seulement si développé) */}
                     {expandedDebts.has(debt.id) && (
                       <>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="success"
-                            className="flex-1"
-                            onClick={() => {
-                              actions.setEditingItem(debt);
-                              actions.toggleModal('payment', true);
-                            }}
-                          >
-                            <Icons.CreditCard className="h-4 w-4 mr-2" />
-                            {t('recordPayment')}
-                          </Button>
-                          {debt.remainingBalance > 0 && (
+                        <div className={`p-2 rounded-lg ${theme.bg} border ${theme.border} mb-3`}>
+                          <h5 className={`text-xs font-medium ${theme.text} mb-2`}>{t('actions') || 'Actions'}</h5>
+                          <div className="flex space-x-2">
                             <Button
-                              variant="outline"
-                              size="sm"
+                              variant="success"
+                              className="flex-1"
                               onClick={() => {
-                                // Calculer un paiement optimal (10% du solde)
-                                const optimalPayment = Math.min(debt.remainingBalance, debt.remainingBalance * 0.1);
-                                actions.recordPayment(debt.id, optimalPayment);
+                                actions.setEditingItem(debt);
+                                actions.toggleModal('payment', true);
                               }}
-                              title={t('suggestedPayment')}
                             >
-                              <Icons.Zap className="h-4 w-4" />
+                              <Icons.CreditCard className="h-4 w-4 mr-2" />
+                              {t('recordPayment')}
                             </Button>
-                          )}
+                            {debt.remainingBalance > 0 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Calculer un paiement optimal (10% du solde)
+                                  const optimalPayment = Math.min(debt.remainingBalance, debt.remainingBalance * 0.1);
+                                  actions.recordPayment(debt.id, optimalPayment);
+                                }}
+                                title={t('suggestedPayment')}
+                              >
+                                <Icons.Zap className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                         
                         {/* Paiements du mois sélectionné */}
@@ -497,15 +565,23 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                             return (
                               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                                 <p className={`text-sm font-medium ${theme.text} mb-2`}>{t('paymentsThisMonth') || 'Paiements de ce mois'}</p>
-                                <div className="space-y-1">
+                                <div className="space-y-2">
                                   {monthPayments.map((payment, index) => (
-                                    <div key={payment.id || index} className="flex justify-between items-center text-xs">
-                                      <span className={theme.textSecondary}>
-                                        {new Date(payment.date).toLocaleDateString('fr-FR')}
-                                      </span>
-                                      <span className={`font-medium text-green-600`}>
-                                        -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
-                                      </span>
+                                    <div key={payment.id || index} className={`flex justify-between items-center text-xs p-2 rounded border-2 border-green-300 dark:border-green-700 shadow-sm bg-green-50 dark:bg-green-900/20`}>
+                                      <div className="flex items-center space-x-2">
+                                        <Icons.Circle className="h-2 w-2 text-green-500" />
+                                        <span className={`font-medium text-green-700 dark:text-green-300`}>
+                                          -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
+                                        </span>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className={`text-xs ${theme.textSecondary}`}>
+                                          {new Date(payment.date).toLocaleDateString(state.language === 'fr' ? 'fr-FR' : state.language === 'es' ? 'es-ES' : 'en-US', {
+                                            day: '2-digit',
+                                            month: '2-digit'
+                                          })}
+                                        </div>
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
@@ -515,30 +591,38 @@ const DebtsScreen = memo(({ financeManager, theme, t }) => {
                           return null;
                         })()}
                         
-                        {/* Historique complet des paiements avec carrousel */}
+                        {/* Historique complet des paiements */}
                         {debt.paymentHistory && debt.paymentHistory.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                            <p className={`text-sm font-medium ${theme.text} mb-2`}>{t('paymentHistory') || 'Historique complet'}</p>
+                          <div className={`p-2 rounded-lg ${theme.bg} border ${theme.border} mb-3`}>
+                            <h5 className={`text-xs font-medium ${theme.text} mb-2`}>{t('paymentHistory') || 'Historique complet'}</h5>
                             {(() => {
                               return (
                                 <div className="relative">
-                                  {/* Zone de défilement avec hauteur fixe pour 3 paiements */}
+                                  {/* Zone de défilement avec hauteur fixe pour plus de paiements */}
                                   <div 
-                                    className={`h-[72px] overflow-y-auto pr-2 ${theme.name === 'dark' ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
+                                    className={`max-h-60 overflow-y-auto pr-2 ${theme.name === 'dark' ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
                                     style={{
                                       scrollbarWidth: 'auto',
                                       scrollbarColor: theme.name === 'dark' ? '#6B7280' : '#9CA3AF'
                                     }}
                                   >
-                                    <div className="space-y-1">
+                                    <div className="space-y-2">
                                       {debt.paymentHistory.map((payment, index) => (
-                                        <div key={payment.id || index} className="flex justify-between items-center text-xs py-1">
-                                          <span className={theme.textSecondary}>
-                                            {new Date(payment.date).toLocaleDateString('fr-FR')}
-                                          </span>
-                                          <span className={`font-medium text-green-600`}>
-                                            -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
-                                          </span>
+                                        <div key={payment.id || index} className={`flex justify-between items-center text-xs p-2 rounded border-2 border-green-300 dark:border-green-700 shadow-sm bg-green-50 dark:bg-green-900/20`}>
+                                          <div className="flex items-center space-x-2">
+                                            <Icons.Circle className="h-2 w-2 text-green-500" />
+                                            <span className={`font-medium text-green-700 dark:text-green-300`}>
+                                              -{state.showBalances ? formatCurrency(payment.amount) : '•••'}
+                                            </span>
+                                          </div>
+                                          <div className="text-right">
+                                            <div className={`text-xs ${theme.textSecondary}`}>
+                                              {new Date(payment.date).toLocaleDateString(state.language === 'fr' ? 'fr-FR' : state.language === 'es' ? 'es-ES' : 'en-US', {
+                                                day: '2-digit',
+                                                month: '2-digit'
+                                              })}
+                                            </div>
+                                          </div>
                                         </div>
                                       ))}
                                     </div>

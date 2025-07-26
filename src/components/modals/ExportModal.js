@@ -1,10 +1,9 @@
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo, useState, useEffect, useCallback } from 'react';
 import * as Icons from 'lucide-react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import ReportGenerator from '../../utils/ReportGenerator';
 import { ExcelExportEngine } from '../../utils/ExcelExportEngine';
-import { testExcelExport } from '../../utils/testExcelExport';
 
 const ExportModal = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, showNotification } = financeManager;
@@ -15,56 +14,9 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
   const [showPreview, setShowPreview] = useState(false);
   // 🔧 NOUVEAUX ÉTATS POUR EXCEL v3.0
   const [selectedTemplate, setSelectedTemplate] = useState('comprehensive');
-  const [selectedChartTypes, setSelectedChartTypes] = useState(['pie', 'column', 'line']);
   const [selectedTheme, setSelectedTheme] = useState('green');
 
-  // Régénérer l'aperçu quand le type de rapport change
-  useEffect(() => {
-    if (showPreview) {
-      handlePreview();
-    }
-  }, [selectedReport]);
-
-  const reportTypes = [
-    {
-      id: 'monthly',
-      icon: Icons.Calendar,
-      title: t('monthlyReport'),
-      description: t('monthlyReportDesc')
-    },
-    {
-      id: 'annual',
-      icon: Icons.TrendingUp,
-      title: t('annualReport'),
-      description: t('annualReportDesc')
-    },
-    {
-      id: 'budget',
-      icon: Icons.Target,
-      title: t('budgetAnalysis'),
-      description: t('budgetAnalysisDesc')
-    },
-    {
-      id: 'savings',
-      icon: Icons.PiggyBank,
-      title: t('savingsReport'),
-      description: t('savingsReportDesc')
-    },
-    {
-      id: 'debts',
-      icon: Icons.CreditCard,
-      title: t('debtAnalysis'),
-      description: t('debtAnalysisDesc')
-    },
-    {
-      id: 'excel',
-      icon: Icons.FileSpreadsheet,
-      title: t('exportExcelPremium'),
-      description: t('exportExcelPremiumDesc')
-    }
-  ];
-
-  const handlePreview = async () => {
+  const handlePreview = useCallback(async () => {
     setIsGenerating(true);
     try {
       console.log('🔍 Génération aperçu pour:', selectedReport);
@@ -215,7 +167,53 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [selectedReport, state, computedValues, t]);
+
+  // Régénérer l'aperçu quand le type de rapport change
+  useEffect(() => {
+    if (showPreview) {
+      handlePreview();
+    }
+  }, [selectedReport, showPreview, handlePreview]);
+
+  const reportTypes = [
+    {
+      id: 'monthly',
+      icon: Icons.Calendar,
+      title: t('monthlyReport'),
+      description: t('monthlyReportDesc')
+    },
+    {
+      id: 'annual',
+      icon: Icons.TrendingUp,
+      title: t('annualReport'),
+      description: t('annualReportDesc')
+    },
+    {
+      id: 'budget',
+      icon: Icons.Target,
+      title: t('budgetAnalysis'),
+      description: t('budgetAnalysisDesc')
+    },
+    {
+      id: 'savings',
+      icon: Icons.PiggyBank,
+      title: t('savingsReport'),
+      description: t('savingsReportDesc')
+    },
+    {
+      id: 'debts',
+      icon: Icons.CreditCard,
+      title: t('debtAnalysis'),
+      description: t('debtAnalysisDesc')
+    },
+    {
+      id: 'excel',
+      icon: Icons.FileSpreadsheet,
+      title: t('exportExcelPremium'),
+      description: t('exportExcelPremiumDesc')
+    }
+  ];
 
   const handleExport = async () => {
     setIsGenerating(true);
@@ -265,7 +263,7 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
         // Options avancées v3.0
         const options = {
           template: selectedTemplate,
-          chartTypes: selectedChartTypes,
+          chartTypes: ['pie', 'column', 'line'], // Default chart types
           theme: selectedTheme,
           language: state.language, // Utilise la langue de l'interface
           enableCache: false  // 🔧 Désactivé temporairement pour éviter le cache
@@ -273,14 +271,67 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
         console.log('LANGUE PASSEE A L EXPORT EXCEL :', options.language);
         const result = await ExcelExportEngine.exportProfessionalBudget(excelData, options);
         if (result.success) {
-          showNotification(`✅ Export Excel réussi: ${result.fileName}`, 'success');
+          // Vérifier si on est dans Electron pour le chiffrement
+          if (window.electronAPI && window.electronAPI.exportEncryptedFile) {
+            // Export chiffré via Electron
+            const res = await window.electronAPI.exportEncryptedFile({
+              data: result.buffer,
+              type: 'excel',
+              defaultName: 'budget_report.xlsx.enc'
+            });
+            if (res.success) {
+              showNotification(`✅ Export Excel chiffré: ${res.filePath}`, 'success');
+            } else {
+              showNotification('Erreur lors de l\'export Excel chiffré', 'error');
+            }
+          } else {
+            // Export normal (navigateur)
+            const blob = new Blob([result.buffer], { 
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = result.fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showNotification(`✅ Export Excel réussi: ${result.fileName}`, 'success');
+          }
         } else {
           showNotification(`❌ Erreur export Excel: ${result.error}`, 'error');
         }
       } else if (selectedFormat === 'html') {
         const htmlResult = await ReportGenerator.exportHTML(reportData);
         if (htmlResult.success) {
-          showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
+          // Vérifier si on est dans Electron pour le chiffrement
+          if (window.electronAPI && window.electronAPI.exportEncryptedFile) {
+            // Export chiffré via Electron
+            const res = await window.electronAPI.exportEncryptedFile({
+              data: htmlResult.html,
+              type: 'html',
+              defaultName: 'report.html.enc'
+            });
+            if (res.success) {
+              showNotification(`✅ Export HTML chiffré: ${res.filePath}`, 'success');
+            } else {
+              showNotification('Erreur lors de l\'export HTML chiffré', 'error');
+            }
+          } else {
+            // Export normal (navigateur)
+            // Télécharger le fichier HTML normalement
+            const blob = new Blob([htmlResult.html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = htmlResult.fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
+          }
         } else {
           showNotification('Erreur lors de l\'export HTML', 'error');
         }
@@ -288,7 +339,33 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
         console.log('🔄 Tentative d\'export PDF...');
         const pdfResult = await ReportGenerator.exportPDF(reportData);
         if (pdfResult.success) {
-          showNotification(`Export PDF réussi: ${pdfResult.fileName}`, 'success');
+          // Vérifier si on est dans Electron pour le chiffrement
+          if (window.electronAPI && window.electronAPI.exportEncryptedFile) {
+            // Export chiffré via Electron
+            const res = await window.electronAPI.exportEncryptedFile({
+              data: pdfResult.buffer,
+              type: 'pdf',
+              defaultName: 'report.pdf.enc'
+            });
+            if (res.success) {
+              showNotification(`✅ Export PDF chiffré: ${res.filePath}`, 'success');
+            } else {
+              showNotification('Erreur lors de l\'export PDF chiffré', 'error');
+            }
+          } else {
+            // Export normal (navigateur)
+            // Télécharger le fichier PDF normalement
+            const blob = new Blob([pdfResult.buffer], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = pdfResult.fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showNotification(`Export PDF réussi: ${pdfResult.fileName}`, 'success');
+          }
         } else {
           console.error('Erreur export PDF:', pdfResult.error);
           showNotification(`Erreur export PDF: ${pdfResult.error}`, 'error');
@@ -297,7 +374,31 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
           if (window.confirm('L\'export PDF a échoué. Voulez-vous essayer l\'export HTML à la place ?')) {
             const htmlResult = await ReportGenerator.exportHTML(reportData);
             if (htmlResult.success) {
-              showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
+              // Vérifier si on est dans Electron pour le chiffrement
+              if (window.electronAPI && window.electronAPI.exportEncryptedFile) {
+                const res = await window.electronAPI.exportEncryptedFile({
+                  data: htmlResult.html,
+                  type: 'html',
+                  defaultName: 'report_fallback.html.enc'
+                });
+                if (res.success) {
+                  showNotification(`✅ Export HTML chiffré (fallback): ${res.filePath}`, 'success');
+                } else {
+                  showNotification('Erreur lors de l\'export HTML chiffré', 'error');
+                }
+              } else {
+                // Télécharger le fichier HTML normalement (fallback)
+                const blob = new Blob([htmlResult.html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = htmlResult.fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
+              }
             } else {
               showNotification('Erreur lors de l\'export HTML', 'error');
             }
@@ -434,9 +535,7 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
             <div className="mb-4">
               <h4 className={`font-medium ${theme.text} mb-3`}>{t('excelTemplate')}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {[
-                  { key: 'comprehensive', name: t('excelComplet'), desc: t('excelCompletDesc') }
-                ].map((template) => (
+                {[{ key: 'comprehensive', name: t('excelComplet'), desc: t('excelCompletDesc') }].map((template) => (
                   <button
                     key={template.key}
                     onClick={() => setSelectedTemplate(template.key)}
@@ -452,32 +551,7 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
                 ))}
               </div>
             </div>
-            <div className="mb-4">
-              <h4 className={`font-medium ${theme.text} mb-3`}>{t('excelTypesOfCharts')}</h4>
-              <div className="flex flex-wrap gap-3">
-                {[
-                  { key: 'pie', label: t('excelChartPie') },
-                  { key: 'column', label: t('excelChartColumn') },
-                  { key: 'line', label: t('excelChartLine') }
-                ].map(chart => (
-                  <label key={chart.key} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedChartTypes.includes(chart.key)}
-                      onChange={e => {
-                        if (e.target.checked) {
-                          setSelectedChartTypes([...selectedChartTypes, chart.key]);
-                        } else {
-                          setSelectedChartTypes(selectedChartTypes.filter(t => t !== chart.key));
-                        }
-                      }}
-                      className="accent-blue-600"
-                    />
-                    <span>{chart.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+            {/* Supprimer tout bloc ou texte sur les autres templates et 'Available templates' */}
             <div className="mb-4">
               <h4 className={`font-medium ${theme.text} mb-3`}>{t('excelThemeColor')}</h4>
               <select
@@ -491,42 +565,7 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
                 <option value="orange">🟠</option>
               </select>
             </div>
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center space-x-2 mb-2">
-                <Icons.FileSpreadsheet className="h-5 w-5 text-blue-600" />
-                <h4 className="font-medium text-blue-800 dark:text-blue-200">
-                  {t('excelTemplatesTitle')}
-                </h4>
-              </div>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                {t('excelTemplatesDesc')}
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                <div>
-                  <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                    {t('excelFeaturesTitle')}
-                  </div>
-                  <ul className="text-blue-600 dark:text-blue-400 space-y-1">
-                    <li>• {t('excelFeatureDesign')}</li>
-                    <li>• {t('excelFeatureCharts')}</li>
-                    <li>• {t('excelFeatureFormulas')}</li>
-                    <li>• {t('excelFeatureAI')}</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                    {t('excelAvailableTemplates')}
-                  </div>
-                  <ul className="text-blue-600 dark:text-blue-400 space-y-1">
-                    <li>• {t('excelStandard')} (recommandé)</li>
-                    <li>• {t('excelMinimal')}</li>
-                    <li>• {t('excelAnalytique')}</li>
-                    <li>• {t('excelComplet')}</li>
-                    <li>• {t('excelExecutif')}</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+            {/* Bloc d'information sur les templates supprimé */}
           </>
         )}
 

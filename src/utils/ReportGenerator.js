@@ -61,8 +61,10 @@ class ReportGenerator {
           .positive { color: #10b981; }
           .negative { color: #ef4444; }
           .warning { color: #f59e0b; }
-          .chart-container { height: 300px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; padding: 2rem; margin: 1rem 0; display: flex; align-items: center; justify-content: center; border: 2px dashed #cbd5e1; }
+          .chart-container { height: 500px; overflow-y: auto; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; padding: 2rem; margin: 1rem 0; border: 2px dashed #cbd5e1; }
           .chart-placeholder { text-align: center; color: #64748b; font-size: 1.1rem; }
+          .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+          .chart-item { text-align: center; height: fit-content; }
           .table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
           .table th, .table td { padding: 1rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
           .table th { background: #f9fafb; font-weight: 600; color: #374151; }
@@ -87,6 +89,14 @@ class ReportGenerator {
             .metric-card .value { font-size: 2rem; }
             .header h1 { font-size: 2rem; }
             .section h2 { font-size: 1.5rem; }
+          }
+          
+          /* Responsive design pour mobile */
+          @media (max-width: 768px) {
+            .chart-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .chart-container { padding: 1rem; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .container { padding: 1rem; }
           }
         </style>
         
@@ -149,12 +159,47 @@ class ReportGenerator {
         <!-- Graphique des dépenses -->
         <div class="section">
           <h2>📈 ${t('expenseChart')}</h2>
-          <div class="chart-container">
-            <div class="chart-placeholder">
-              📊 ${t('chartWillBeHere')}
-              <br><small>${t('interactiveInBrowser')}</small>
-            </div>
-          </div>
+          ${(() => {
+            // Générer les données AVANT le template
+            const categoryData = data.categories.map(category => {
+              const spent = data.currentMonthExpenses
+                .filter(e => e.category === category.name)
+                .reduce((sum, e) => sum + e.amount, 0);
+              return {
+                label: t(category.name),
+                value: spent
+              };
+            }).filter(item => item.value > 0);
+            
+            const topExpenses = data.currentMonthExpenses
+              .sort((a, b) => b.amount - a.amount)
+              .slice(0, 10)
+              .map(expense => ({
+                label: expense.description.length > 15 ? expense.description.substring(0, 15) + '...' : expense.description,
+                value: expense.amount
+              }));
+            
+            // Calculer la hauteur dynamique basée sur le nombre d'éléments
+            const pieChartHeight = Math.min(400, Math.max(300, categoryData.length * 20 + 200));
+            const barChartHeight = Math.min(400, Math.max(300, topExpenses.length * 25 + 150));
+            
+            // Générer les SVG AVANT le template
+            const pieChartSVG = this.generatePieChart(categoryData, 350, pieChartHeight);
+            const barChartSVG = this.generateBarChart(topExpenses, 450, barChartHeight);
+            
+            return `
+              <div class="chart-container" style="height: 500px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; padding: 2rem;">
+                <div style="text-align: center; height: fit-content;">
+                  <h3 style="margin-bottom: 1.5rem; color: #374151; font-size: 1.2rem;">${t('expensesByCategory') || 'Dépenses par catégorie'}</h3>
+                  ${pieChartSVG}
+                </div>
+                <div style="text-align: center; height: fit-content;">
+                  <h3 style="margin-bottom: 1.5rem; color: #374151; font-size: 1.2rem;">${t('topExpenses')}</h3>
+                  ${barChartSVG}
+                </div>
+              </div>
+            `;
+          })()}
         </div>
 
         <!-- Top dépenses -->
@@ -265,6 +310,14 @@ class ReportGenerator {
             .metric-card .value { font-size: 2rem; }
             .header h1 { font-size: 2rem; }
             .section h2 { font-size: 1.5rem; }
+          }
+          
+          /* Responsive design pour mobile */
+          @media (max-width: 768px) {
+            .chart-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .chart-container { padding: 1rem; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .container { padding: 1rem; }
           }
         </style>
         
@@ -401,6 +454,14 @@ class ReportGenerator {
             .header h1 { font-size: 2rem; }
             .section h2 { font-size: 1.5rem; }
           }
+          
+          /* Responsive design pour mobile */
+          @media (max-width: 768px) {
+            .chart-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .chart-container { padding: 1rem; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .container { padding: 1rem; }
+          }
         </style>
         
         <div class="header">
@@ -496,6 +557,14 @@ class ReportGenerator {
             .metric-card .value { font-size: 2rem; }
             .header h1 { font-size: 2rem; }
             .section h2 { font-size: 1.5rem; }
+          }
+          
+          /* Responsive design pour mobile */
+          @media (max-width: 768px) {
+            .chart-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .chart-container { padding: 1rem; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .container { padding: 1rem; }
           }
         </style>
         
@@ -611,6 +680,14 @@ class ReportGenerator {
             .metric-card .value { font-size: 2rem; }
             .header h1 { font-size: 2rem; }
             .section h2 { font-size: 1.5rem; }
+          }
+          
+          /* Responsive design pour mobile */
+          @media (max-width: 768px) {
+            .chart-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .chart-container { padding: 1rem; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .container { padding: 1rem; }
           }
         </style>
         
@@ -801,23 +878,13 @@ class ReportGenerator {
     try {
       const html = await this.generateHTML(reportData);
       
-      // Créer un blob et télécharger
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      
       const timestamp = new Date().toISOString().split('T')[0];
       const fileName = `Rapport-${reportData.type}-${timestamp}.html`;
       
-      // Télécharger le fichier
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // Retourner le HTML comme buffer pour le chiffrement
+      const buffer = new TextEncoder().encode(html);
       
-      return { success: true, fileName };
+      return { success: true, fileName, html, buffer };
     } catch (error) {
       console.error('Erreur export HTML:', error);
       return { success: false, error };
@@ -877,9 +944,9 @@ class ReportGenerator {
       try {
         console.log('📄 Génération PDF avec html2pdf.js...');
         
-        await window.html2pdf().set({
+        // Générer le PDF en tant que buffer
+        const pdfBuffer = await window.html2pdf().set({
           margin: [10, 10, 10, 10],
-          filename: fileName,
           image: { 
             type: 'jpeg', 
             quality: 0.98 
@@ -901,11 +968,14 @@ class ReportGenerator {
           pagebreak: { 
             mode: ['avoid-all', 'css', 'legacy'] 
           }
-        }).from(element).save();
+        }).from(element).outputPdf('arraybuffer');
         
         console.log('✅ PDF généré avec html2pdf.js');
         document.body.removeChild(element);
-        return { success: true, fileName };
+        
+        // Convertir ArrayBuffer en Uint8Array pour la compatibilité navigateur
+        const buffer = new Uint8Array(pdfBuffer);
+        return { success: true, fileName, buffer };
         
       } catch (pdfError) {
         console.warn('⚠️ html2pdf.js a échoué:', pdfError);
@@ -975,37 +1045,7 @@ class ReportGenerator {
       
     } catch (error) {
       console.error('❌ Erreur export PDF:', error);
-      
-      // === MÉTHODE 3: Dernière tentative avec jsPDF ===
-      try {
-        if (typeof window.jsPDF !== 'undefined') {
-          console.log('📄 Tentative avec jsPDF...');
-          
-          const { jsPDF } = window.jsPDF;
-          const doc = new jsPDF('p', 'mm', 'a4');
-          
-         // Texte simple si tout le reste échoue
-doc.setFontSize(16);
-doc.text('Rapport Budget', 20, 30);
-doc.setFontSize(12);
-doc.text('Rapport généré le ' + new Date().toLocaleDateString(), 20, 50);
-doc.text('Erreur lors de la génération HTML complète', 20, 70);
-doc.text('Veuillez utiliser l\'export HTML pour un rapport complet', 20, 90);
-
-const fallbackFileName = `Rapport-${reportData.type}-${new Date().toISOString().split('T')[0]}.pdf`;
-doc.save(fallbackFileName);
-
-console.log('✅ PDF de secours généré avec jsPDF');
-return { success: true, fileName: fallbackFileName };
-} 
-} catch (jsPdfError) {
-console.error('❌ jsPDF aussi a échoué:', jsPdfError);
-} 
-      
-      return { 
-        success: false, 
-        error: 'PDF impossible - essayez d\'autoriser les popups ou utilisez Export HTML' 
-      };
+      return { success: false, error: error.message };
     }
   }
 
@@ -1269,6 +1309,155 @@ console.error('❌ jsPDF aussi a échoué:', jsPdfError);
     }
 
     return allPDFTestsPassed;
+  }
+
+  static generatePieChart(data, width = 400, height = 350) {
+    if (!data || data.length === 0) {
+      return `
+        <div style="text-align: center; padding: 40px 20px; color: #666; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
+          <div style="font-size: 18px; margin-bottom: 8px;">📊</div>
+          <div>Aucune donnée disponible</div>
+        </div>
+      `;
+    }
+    
+    // Calculer la hauteur du SVG en fonction de la hauteur totale
+    const svgHeight = Math.min(height - 100, 280);
+    const radius = Math.min(100, svgHeight / 2 - 20);
+    const centerX = width / 2;
+    const centerY = svgHeight / 2;
+    
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+    
+    // Couleurs simples et harmonieuses
+    const colors = [
+      '#3B82F6', // Bleu
+      '#10B981', // Vert
+      '#F59E0B', // Orange
+      '#EF4444', // Rouge
+      '#8B5CF6', // Violet
+      '#06B6D4', // Cyan
+      '#84CC16', // Lime
+      '#F97316', // Orange foncé
+      '#EC4899', // Rose
+      '#6B7280'  // Gris
+    ];
+    
+    let currentAngle = -Math.PI / 2;
+    
+    const slices = data.map((item, index) => {
+      const sliceAngle = (item.value / total) * 2 * Math.PI;
+      const endAngle = currentAngle + sliceAngle;
+      
+      const x1 = centerX + radius * Math.cos(currentAngle);
+      const y1 = centerY + radius * Math.sin(currentAngle);
+      const x2 = centerX + radius * Math.cos(endAngle);
+      const y2 = centerY + radius * Math.sin(endAngle);
+      
+      const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
+      
+      const pathData = [
+        `M ${centerX} ${centerY}`,
+        `L ${x1} ${y1}`,
+        `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+        'Z'
+      ].join(' ');
+      
+      currentAngle = endAngle;
+      
+      return `<path d="${pathData}" fill="${colors[index % colors.length]}" stroke="white" stroke-width="2"/>`;
+    }).join('');
+    
+    // Légende en grille de 3 colonnes
+    const legendItems = data.map((item, index) => {
+      const percentage = ((item.value / total) * 100).toFixed(1);
+      const shortLabel = item.label.length > 12 ? item.label.substring(0, 12) + '...' : item.label;
+      
+      return `
+        <div style="display: flex; align-items: center; padding: 4px 8px; margin: 2px; background: #f8fafc; border-radius: 6px; border: 1px solid #e5e7eb;">
+          <div style="width: 12px; height: 12px; background: ${colors[index % colors.length]}; border-radius: 2px; margin-right: 8px; flex-shrink: 0;"></div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 600; color: #374151; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${shortLabel}</div>
+            <div style="font-size: 10px; color: #6b7280;">${percentage}% • ${this.formatCurrency(item.value)}</div>
+          </div>
+        </div>
+      `;
+    });
+    
+    // Organiser en grille de 3 colonnes
+    const itemsPerRow = 3;
+    const legendRows = [];
+    for (let i = 0; i < legendItems.length; i += itemsPerRow) {
+      const row = legendItems.slice(i, i + itemsPerRow);
+      legendRows.push(`
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px;">
+          ${row.join('')}
+        </div>
+      `);
+    }
+    
+    const legend = legendRows.join('');
+    
+    return `
+      <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <svg width="${width}" height="${svgHeight}" viewBox="0 0 ${width} ${svgHeight}" style="display: block; margin: 0 auto 16px auto;">
+          ${slices}
+          <!-- Cercle central pour effet donut -->
+          <circle cx="${centerX}" cy="${centerY}" r="40" fill="white" stroke="#e5e7eb" stroke-width="2"/>
+          <text x="${centerX}" y="${centerY - 8}" text-anchor="middle" font-size="12" font-weight="600" fill="#6b7280">Total</text>
+          <text x="${centerX}" y="${centerY + 8}" text-anchor="middle" font-size="14" font-weight="700" fill="#374151">${this.formatCurrency(total)}</text>
+        </svg>
+        
+        <div style="max-width: 100%; margin: 0 auto;">
+          ${legend}
+        </div>
+      </div>
+    `;
+  }
+
+  static generateBarChart(data, width = 500, height = 300) {
+    if (!data || data.length === 0) {
+      return `
+        <div style="text-align: center; padding: 40px 20px; color: #666; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
+          <div style="font-size: 18px; margin-bottom: 8px;">📊</div>
+          <div>Aucune donnée disponible</div>
+        </div>
+      `;
+    }
+    
+    // Approche simplifiée : graphique horizontal au lieu de vertical
+    const maxValue = Math.max(...data.map(d => d.value));
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6B7280'];
+    
+    const bars = data.map((item, index) => {
+      const percentage = (item.value / maxValue) * 100;
+      const shortLabel = item.label.length > 15 ? item.label.substring(0, 15) + '...' : item.label;
+      
+      return `
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; margin-bottom: 4px;">
+            <div style="width: 12px; height: 12px; background: ${colors[index % colors.length]}; border-radius: 2px; margin-right: 8px; flex-shrink: 0;"></div>
+            <div style="flex: 1; font-size: 12px; font-weight: 500; color: #374151;">${shortLabel}</div>
+            <div style="font-size: 11px; color: #6b7280; font-weight: 600; margin-left: 8px;">${this.formatCurrency(item.value)}</div>
+          </div>
+          <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+            <div style="width: ${percentage}%; height: 100%; background: ${colors[index % colors.length]}; border-radius: 4px; transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    return `
+      <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 8px;">Top Dépenses</div>
+          <div style="font-size: 12px; color: #6b7280;">Montant maximum: ${this.formatCurrency(maxValue)}</div>
+        </div>
+        <div style="max-height: ${height - 80}px; overflow-y: auto;">
+          ${bars}
+        </div>
+      </div>
+    `;
   }
 }
 

@@ -1,12 +1,75 @@
 // ExpensesScreen.js - Version enrichie
-import React, { memo, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import * as Icons from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import SearchAndFilter from '../components/ui/SearchAndFilter';
 import Pagination from '../components/ui/Pagination';
-import { dateUtils } from '../utils/dateUtils';
 import { WeekComparison } from '../components/dashboard/DashboardWidgets';
+
+// Composant ExpenseItem optimisé
+const ExpenseItem = memo(function ExpenseItem({ expense, category, isRecent, isToday, theme, state, formatCurrency, t, actions }) {
+  return (
+    <div key={expense.id} className={`${theme.card} border ${theme.border} rounded-lg p-4 flex justify-between items-center transition-all hover:shadow-md ${
+      isRecent ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''
+    } ${isToday ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}>
+      <div className="flex items-center space-x-4 flex-1">
+        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: category?.color || '#gray' }} />
+        <div className="flex-1">
+          <p className={`font-medium ${theme.text}`}>{expense.description}</p>
+          <div className="flex items-center space-x-2 text-sm">
+            <span className={theme.textSecondary}>{expense.category}</span>
+            <span className="text-gray-400">•</span>
+            <span className={theme.textSecondary}>
+              {new Date(expense.date).toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', {
+                weekday: 'short',
+                day: '2-digit',
+                month: '2-digit',
+              })}
+            </span>
+            {isRecent && (
+              <>
+                <span className="text-gray-400">•</span>
+                <span className="text-blue-600 text-xs font-medium">{t('recent')}</span>
+              </>
+            )}
+            {isToday && (
+              <>
+                <span className="text-gray-400">•</span>
+                <span className="text-green-600 text-xs font-medium">{t('today')}</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center space-x-3">
+        <span className={`font-bold text-lg ${theme.text}`}>
+          {state.showBalances ? formatCurrency(expense.amount) : '•••'}
+        </span>
+        <div className="flex items-center space-x-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              actions.setEditingItem(expense);
+              actions.toggleModal('editExpense', true);
+            }}
+            className="p-2"
+          >
+            <Icons.Edit2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => actions.deleteExpense(expense.id)}
+            className="p-2 text-red-500 hover:text-red-700"
+          >
+            <Icons.Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 const ExpensesScreen = memo(({ financeManager, theme, t }) => {
   const { 
@@ -17,6 +80,11 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
     totalPages, 
     formatCurrency 
   } = financeManager;
+
+  // Debug log pour voir les dépenses planifiées
+  console.log('DEBUG - ExpensesScreen state.plannedExpenses:', state.plannedExpenses);
+  console.log('DEBUG - ExpensesScreen selectedMonth:', state.selectedMonth);
+  console.log('DEBUG - ExpensesScreen selectedYear:', state.selectedYear);
 
   // Nouvel état pour gérer les onglets
   const [expensesTab, setExpensesTab] = useState('expenses');
@@ -37,7 +105,6 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
 
     // Analyse par jour de la semaine
     const dayAnalysis = expenses.reduce((acc, exp) => {
-      const day = new Date(exp.date).getDay();
       // Utilisation du format natif pour le jour selon la langue
       const dayName = new Date(exp.date).toLocaleDateString(
         state.language === 'fr' ? 'fr-FR' : state.language === 'es' ? 'es-ES' : 'en-US',
@@ -70,7 +137,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
       economySuggestions,
       averageDaily: expenses.reduce((sum, exp) => sum + exp.amount, 0) / Math.max(new Date().getDate(), 1)
     };
-  }, [filteredAndSortedExpenses, formatCurrency, state.language]);
+  }, [filteredAndSortedExpenses, formatCurrency, state.language, t]);
 
   // Détection des patterns de dépenses
   const getSpendingPatterns = useMemo(() => {
@@ -131,31 +198,87 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
   const today = new Date();
   const currentWeek = Math.floor((today.getDate() - 1) / 7);
   const [selectedWeek, setSelectedWeek] = useState(currentWeek);
+  
+  // Réinitialiser selectedWeek quand on change de mois
+  useEffect(() => {
+    const selectedMonthDate = new Date(state.selectedMonth + '-01');
+    const isCurrentMonth = selectedMonthDate.getFullYear() === today.getFullYear() && 
+                          selectedMonthDate.getMonth() === today.getMonth();
+    
+    if (isCurrentMonth) {
+      setSelectedWeek(currentWeek);
+    } else {
+      // Pour les mois futurs/passés, commencer par la première semaine
+      setSelectedWeek(0);
+    }
+  }, [state.selectedMonth, currentWeek]);
   const [selectedDay, setSelectedDay] = useState(null);
   const [searchTermList, setSearchTermList] = useState('');
   const [categoryFilterList, setCategoryFilterList] = useState('all');
   const [weekendOnly, setWeekendOnly] = useState(false);
 
+  // Combiner les dépenses normales et planifiées pour le mois sélectionné
+  const allExpensesForMonth = useMemo(() => {
+    const currentMonth = state.selectedMonth;
+    const currentYear = state.selectedYear;
+    
+    console.log('DEBUG - Current month:', currentMonth, 'Current year:', currentYear);
+    console.log('DEBUG - Planned expenses:', state.plannedExpenses);
+    
+    // Dépenses normales du mois
+    const normalExpenses = paginatedExpenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate.getFullYear() === currentYear && 
+             expenseDate.getMonth() === new Date(currentMonth + '-01').getMonth();
+    });
+    
+    console.log('DEBUG - Normal expenses for month:', normalExpenses);
+    
+    // Dépenses planifiées du mois
+    const plannedExpenses = (state.plannedExpenses || []).filter(expense => {
+      const plannedDate = new Date(expense.plannedDate);
+      const isSameMonth = plannedDate.getFullYear() === currentYear && 
+                         plannedDate.getMonth() === new Date(currentMonth + '-01').getMonth();
+      console.log('DEBUG - Checking planned expense:', expense.description, 'Date:', plannedDate, 'Is same month:', isSameMonth);
+      return isSameMonth;
+    }).map(expense => ({
+      ...expense,
+      date: expense.plannedDate, // Utiliser plannedDate comme date pour l'affichage
+      type: 'planned_expense'
+    }));
+    
+    console.log('DEBUG - Planned expenses for month:', plannedExpenses);
+    console.log('DEBUG - All expenses combined:', [...normalExpenses, ...plannedExpenses]);
+    
+    return [...normalExpenses, ...plannedExpenses];
+  }, [paginatedExpenses, state.plannedExpenses, state.selectedMonth, state.selectedYear]);
+
   // Organisation par semaine et jour pour la liste paginée
   const weeks = useMemo(() => {
     const byWeek = [[], [], [], [], []];
-    paginatedExpenses.forEach(expense => {
+    allExpensesForMonth.forEach(expense => {
       const date = new Date(expense.date);
       const weekNum = Math.floor((date.getDate() - 1) / 7);
+      console.log('DEBUG - Adding expense to week:', weekNum, 'Date:', date, 'Expense:', expense.description);
       byWeek[weekNum].push(expense);
     });
+    console.log('DEBUG - Weeks organization:', byWeek);
     return byWeek;
-  }, [paginatedExpenses]);
+  }, [allExpensesForMonth]);
 
   const daysOfWeek = useMemo(() => {
     const weekExpenses = weeks[selectedWeek] || [];
+    console.log('DEBUG - Selected week:', selectedWeek, 'Week expenses:', weekExpenses);
+    console.log('DEBUG - All weeks data:', weeks);
     const days = {};
     weekExpenses.forEach(exp => {
       const d = new Date(exp.date);
       const dayKey = d.toISOString().split('T')[0];
       if (!days[dayKey]) days[dayKey] = [];
       days[dayKey].push(exp);
+      console.log('DEBUG - Adding expense to day:', dayKey, 'Expense:', exp.description);
     });
+    console.log('DEBUG - Days organization:', days);
     return Object.entries(days).sort(([a], [b]) => new Date(a) - new Date(b));
   }, [weeks, selectedWeek]);
 
@@ -166,8 +289,11 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
   }, [daysOfWeek, selectedDay]);
 
   const filteredDayExpenses = useMemo(() => {
+    console.log('DEBUG - filteredDayExpenses - selectedDay:', selectedDay);
+    console.log('DEBUG - filteredDayExpenses - daysOfWeek:', daysOfWeek);
     if (!selectedDay) return [];
     let expenses = daysOfWeek.find(([d]) => d === selectedDay)?.[1] || [];
+    console.log('DEBUG - filteredDayExpenses - expenses found:', expenses);
     if (categoryFilterList !== 'all') {
       expenses = expenses.filter(e => e.category === categoryFilterList);
     }
@@ -183,6 +309,7 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
         return day === 0 || day === 6;
       });
     }
+    console.log('DEBUG - filteredDayExpenses - final expenses:', expenses);
     return expenses;
   }, [daysOfWeek, selectedDay, categoryFilterList, searchTermList, weekendOnly]);
 
@@ -191,6 +318,35 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
     expenses: { icon: Icons.List, label: t('expenses') },
     recurring: { icon: Icons.Repeat, label: t('recurring') }
   };
+
+  const ITEMS_PER_LOAD = 20;
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
+  const listRef = useRef(null);
+
+  // Remise à zéro du scroll et du nombre d'éléments visibles lors d'un changement de filtre/date
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_LOAD);
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [filteredDayExpenses]);
+
+  // Gestion du scroll pour charger plus d'éléments
+  const handleScroll = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+      // On est en bas de la liste
+      setVisibleCount((prev) => Math.min(prev + ITEMS_PER_LOAD, filteredDayExpenses.length));
+    }
+  }, [filteredDayExpenses.length]);
+
+  // Liste des dépenses à afficher
+  const visibleExpenses = useMemo(() => {
+    console.log('DEBUG - visibleExpenses - filteredDayExpenses:', filteredDayExpenses);
+    console.log('DEBUG - visibleExpenses - visibleCount:', visibleCount);
+    const result = filteredDayExpenses.slice(0, visibleCount);
+    console.log('DEBUG - visibleExpenses - result:', result);
+    return result;
+  }, [filteredDayExpenses, visibleCount]);
 
   return (
     <div className={`min-h-screen ${theme.bg} transition-colors duration-500`}>
@@ -227,22 +383,6 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1">
               <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('addExpense')}</h3>
-              {/* Suggestions rapides */}
-              <div className="mb-4">
-                <p className={`text-sm ${theme.textSecondary} mb-2`}>{t('quickSuggestions')}</p>
-                <div className="flex flex-wrap gap-2">
-                  {['Courses', 'Essence', 'Resto', 'Café'].map(suggestion => (
-                    <Button
-                      key={suggestion}
-                      size="xs"
-                      variant="outline"
-                      onClick={() => actions.quickAddExpense(suggestion)}
-                    >
-                      {suggestion}
-                    </Button>
-                  ))}
-                </div>
-              </div>
               <form 
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -413,82 +553,41 @@ const ExpensesScreen = memo(({ financeManager, theme, t }) => {
                       })}
                     </div>
                     {/* Liste des opérations du jour sélectionné avec défilement */}
-                    <div className="space-y-3 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                      {filteredDayExpenses.length === 0 ? (
-                        <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
-                          {t('noExpensesMatch')}
-                        </div>
-                      ) : (
-                        <>
-
-                                                    {filteredDayExpenses.map(expense => {
+                    <div
+                      className="space-y-3 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                      ref={listRef}
+                      onScroll={handleScroll}
+                    >
+                      {(() => {
+                        console.log('DEBUG - Condition check - visibleExpenses.length:', visibleExpenses.length);
+                        console.log('DEBUG - Condition check - visibleExpenses:', visibleExpenses);
+                        return visibleExpenses.length === 0 ? (
+                          <div className={`text-center ${theme.textSecondary} py-8 border rounded-lg ${theme.border}`}>
+                            {t('noExpensesMatch')}
+                          </div>
+                        ) : (
+                          <>{visibleExpenses.map(expense => {
+                            console.log('DEBUG - Rendering ExpenseItem for expense:', expense);
                             const category = state.categories.find(cat => cat.name === expense.category);
                             const isRecent = (new Date() - new Date(expense.date)) < 24 * 60 * 60 * 1000;
                             const isToday = new Date(expense.date).toDateString() === new Date().toDateString();
                             return (
-                              <div key={expense.id} className={`${theme.card} border ${theme.border} rounded-lg p-4 flex justify-between items-center transition-all hover:shadow-md ${
-                                isRecent ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''
-                              } ${isToday ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}>
-                                <div className="flex items-center space-x-4 flex-1">
-                                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: category?.color || '#gray' }} />
-                                  <div className="flex-1">
-                                    <p className={`font-medium ${theme.text}`}>{expense.description}</p>
-                                    <div className="flex items-center space-x-2 text-sm">
-                                      <span className={theme.textSecondary}>{expense.category}</span>
-                                      <span className="text-gray-400">•</span>
-                                      <span className={theme.textSecondary}>
-                                        {new Date(expense.date).toLocaleDateString(state.language === 'fr' ? 'fr-FR' : 'en-US', { 
-                                          weekday: 'short', 
-                                          day: '2-digit', 
-                                          month: '2-digit' 
-                                        })}
-                                      </span>
-                                      {isRecent && (
-                                        <>
-                                          <span className="text-gray-400">•</span>
-                                          <span className="text-blue-600 text-xs font-medium">{t('recent')}</span>
-                                        </>
-                                      )}
-                                      {isToday && (
-                                        <>
-                                          <span className="text-gray-400">•</span>
-                                          <span className="text-green-600 text-xs font-medium">{t('today')}</span>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                  <span className={`font-bold text-lg ${theme.text}`}>
-                                    {state.showBalances ? formatCurrency(expense.amount) : '•••'}
-                                  </span>
-                                  <div className="flex items-center space-x-1">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        actions.setEditingItem(expense);
-                                        actions.toggleModal('editExpense', true);
-                                      }}
-                                      className="p-2"
-                                    >
-                                      <Icons.Edit2 className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => actions.deleteExpense(expense.id)}
-                                      className="p-2 text-red-500 hover:text-red-700"
-                                    >
-                                      <Icons.Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
+                              <ExpenseItem
+                                key={expense.id}
+                                expense={expense}
+                                category={category}
+                                isRecent={isRecent}
+                                isToday={isToday}
+                                theme={theme}
+                                state={state}
+                                formatCurrency={formatCurrency}
+                                t={t}
+                                actions={actions}
+                              />
                             );
-                          })}
-                        </>
-                      )}
+                          })}</>
+                        );
+                      })()}
                     </div>
                   </>
                 )}

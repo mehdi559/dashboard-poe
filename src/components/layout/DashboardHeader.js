@@ -18,7 +18,7 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
   const [stepIndex, setStepIndex] = useState(0);
   // Fonction pour forcer la majuscule sur la première lettre
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
-  
+
   const monthNav = getMonthNavigation();
   const currentTime = new Date();
   // Simple greeting selon la langue
@@ -28,11 +28,17 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
     return 'Hello';
   }, [state.language]);
 
-  // Mois en français
-  const months = [
-    'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin',
-    'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'
-  ];
+  // Mois selon la langue sélectionnée
+  const getMonthsByLanguage = () => {
+    const monthNames = {
+      fr: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'],
+      en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      es: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    };
+    return monthNames[state.language] || monthNames.fr;
+  };
+
+  const months = getMonthsByLanguage();
 
   // Générer les jours du mois sélectionné
   const getDaysInMonth = (year, month) => {
@@ -150,10 +156,6 @@ const DashboardHeader = memo(({ financeManager, theme, t }) => {
                   const month = getMonthDisplayName(state.selectedMonth);
                   return month.charAt(0).toUpperCase() + month.slice(1);
                 })()}
-              </div>
-              <div className={`text-xs mt-1 ${theme.primary}`}>
-                {monthNav.isCurrentMonth ? t('currentMonth') : 
-                 monthNav.isPastMonth ? t('pastMonth') : t('futureMonth')}
               </div>
               
               {showDatePicker && (

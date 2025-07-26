@@ -1,8 +1,9 @@
-import React, { memo, useState, useMemo, useCallback } from 'react';
+import React, { memo, useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import * as Icons from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import { Search } from 'lucide-react';
 
 // Déclaration de WidgetCard avec la prop theme
 const WidgetCard = memo(({ title, icon: Icon, children, color = 'blue', className = '', theme }) => (
@@ -22,6 +23,9 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [editingRevenueId, setEditingRevenueId] = useState(null);
   const [editRevenueForm, setEditRevenueForm] = useState(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTermList, setSearchTermList] = useState('');
+  const [expandedSavings, setExpandedSavings] = useState(new Set());
 
   // Synchroniser le formulaire d'édition avec la source sélectionnée
   React.useEffect(() => {
@@ -100,18 +104,6 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
     return months;
   }, [state.monthlyIncome, computedValues.totalSpent, state.language]);
 
-  // Allocation automatique d'épargne
-  const getAutomaticAllocation = useMemo(() => {
-    const totalRevenue = state.revenues?.reduce((sum, rev) => sum + rev.amount, 0) || state.monthlyIncome;
-    
-    return {
-      emergency: { percentage: 10, amount: totalRevenue * 0.1, name: t('emergencyFund') },
-      retirement: { percentage: 15, amount: totalRevenue * 0.15, name: t('retirement') },
-      vacation: { percentage: 5, amount: totalRevenue * 0.05, name: t('vacation') },
-      investment: { percentage: 10, amount: totalRevenue * 0.1, name: t('investments') }
-    };
-  }, [state.revenues, state.monthlyIncome, t]);
-
   // Sources de revenus par défaut
   const getDefaultRevenueSources = () => {
     const sources = {
@@ -170,12 +162,95 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
   const balance = getCurrentBalance;
   const stability = getRevenueStability;
   const evolution = getRevenueEvolution;
-  const allocation = getAutomaticAllocation;
   const defaultSources = getDefaultRevenueSources();
+
+  // Composant RevenueItem optimisé
+  const RevenueItem = memo(function RevenueItem({ revenue, theme, state, formatCurrency, t, setEditingRevenueId, actions }) {
+    return (
+      <div className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h4 className={`font-semibold ${theme.text}`}>{revenue.name}</h4>
+            <div className="flex items-center space-x-2 mt-1">
+              <span className={`px-2 py-1 text-xs rounded-full ${
+                revenue.type === 'fixed' 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+              }`}>
+                {t(revenue.type)}
+              </span>
+              <span className={`text-xs ${theme.textSecondary}`}>{t(revenue.frequency)}</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className={`text-lg font-bold text-green-600`}>
+              {state.showBalances ? formatCurrency(revenue.amount) : '•••'}
+            </div>
+            <div className="flex items-center space-x-1 mt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingRevenueId(revenue.id)}
+              >
+                <Icons.Edit2 className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => actions.deleteRevenue(revenue.id)}
+                className="text-red-500 hover:text-red-700"
+              >
+                <Icons.Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {revenue.description && (
+          <p className={`text-sm ${theme.textSecondary} mt-2`}>{revenue.description}</p>
+        )}
+      </div>
+    );
+  });
+
+  const revenueItems = useMemo(() => (state.revenues || []).map(revenue => (
+    <RevenueItem
+      key={revenue.id}
+      revenue={revenue}
+      theme={theme}
+      state={state}
+      formatCurrency={formatCurrency}
+      t={t}
+      setEditingRevenueId={setEditingRevenueId}
+      actions={actions}
+    />
+  )), [state.revenues, theme, state, formatCurrency, t, setEditingRevenueId, actions]);
+
+  const ITEMS_PER_LOAD = 20;
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
+  const listRef = useRef(null);
+
+  // Remise à zéro du scroll et du nombre d'éléments visibles lors d'un changement de filtre
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_LOAD);
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [state.revenues]);
+
+  // Gestion du scroll pour charger plus d'éléments
+  const handleScroll = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+      setVisibleCount((prev) => Math.min(prev + ITEMS_PER_LOAD, (state.revenues || []).length));
+    }
+  }, [state.revenues]);
+
+  // Liste des revenus à afficher
+  const visibleRevenues = useMemo(() => (state.revenues || []).slice(0, visibleCount), [state.revenues, visibleCount]);
 
   return (
     <div className={`min-h-screen ${theme.bg} transition-colors duration-500`}>
-      <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-10 backdrop-blur-lg bg-opacity-90`}>
+      <div className={`${theme.card} border-b ${theme.border} sticky top-0 z-10 backdrop-blur-lg bg-opacity-90 mt-6`}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
@@ -321,20 +396,7 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
               </WidgetCard>
             </div>
 
-            {/* Allocation automatique */}
-            <WidgetCard title={t('automaticAllocation')} icon={Icons.Shuffle} color="purple" theme={theme}>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {Object.entries(allocation).map(([key, item]) => (
-                  <div key={key} className={`p-3 rounded-lg ${theme.bg} border ${theme.border} text-center`}>
-                    <div className={`text-sm ${theme.textSecondary} mb-1`}>{item.name}</div>
-                    <div className={`text-lg font-bold text-purple-600`}>
-                      {formatCurrency(item.amount)}
-                    </div>
-                    <div className={`text-xs ${theme.textSecondary}`}>{item.percentage}%</div>
-                  </div>
-                ))}
-              </div>
-            </WidgetCard>
+            {/* Allocation automatique - SUPPRIMÉ */}
           </div>
         )}
 
@@ -481,61 +543,30 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
 
               <div className="lg:col-span-2">
                 <WidgetCard title={t('currentRevenueSources')} icon={Icons.List} color="green" theme={theme}>
-                  <div className="space-y-3">
-                    {(state.revenues || []).length === 0 ? (
+                  <div
+                    className="space-y-3 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                    ref={listRef}
+                    onScroll={handleScroll}
+                  >
+                    {visibleRevenues.length === 0 ? (
                       <div className="text-center py-8">
                         <Icons.DollarSign className={`h-12 w-12 mx-auto mb-3 ${theme.textSecondary} opacity-50`} />
                         <p className={theme.textSecondary}>{t('noRevenueSources')}</p>
                         <p className={`text-xs ${theme.textSecondary} mt-2`}>{t('addFirstRevenueSource')}</p>
                       </div>
                     ) : (
-                      (state.revenues || []).map(revenue => (
-                        <div key={revenue.id} className={`p-4 rounded-lg border ${theme.border} ${theme.bg}`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h4 className={`font-semibold ${theme.text}`}>{revenue.name}</h4>
-                              <div className="flex items-center space-x-2 mt-1">
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  revenue.type === 'fixed' 
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                }`}>
-                                  {t(revenue.type)}
-                                </span>
-                                <span className={`text-xs ${theme.textSecondary}`}>
-                                  {t(revenue.frequency)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className={`text-lg font-bold text-green-600`}>
-                                {state.showBalances ? formatCurrency(revenue.amount) : '•••'}
-                              </div>
-                              <div className="flex items-center space-x-1 mt-1">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setEditingRevenueId(revenue.id)}
-                                >
-                                  <Icons.Edit2 className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => actions.deleteRevenue && actions.deleteRevenue(revenue.id)}
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  <Icons.Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {revenue.description && (
-                            <p className={`text-sm ${theme.textSecondary} mt-2`}>{revenue.description}</p>
-                          )}
-                        </div>
-                      ))
+                      <>{visibleRevenues.map(revenue => (
+                        <RevenueItem
+                          key={revenue.id}
+                          revenue={revenue}
+                          theme={theme}
+                          state={state}
+                          formatCurrency={formatCurrency}
+                          t={t}
+                          setEditingRevenueId={setEditingRevenueId}
+                          actions={actions}
+                        />
+                      ))}</>
                     )}
                   </div>
                 </WidgetCard>
@@ -613,8 +644,37 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                 </div>
                 <div className="lg:col-span-2">
                   <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('goalsWithImpact')}</h3>
-                  <div className="max-h-[20rem] overflow-y-auto space-y-4">
-                    {computedValues.savingsForSelectedMonth.map(goal => {
+                  {/* Barre de recherche stylée */}
+                  <form
+                    className="flex items-center gap-2 mb-4"
+                    onSubmit={e => {
+                      e.preventDefault();
+                      setSearchTermList(searchInput);
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={searchInput}
+                      onChange={e => {
+                        setSearchInput(e.target.value);
+                        setSearchTermList(e.target.value); // Recherche en temps réel
+                      }}
+                      placeholder=""
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none w-full"
+                      style={{maxWidth: 300}}
+                    />
+                    <button
+                      type="submit"
+                      className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      {t('search')}
+                    </button>
+                  </form>
+                  <div className="max-h-[35rem] overflow-y-auto space-y-4">
+                    {computedValues.savingsForSelectedMonth
+                      .filter(goal => goal.name.toLowerCase().includes(searchTermList.toLowerCase()))
+                      .map(goal => {
                       const progress = (goal.currentAmount / goal.targetAmount) * 100;
                       const segments = 10;
                       const filledSegments = Math.floor((progress / 100) * segments);
@@ -623,7 +683,15 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                         <div key={goal.id} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
                           <div className="flex justify-between items-center mb-3">
                             <div>
-                              <h4 className={`font-semibold ${theme.text}`}>{goal.name}</h4>
+                              <div className="flex items-center space-x-2">
+                                <h4 className={`font-semibold ${theme.text}`}>{goal.name}</h4>
+                                {goal.autoDebit && (
+                                  <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full flex items-center">
+                                    <Icons.CreditCard className="h-3 w-3 mr-1" />
+                                    {t('autoDebit')}
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex items-center space-x-2 mt-1">
                                 <span className={`font-medium ${theme.text}`}>{state.showBalances 
                                   ? `${formatCurrency(goal.cumulativeAmount)} / ${formatCurrency(goal.targetAmount)}`
@@ -654,6 +722,15 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                                 title={t('edit')}
                               >
                                 <Icons.Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => actions.toggleSavingsAutoDebit(goal.id, goal.autoDebitAmount || 100)}
+                                className={`${goal.autoDebit ? 'text-green-600 hover:text-green-800' : 'text-gray-500 hover:text-gray-700'}`}
+                                title={goal.autoDebit ? t('disableAutoDebit') : t('enableAutoDebit')}
+                              >
+                                <Icons.CreditCard className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="outline"
@@ -695,49 +772,164 @@ const RevenueScreen = memo(({ financeManager, theme, t }) => {
                               {goal.cumulativeProgress.toFixed(1)}% {t('reached')}
                               {goal.cumulativeProgress >= 100 && <span className="text-green-500 ml-2">{t('goalReached')}</span>}
                             </p>
-                            
-                            {/* Progression du mois en cours */}
-                            {goal.monthAmount > 0 && (
-                              <div className={`mt-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800`}>
-                                <div className="flex justify-between items-center mb-2">
-                                  <span className={`text-sm font-medium ${theme.text}`}>{t('progressThisMonth')}</span>
-                                  <span className={`text-sm font-bold text-green-600`}>+{formatCurrency(goal.monthAmount)}</span>
-                                </div>
-                                <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2">
-                                  <div 
-                                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${Math.min(goal.monthProgress, 100)}%` }}
-                                  />
-                                </div>
-                                <p className={`text-xs ${theme.textSecondary} mt-1`}>
-                                  {goal.monthProgress.toFixed(1)}% {t('ofTargetThisMonth')}
-                                </p>
-                              </div>
-                            )}
                           </div>
                           
-                          {/* Calculateur d'impact */}
-                          <div className={`mt-4 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                            <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('impactCalculator')}</h5>
-                            <div className="grid grid-cols-2 gap-4 text-xs">
-                              <div>
-                                <span className={theme.textSecondary}>{t('remainingToSave')}</span>
-                                <div className={`font-bold ${theme.text}`}>{formatCurrency(goal.targetAmount - goal.cumulativeAmount)}</div>
+                          {/* Contenu détaillé (masqué par défaut) */}
+                                                      {expandedSavings.has(goal.id) && (
+                              <div className="space-y-2 mt-2">
+                              {/* Progression du mois en cours - version compacte */}
+                              {goal.monthAmount > 0 && (
+                                <div className={`p-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800`}>
+                                  <div className="flex justify-between items-center mb-1">
+                                    <span className={`text-xs font-medium ${theme.text}`}>{t('progressThisMonth')}</span>
+                                    <span className={`text-xs font-bold text-green-600`}>+{formatCurrency(goal.monthAmount)}</span>
+                                  </div>
+                                  <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-1.5">
+                                    <div 
+                                      className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
+                                      style={{ width: `${Math.min(goal.monthProgress, 100)}%` }}
+                                    />
+                                  </div>
+                                  <p className={`text-xs ${theme.textSecondary} mt-1`}>
+                                    {goal.monthProgress.toFixed(1)}% {t('ofTargetThisMonth')}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {/* Calculateur d'impact - version compacte */}
+                              <div className={`p-2 rounded-lg ${theme.bg} border ${theme.border}`}>
+                                <h5 className={`text-xs font-medium ${theme.text} mb-2`}>{t('impactCalculator')}</h5>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  <div>
+                                    <span className={theme.textSecondary}>{t('remainingToSave')}</span>
+                                    <div className={`font-bold ${theme.text}`}>{formatCurrency(goal.targetAmount - goal.cumulativeAmount)}</div>
+                                  </div>
+                                  <div>
+                                    <span className={theme.textSecondary}>{t('perMonth')}</span>
+                                    <div className={`font-bold text-blue-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 12)}</div>
+                                  </div>
+                                  <div>
+                                    <span className={theme.textSecondary}>{t('perWeek')}</span>
+                                    <div className={`font-bold text-purple-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 52)}</div>
+                                  </div>
+                                  <div>
+                                    <span className={theme.textSecondary}>{t('perDay')}</span>
+                                    <div className={`font-bold text-orange-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 365)}</div>
+                                  </div>
+                                </div>
                               </div>
-                              <div>
-                                <span className={theme.textSecondary}>{t('perMonth')}</span>
-                                <div className={`font-bold text-blue-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 12)}</div>
-                              </div>
-                              <div>
-                                <span className={theme.textSecondary}>{t('perWeek')}</span>
-                                <div className={`font-bold text-purple-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 52)}</div>
-                              </div>
-                              <div>
-                                <span className={theme.textSecondary}>{t('perDay')}</span>
-                                <div className={`font-bold text-orange-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 365)}</div>
+                              
+                              {/* Historique des transactions - version compacte */}
+                              <div className={`p-2 rounded-lg ${theme.bg} border ${theme.border}`}>
+                                <h5 className={`text-xs font-medium ${theme.text} mb-2`}>
+                                  <span>{t('transactions') || 'Historique'}</span>
+                                </h5>
+                                
+                                {goal.transactions && goal.transactions.length > 0 ? (
+                                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                                    {goal.transactions
+                                      .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                      .slice(0, 8)
+                                      .map((transaction, index) => (
+                                        <div key={transaction.id} className={`flex items-center justify-between p-2 rounded text-xs border-2 ${
+                                          transaction.type === 'add' 
+                                            ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 shadow-sm' 
+                                            : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 shadow-sm'
+                                        }`}>
+                                          <div className="flex items-center space-x-2">
+                                            <Icons.Circle className={`h-2 w-2 ${
+                                              transaction.type === 'add' ? 'text-green-500' : 'text-red-500'
+                                            }`} />
+                                            <span className={`font-medium ${
+                                              transaction.type === 'add' ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
+                                            }`}>
+                                              {transaction.type === 'add' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center space-x-1">
+                                            <div className="text-right mr-2">
+                                              <div className={`text-xs ${theme.textSecondary}`}>
+                                                {new Date(transaction.date).toLocaleDateString(state.language === 'fr' ? 'fr-FR' : state.language === 'es' ? 'es-ES' : 'en-US', {
+                                                  day: '2-digit',
+                                                  month: '2-digit'
+                                                })}
+                                              </div>
+                                              {transaction.description && (
+                                                <div className={`text-xs ${theme.textSecondary} truncate max-w-20`} title={transaction.description}>
+                                                  {transaction.description}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div className="flex space-x-1">
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                  actions.setEditingItem({ ...goal, editingTransaction: transaction });
+                                                  actions.toggleModal('editSaving', true);
+                                                }}
+                                                className="text-xs px-1 py-1 h-6 w-6"
+                                                title={t('edit')}
+                                              >
+                                                <Icons.Edit2 className="h-3 w-3" />
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                  if (window.confirm(t('confirmDeleteGoal') || 'Supprimer cette transaction ?')) {
+                                                    actions.deleteSavingsTransaction(goal.id, transaction.id);
+                                                  }
+                                                }}
+                                                className="text-xs px-1 py-1 h-6 w-6 text-red-500 hover:text-red-700"
+                                                title={t('delete')}
+                                              >
+                                                <Icons.Trash2 className="h-3 w-3" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </div>
+                                ) : (
+                                  <div className={`text-center py-4 ${theme.textSecondary}`}>
+                                    <Icons.History className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                    <p className="text-xs">{t('noOperationsThisMonth') || 'Aucune opération'}</p>
+                                  </div>
+                                )}
+                                
+                                {goal.transactions && goal.transactions.length > 8 && (
+                                  <div className="text-center mt-2">
+                                    <span className={`text-xs ${theme.textSecondary}`}>
+                                      +{goal.transactions.length - 8} {t('more') || 'autres'}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          </div>
+                          )}
+                          
+                          {/* Bouton showDetails/hideDetails - toujours en bas */}
+                          <button
+                            onClick={() => {
+                              const newExpanded = new Set(expandedSavings);
+                              if (newExpanded.has(goal.id)) {
+                                newExpanded.delete(goal.id);
+                              } else {
+                                newExpanded.add(goal.id);
+                              }
+                              setExpandedSavings(newExpanded);
+                            }}
+                            className={`flex items-center space-x-1 text-xs font-medium transition-colors mt-3 ${
+                              expandedSavings.has(goal.id) 
+                                ? 'text-blue-600 hover:text-blue-800' 
+                                : 'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+                            }`}
+                            title={expandedSavings.has(goal.id) ? t('hideDetails') : t('showDetails')}
+                          >
+                            <Icons.ChevronDown className={`h-3 w-3 transition-transform ${expandedSavings.has(goal.id) ? 'rotate-180' : ''}`} />
+                            <span className="ml-1 text-xs">{expandedSavings.has(goal.id) ? t('hideDetails') : t('showDetails')}</span>
+                                                    </button>
                         </div>
                       );
                     })}

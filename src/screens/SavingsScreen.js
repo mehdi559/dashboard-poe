@@ -1,5 +1,5 @@
 // SavingsScreen.js - Version enrichie
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import * as Icons from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -7,6 +7,10 @@ import Input from '../components/ui/Input';
 const SavingsScreen = memo(({ financeManager, theme, t }) => {
   const { state, actions, computedValues, formatCurrency } = financeManager;
   const [openGoalId, setOpenGoalId] = useState(null);
+
+  const ITEMS_PER_LOAD = 20;
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
+  const listRef = useRef(null);
 
   // Calculateur d'impact des épargnes
   const getImpactCalculations = useMemo(() => {
@@ -122,6 +126,216 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
     return translationMap[description] || description;
   };
 
+  // Composant SavingGoalItem optimisé
+  const SavingGoalItem = memo(function SavingGoalItem({ goal, progress, segments, filledSegments, open, theme, state, formatCurrency, t, actions, setOpenGoalId }) {
+    return (
+      <div className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <h4 className={`font-semibold ${theme.text}`}>{goal.name}</h4>
+            <div className="flex items-center space-x-2 mt-1">
+              <span className={`font-medium ${theme.text}`}>{state.showBalances 
+                ? `${formatCurrency(goal.cumulativeAmount)} / ${formatCurrency(goal.targetAmount)}`
+                : '••• / •••'
+              }</span>
+              <span className={`text-xs ${theme.textSecondary}`}>{goal.cumulativeProgress.toFixed(1)}% {t('reached')}</span>
+            </div>
+            {goal.monthAmount > 0 && (
+              <div className="flex items-center space-x-2 mt-1">
+                <span className="text-xs text-green-600 font-medium">
+                  +{formatCurrency(goal.monthAmount)} {t('thisMonth')}
+                </span>
+                <span className={`text-xs ${theme.textSecondary}`}>
+                  ({goal.monthProgress.toFixed(1)}% {t('progressThisMonth')})
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                actions.setEditingItem(goal);
+                actions.toggleModal('editSaving', true);
+              }}
+              title={t('edit')}
+            >
+              <Icons.Edit2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-500 hover:text-red-700"
+              onClick={() => {
+                if (window.confirm(t('confirmDeleteGoal') || 'Supprimer cet objectif ?')) {
+                  actions.deleteSavingsGoal(goal.id);
+                }
+              }}
+              title={t('delete')}
+            >
+              <Icons.Trash2 className="h-4 w-4" />
+            </Button>
+            <button
+              className="ml-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              onClick={() => setOpenGoalId(open ? null : goal.id)}
+              aria-label={open ? t('collapse') : t('expand')}
+            >
+              <Icons.ChevronDown className={`h-5 w-5 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        </div>
+        {/* Contenu dépliable */}
+        {open && (
+          <>
+            {/* Progression visuelle avancée */}
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className={theme.textSecondary}>{t('progression')}</span>
+                <span className={`font-medium ${theme.text}`}>{state.showBalances 
+                  ? `${formatCurrency(goal.cumulativeAmount)} / ${formatCurrency(goal.targetAmount)}`
+                  : '••• / •••'
+                }</span>
+              </div>
+              {/* Barre de progression segmentée */}
+              <div className="flex space-x-1">
+                {Array.from({ length: segments }).map((_, index) => (
+                  <div
+                    key={index}
+                    className={`flex-1 h-3 rounded ${
+                      index < filledSegments ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className={`text-xs ${theme.textSecondary}`}>
+                {goal.cumulativeProgress.toFixed(1)}% {t('reached')}
+                {goal.cumulativeProgress >= 100 && <span className="text-green-500 ml-2">{t('goalReached')}</span>}
+              </p>
+              
+              {/* Progression du mois en cours */}
+              {goal.monthAmount > 0 && (
+                <div className={`mt-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className={`text-sm font-medium ${theme.text}`}>{t('progressThisMonth')}</span>
+                    <span className={`text-sm font-bold text-green-600`}>+{formatCurrency(goal.monthAmount)}</span>
+                  </div>
+                  <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2">
+                    <div 
+                      className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(goal.monthProgress, 100)}%` }}
+                    />
+                  </div>
+                  <p className={`text-xs ${theme.textSecondary} mt-1`}>
+                    {goal.monthProgress.toFixed(1)}% {t('ofTargetThisMonth')}
+                  </p>
+                </div>
+              )}
+            </div>
+            {/* Calculateur d'impact */}
+            <div className={`mt-4 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
+              <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('impactCalculator')}</h5>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <span className={theme.textSecondary}>{t('remainingToSave')}</span>
+                  <div className={`font-bold ${theme.text}`}>{formatCurrency(goal.targetAmount - goal.cumulativeAmount)}</div>
+                </div>
+                <div>
+                  <span className={theme.textSecondary}>{t('atCurrentRate')}</span>
+                  <div className={`font-bold ${goal.monthsToTarget > 24 ? 'text-red-600' : goal.monthsToTarget > 12 ? 'text-yellow-600' : 'text-green-600'}`}>{goal.monthsToTarget === Infinity ? t('undefined') : `${goal.monthsToTarget} ${t('months')}`}</div>
+                </div>
+                <div>
+                  <span className={theme.textSecondary}>{t('perMonth')}</span>
+                  <div className={`font-bold text-blue-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 12)}</div>
+                </div>
+                <div>
+                  <span className={theme.textSecondary}>{t('perDay')}</span>
+                  <div className={`font-bold text-purple-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 365)}</div>
+                </div>
+              </div>
+            </div>
+            {/* Historique des transactions du mois sélectionné avec carrousel */}
+            {goal.transactions && goal.transactions.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('operationsThisMonth') || 'Opérations de ce mois'}</h5>
+                {(() => {
+                  const monthTransactions = goal.transactions.filter(transaction => 
+                    transaction.date.startsWith(state.selectedMonth)
+                  );
+                  
+                  if (monthTransactions.length === 0) {
+                    return (
+                      <p className={`text-xs ${theme.textSecondary} italic`}>
+                        {t('noOperationsThisMonth') || 'Aucune opération ce mois'}
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <div className="relative">
+                      {/* Zone de défilement avec hauteur fixe pour 3 opérations */}
+                      <div 
+                        className={`h-[72px] overflow-y-auto pr-2 ${theme.name === 'dark' ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
+                        style={{
+                          scrollbarWidth: 'auto',
+                          scrollbarColor: theme.name === 'dark' ? '#6B7280' : '#9CA3AF'
+                        }}
+                      >
+                        <div className="space-y-1">
+                          {monthTransactions.map((transaction, index) => (
+                            <div key={transaction.id || index} className="flex justify-between text-xs py-1">
+                              <span className={theme.textSecondary}>
+                                {new Date(transaction.date).toLocaleDateString('fr-FR')} - {translateTransactionDescription(transaction.description)}
+                              </span>
+                              <span className={`font-medium ${transaction.type === 'add' ? 'text-green-600' : 'text-red-600'}`}>
+                                {transaction.type === 'add' ? '+' : '-'}{state.showBalances ? formatCurrency(transaction.amount) : '•••'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+            {/* Bouton enregistrer un mouvement */}
+            <div className="mt-4 flex justify-end">
+              <Button
+                variant="success"
+                onClick={() => {
+                  actions.setEditingItem(goal);
+                  actions.toggleModal('editSaving', true);
+                }}
+              >
+                <Icons.PlusCircle className="h-4 w-4 mr-2" />
+                {t('recordSavingTransaction') || 'Enregistrer un mouvement'}
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  });
+
+  // Remise à zéro du scroll et du nombre d'éléments visibles lors d'un changement de filtre/mois
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_LOAD);
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [computedValues.savingsForSelectedMonth]);
+
+  // Gestion du scroll pour charger plus d'éléments
+  const handleScroll = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+      setVisibleCount((prev) => Math.min(prev + ITEMS_PER_LOAD, computedValues.savingsForSelectedMonth.length));
+    }
+  }, [computedValues.savingsForSelectedMonth.length]);
+
+  // Liste des objectifs à afficher
+  const visibleGoals = useMemo(() => computedValues.savingsForSelectedMonth.slice(0, visibleCount), [computedValues.savingsForSelectedMonth, visibleCount]);
+
   return (
     <div className="space-y-6 mt-6">
       {/* Section principale - Objectifs d'épargne */}
@@ -190,199 +404,32 @@ const SavingsScreen = memo(({ financeManager, theme, t }) => {
           <div className="lg:col-span-2">
             <h3 className={`text-lg font-semibold ${theme.text} mb-4`}>{t('goalsWithImpact')}</h3>
             <div className="space-y-4">
-              {computedValues.savingsForSelectedMonth.map(goal => {
-                const { progress, segments, filledSegments } = getProgressVisualization(goal);
-                const open = openGoalId === goal.id;
-                return (
-                  <div key={goal.id} className={`${theme.card} border ${theme.border} rounded-lg p-4`}>
-                    <div className="flex justify-between items-center mb-3">
-                      <div>
-                        <h4 className={`font-semibold ${theme.text}`}>{goal.name}</h4>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <span className={`font-medium ${theme.text}`}>{state.showBalances 
-                            ? `${formatCurrency(goal.cumulativeAmount)} / ${formatCurrency(goal.targetAmount)}`
-                            : '••• / •••'
-                          }</span>
-                          <span className={`text-xs ${theme.textSecondary}`}>{goal.cumulativeProgress.toFixed(1)}% {t('reached')}</span>
-                        </div>
-                        {/* Affichage de la progression du mois */}
-                        {goal.monthAmount > 0 && (
-                          <div className="flex items-center space-x-2 mt-1">
-                            <span className={`text-xs text-green-600 font-medium`}>
-                              +{formatCurrency(goal.monthAmount)} {t('thisMonth')}
-                            </span>
-                            <span className={`text-xs ${theme.textSecondary}`}>
-                              ({goal.monthProgress.toFixed(1)}% {t('progressThisMonth')})
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            actions.setEditingItem(goal);
-                            actions.toggleModal('editSaving', true);
-                          }}
-                          title={t('edit')}
-                        >
-                          <Icons.Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700"
-                          onClick={() => {
-                            if (window.confirm(t('confirmDeleteGoal') || 'Supprimer cet objectif ?')) {
-                              actions.deleteSavingsGoal(goal.id);
-                            }
-                          }}
-                          title={t('delete')}
-                        >
-                          <Icons.Trash2 className="h-4 w-4" />
-                        </Button>
-                        <button
-                          className="ml-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                          onClick={() => setOpenGoalId(open ? null : goal.id)}
-                          aria-label={open ? t('collapse') : t('expand')}
-                        >
-                          <Icons.ChevronDown className={`h-5 w-5 transition-transform ${open ? 'rotate-180' : ''}`} />
-                        </button>
-                      </div>
-                    </div>
-                    {/* Contenu dépliable */}
-                    {open && (
-                      <>
-                        {/* Progression visuelle avancée */}
-                        <div className="space-y-3">
-                          <div className="flex justify-between text-sm">
-                            <span className={theme.textSecondary}>{t('progression')}</span>
-                            <span className={`font-medium ${theme.text}`}>{state.showBalances 
-                              ? `${formatCurrency(goal.cumulativeAmount)} / ${formatCurrency(goal.targetAmount)}`
-                              : '••• / •••'
-                            }</span>
-                          </div>
-                          {/* Barre de progression segmentée */}
-                          <div className="flex space-x-1">
-                            {Array.from({ length: segments }).map((_, index) => (
-                              <div
-                                key={index}
-                                className={`flex-1 h-3 rounded ${
-                                  index < filledSegments ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <p className={`text-xs ${theme.textSecondary}`}>
-                            {goal.cumulativeProgress.toFixed(1)}% {t('reached')}
-                            {goal.cumulativeProgress >= 100 && <span className="text-green-500 ml-2">{t('goalReached')}</span>}
-                          </p>
-                          
-                          {/* Progression du mois en cours */}
-                          {goal.monthAmount > 0 && (
-                            <div className={`mt-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800`}>
-                              <div className="flex justify-between items-center mb-2">
-                                <span className={`text-sm font-medium ${theme.text}`}>{t('progressThisMonth')}</span>
-                                <span className={`text-sm font-bold text-green-600`}>+{formatCurrency(goal.monthAmount)}</span>
-                              </div>
-                              <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2">
-                                <div 
-                                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                                  style={{ width: `${Math.min(goal.monthProgress, 100)}%` }}
-                                />
-                              </div>
-                              <p className={`text-xs ${theme.textSecondary} mt-1`}>
-                                {goal.monthProgress.toFixed(1)}% {t('ofTargetThisMonth')}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                        {/* Calculateur d'impact */}
-                        <div className={`mt-4 p-3 rounded-lg ${theme.bg} border ${theme.border}`}>
-                          <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('impactCalculator')}</h5>
-                          <div className="grid grid-cols-2 gap-4 text-xs">
-                            <div>
-                              <span className={theme.textSecondary}>{t('remainingToSave')}</span>
-                              <div className={`font-bold ${theme.text}`}>{formatCurrency(goal.targetAmount - goal.cumulativeAmount)}</div>
-                            </div>
-                            <div>
-                              <span className={theme.textSecondary}>{t('atCurrentRate')}</span>
-                              <div className={`font-bold ${goal.monthsToTarget > 24 ? 'text-red-600' : goal.monthsToTarget > 12 ? 'text-yellow-600' : 'text-green-600'}`}>{goal.monthsToTarget === Infinity ? t('undefined') : `${goal.monthsToTarget} ${t('months')}`}</div>
-                            </div>
-                            <div>
-                              <span className={theme.textSecondary}>{t('perMonth')}</span>
-                              <div className={`font-bold text-blue-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 12)}</div>
-                            </div>
-                            <div>
-                              <span className={theme.textSecondary}>{t('perDay')}</span>
-                              <div className={`font-bold text-purple-600`}>{formatCurrency((goal.targetAmount - goal.cumulativeAmount) / 365)}</div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* Historique des transactions du mois sélectionné avec carrousel */}
-                        {goal.transactions && goal.transactions.length > 0 && (
-                          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                            <h5 className={`text-sm font-medium ${theme.text} mb-2`}>{t('operationsThisMonth') || 'Opérations de ce mois'}</h5>
-                            {(() => {
-                              const monthTransactions = goal.transactions.filter(transaction => 
-                                transaction.date.startsWith(state.selectedMonth)
-                              );
-                              
-                              if (monthTransactions.length === 0) {
-                                return (
-                                  <p className={`text-xs ${theme.textSecondary} italic`}>
-                                    {t('noOperationsThisMonth') || 'Aucune opération ce mois'}
-                                  </p>
-                                );
-                              }
-
-                              return (
-                                <div className="relative">
-                                  {/* Zone de défilement avec hauteur fixe pour 3 opérations */}
-                                  <div 
-                                    className={`h-[72px] overflow-y-auto pr-2 ${theme.name === 'dark' ? 'scrollbar-visible-dark' : 'scrollbar-visible-light'}`}
-                                    style={{
-                                      scrollbarWidth: 'auto',
-                                      scrollbarColor: theme.name === 'dark' ? '#6B7280' : '#9CA3AF'
-                                    }}
-                                  >
-                                    <div className="space-y-1">
-                                      {monthTransactions.map((transaction, index) => (
-                                        <div key={transaction.id || index} className="flex justify-between text-xs py-1">
-                                          <span className={theme.textSecondary}>
-                                            {new Date(transaction.date).toLocaleDateString('fr-FR')} - {translateTransactionDescription(transaction.description)}
-                                          </span>
-                                          <span className={`font-medium ${transaction.type === 'add' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {transaction.type === 'add' ? '+' : '-'}{state.showBalances ? formatCurrency(transaction.amount) : '•••'}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        )}
-                        {/* Bouton enregistrer un mouvement */}
-                        <div className="mt-4 flex justify-end">
-                          <Button
-                            variant="success"
-                            onClick={() => {
-                              actions.setEditingItem(goal);
-                              actions.toggleModal('editSaving', true);
-                            }}
-                          >
-                            <Icons.PlusCircle className="h-4 w-4 mr-2" />
-                            {t('recordSavingTransaction') || 'Enregistrer un mouvement'}
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+              <div
+                className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                ref={listRef}
+                onScroll={handleScroll}
+              >
+                {visibleGoals.map(goal => {
+                  const { progress, segments, filledSegments } = getProgressVisualization(goal);
+                  const open = openGoalId === goal.id;
+                  return (
+                    <SavingGoalItem
+                      key={goal.id}
+                      goal={goal}
+                      progress={progress}
+                      segments={segments}
+                      filledSegments={filledSegments}
+                      open={open}
+                      theme={theme}
+                      state={state}
+                      formatCurrency={formatCurrency}
+                      t={t}
+                      actions={actions}
+                      setOpenGoalId={setOpenGoalId}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

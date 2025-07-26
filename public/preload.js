@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCategories: () => ipcRenderer.invoke('db-get-categories'),
   addCategory: (category) => ipcRenderer.invoke('db-add-category', category),
   
+  // Export chiffré
+  exportEncryptedFile: (data) => ipcRenderer.invoke('db-export-encrypted-file', data),
+  
   // Informations sur l'environnement
   isElectron: true,
   platform: process.platform

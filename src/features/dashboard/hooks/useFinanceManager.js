@@ -7,6 +7,15 @@ import { dateUtils } from '../../../utils/dateUtils';
 import { storage } from '../../../utils/storage';
 import { dataUtils } from '../../../utils/dataUtils';
 
+// Fonction utilitaire debounce
+function debounce(fn, delay) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 const useFinanceManager = () => {
   const [state, dispatch] = useReducer(financeReducer, initialState);
   const notificationTimeouts = useRef(new Map());
@@ -35,7 +44,13 @@ const useFinanceManager = () => {
     }
   }, []);
 
-  // Save to localStorage whenever state changes
+  // Save to localStorage whenever state changes (debounced)
+  const debouncedSave = useRef(
+    debounce((dataToSave) => {
+      storage.set('financeData', dataToSave);
+    }, 500)
+  ).current;
+
   useEffect(() => {
     const dataToSave = {
       userName: state.userName,
@@ -43,6 +58,7 @@ const useFinanceManager = () => {
       monthlyIncome: state.monthlyIncome,
       categories: state.categories,
       expenses: state.expenses,
+      plannedExpenses: state.plannedExpenses,
       savingsGoals: state.savingsGoals,
       recurringExpenses: state.recurringExpenses,
       debts: state.debts,
@@ -52,7 +68,7 @@ const useFinanceManager = () => {
       showBalances: state.showBalances,
       initialBalance: state.initialBalance
     };
-    storage.set('financeData', dataToSave);
+    debouncedSave(dataToSave);
   }, [state]);
 
   // Notification management
@@ -403,8 +419,8 @@ const useFinanceManager = () => {
           { validator: validators.required, message: 'La catégorie est requise' }
         ],
         date: [
-          { validator: validators.required, message: 'La date est requise' },
-          { validator: validators.futureDate, message: 'Les dates futures ne sont pas autorisées' }
+          { validator: validators.required, message: 'La date est requise' }
+          // SUPPRESSION de la règle futureDate pour permettre les dates futures
         ]
       };
 
@@ -581,6 +597,56 @@ const useFinanceManager = () => {
 
       dispatch({ type: ACTIONS.ADD_SAVINGS_TRANSACTION, payload: sanitizedData });
       showNotification(`Transaction ${sanitizedData.type === 'add' ? 'ajoutée' : 'retirée'} avec succès`);
+      return true;
+    },
+
+    deleteSavingsTransaction: (goalId, transactionId) => {
+      const goal = state.savingsGoals.find(g => g.id === goalId);
+      const transaction = goal?.transactions.find(t => t.id === transactionId);
+      
+      if (!transaction) {
+        showNotification(t('transactionNotFound') || 'Transaction non trouvée', 'error');
+        return false;
+      }
+
+      dispatch({ 
+        type: ACTIONS.DELETE_SAVINGS_TRANSACTION, 
+        payload: { goalId, transactionId, transaction } 
+      });
+      showNotification('Objectif supprimé');
+      return true;
+    },
+
+    updateSavingsTransaction: (goalId, transactionId, transactionData) => {
+      const rules = {
+        amount: [
+          { validator: validators.required, message: t('amountRequired') || 'Le montant est requis' },
+          { validator: validators.positiveNumber, message: t('amountPositive') || 'Le montant doit être positif' }
+        ],
+        type: [
+          { validator: validators.required, message: t('transactionTypeRequired') || 'Le type de transaction est requis' }
+        ]
+      };
+
+      const { isValid, errors } = validateForm(transactionData, rules);
+      
+      if (!isValid) {
+        Object.entries(errors).forEach(([field, message]) => setError(field, message));
+        return false;
+      }
+
+      const sanitizedData = {
+        amount: sanitizers.currency(transactionData.amount),
+        type: transactionData.type,
+        date: transactionData.date || new Date().toISOString().split('T')[0],
+        description: sanitizers.text(transactionData.description || '')
+      };
+
+      dispatch({ 
+        type: ACTIONS.UPDATE_SAVINGS_TRANSACTION, 
+        payload: { goalId, transactionId, updatedTransaction: sanitizedData } 
+      });
+      showNotification('Objectif mis à jour');
       return true;
     },
 
@@ -928,6 +994,27 @@ const useFinanceManager = () => {
       return true;
     },
 
+    toggleSavingsAutoDebit: (goalId, amount = 100) => {
+      const savingsGoal = state.savingsGoals.find(s => s.id === goalId);
+      if (!savingsGoal) {
+        showNotification(t('savingsGoalNotFound') || 'Objectif d\'épargne non trouvé', 'error');
+        return false;
+      }
+
+      dispatch({ 
+        type: ACTIONS.TOGGLE_SAVINGS_AUTO_DEBIT, 
+        payload: { goalId, amount } 
+      });
+      
+      if (savingsGoal.autoDebit) {
+        showNotification(t('savingsAutoDebitDisabled') || 'Auto-débit d\'épargne désactivé');
+      } else {
+        showNotification(t('savingsAutoDebitEnabled') || 'Auto-débit d\'épargne activé');
+      }
+      
+      return true;
+    },
+
     setPaymentAmount: (value) => {
       dispatch({ type: ACTIONS.SET_PAYMENT_AMOUNT, payload: value });
     },
@@ -1151,6 +1238,16 @@ const useFinanceManager = () => {
     },
     confirmInitialBalance: () => {
       showNotification('Solde initial mis à jour');
+    },
+    // Planned expenses actions
+    addPlannedExpense: (plannedExpense) => {
+      dispatch({ type: ACTIONS.ADD_PLANNED_EXPENSE, payload: plannedExpense });
+    },
+    deletePlannedExpense: (plannedExpenseId) => {
+      dispatch({ type: ACTIONS.DELETE_PLANNED_EXPENSE, payload: plannedExpenseId });
+    },
+    updatePlannedExpense: (plannedExpense) => {
+      dispatch({ type: ACTIONS.UPDATE_PLANNED_EXPENSE, payload: plannedExpense });
     }
   };
 
