@@ -1,0 +1,58 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v0.1.0)'
+        required: true
+        default: 'v0.1.0'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        name: Release ${{ github.event.inputs.version }}
+        body: |
+          ## My Wallet - Gestionnaire Financier ${{ github.event.inputs.version }}
+          
+          ### 📦 Downloads
+          - **Windows**: My-Wallet-Windows-v0.1.0.zip
+          - **macOS**: My-Wallet-Mac-v0.1.0.zip  
+          - **Linux**: My-Wallet-Linux-v0.1.0.zip
+          
+          ### 🚀 Features
+          - Gestion des dépenses et revenus
+          - Budget intelligent
+          - Épargne et objectifs
+          - Rapports détaillés
+          - Interface moderne et intuitive
+          
+          ### 📋 Installation
+          1. Téléchargez la version pour votre système
+          2. Décompressez le fichier ZIP
+          3. Lancez l'application
+          
+          ### 💡 Support
+          Pour toute question ou problème, n'hésitez pas à ouvrir une issue.
+        files: |
+          artifacts/My-Wallet-Windows-latest-ZIP/*.zip
+          artifacts/My-Wallet-macos-latest-ZIP/*.zip
+          artifacts/My-Wallet-ubuntu-latest-ZIP/*.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

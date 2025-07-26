@@ -271,67 +271,37 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
         console.log('LANGUE PASSEE A L EXPORT EXCEL :', options.language);
         const result = await ExcelExportEngine.exportProfessionalBudget(excelData, options);
         if (result.success) {
-          // Vérifier si on est dans Electron pour le chiffrement
-          if (window.electronAPI && window.electronAPI.exportEncryptedFile) {
-            // Export chiffré via Electron
-            const res = await window.electronAPI.exportEncryptedFile({
-              data: result.buffer,
-              type: 'excel',
-              defaultName: 'budget_report.xlsx.enc'
-            });
-            if (res.success) {
-              showNotification(`✅ Export Excel chiffré: ${res.filePath}`, 'success');
-            } else {
-              showNotification('Erreur lors de l\'export Excel chiffré', 'error');
-            }
-          } else {
-            // Export normal (navigateur)
-            const blob = new Blob([result.buffer], { 
-              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-            });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = result.fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            showNotification(`✅ Export Excel réussi: ${result.fileName}`, 'success');
-          }
+          // Export normal (navigateur)
+          const blob = new Blob([result.buffer], { 
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = result.fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          showNotification(`✅ Export Excel réussi: ${result.fileName}`, 'success');
         } else {
           showNotification(`❌ Erreur export Excel: ${result.error}`, 'error');
         }
       } else if (selectedFormat === 'html') {
         const htmlResult = await ReportGenerator.exportHTML(reportData);
         if (htmlResult.success) {
-          // Vérifier si on est dans Electron pour le chiffrement
-          if (window.electronAPI && window.electronAPI.exportEncryptedFile) {
-            // Export chiffré via Electron
-            const res = await window.electronAPI.exportEncryptedFile({
-              data: htmlResult.html,
-              type: 'html',
-              defaultName: 'report.html.enc'
-            });
-            if (res.success) {
-              showNotification(`✅ Export HTML chiffré: ${res.filePath}`, 'success');
-            } else {
-              showNotification('Erreur lors de l\'export HTML chiffré', 'error');
-            }
-          } else {
-            // Export normal (navigateur)
-            // Télécharger le fichier HTML normalement
-            const blob = new Blob([htmlResult.html], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = htmlResult.fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
-          }
+          // Export normal (navigateur)
+          // Télécharger le fichier HTML normalement
+          const blob = new Blob([htmlResult.html], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = htmlResult.fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
         } else {
           showNotification('Erreur lors de l\'export HTML', 'error');
         }
@@ -339,33 +309,18 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
         console.log('🔄 Tentative d\'export PDF...');
         const pdfResult = await ReportGenerator.exportPDF(reportData);
         if (pdfResult.success) {
-          // Vérifier si on est dans Electron pour le chiffrement
-          if (window.electronAPI && window.electronAPI.exportEncryptedFile) {
-            // Export chiffré via Electron
-            const res = await window.electronAPI.exportEncryptedFile({
-              data: pdfResult.buffer,
-              type: 'pdf',
-              defaultName: 'report.pdf.enc'
-            });
-            if (res.success) {
-              showNotification(`✅ Export PDF chiffré: ${res.filePath}`, 'success');
-            } else {
-              showNotification('Erreur lors de l\'export PDF chiffré', 'error');
-            }
-          } else {
-            // Export normal (navigateur)
-            // Télécharger le fichier PDF normalement
-            const blob = new Blob([pdfResult.buffer], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = pdfResult.fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            showNotification(`Export PDF réussi: ${pdfResult.fileName}`, 'success');
-          }
+          // Export normal (navigateur)
+          // Télécharger le fichier PDF normalement
+          const blob = new Blob([pdfResult.buffer], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = pdfResult.fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          showNotification(`Export PDF réussi: ${pdfResult.fileName}`, 'success');
         } else {
           console.error('Erreur export PDF:', pdfResult.error);
           showNotification(`Erreur export PDF: ${pdfResult.error}`, 'error');
@@ -374,31 +329,17 @@ const ExportModal = memo(({ financeManager, theme, t }) => {
           if (window.confirm('L\'export PDF a échoué. Voulez-vous essayer l\'export HTML à la place ?')) {
             const htmlResult = await ReportGenerator.exportHTML(reportData);
             if (htmlResult.success) {
-              // Vérifier si on est dans Electron pour le chiffrement
-              if (window.electronAPI && window.electronAPI.exportEncryptedFile) {
-                const res = await window.electronAPI.exportEncryptedFile({
-                  data: htmlResult.html,
-                  type: 'html',
-                  defaultName: 'report_fallback.html.enc'
-                });
-                if (res.success) {
-                  showNotification(`✅ Export HTML chiffré (fallback): ${res.filePath}`, 'success');
-                } else {
-                  showNotification('Erreur lors de l\'export HTML chiffré', 'error');
-                }
-              } else {
-                // Télécharger le fichier HTML normalement (fallback)
-                const blob = new Blob([htmlResult.html], { type: 'text/html' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = htmlResult.fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
-              }
+              // Télécharger le fichier HTML normalement (fallback)
+              const blob = new Blob([htmlResult.html], { type: 'text/html' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = htmlResult.fileName;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+              showNotification(`Export HTML réussi: ${htmlResult.fileName}`, 'success');
             } else {
               showNotification('Erreur lors de l\'export HTML', 'error');
             }
