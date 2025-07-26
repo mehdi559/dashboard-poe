@@ -8,14 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
-
-    runs-on: ${{ matrix.platform }}
-
+  build-windows:
+    runs-on: windows-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -32,7 +26,7 @@ jobs:
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        targets: ${{ matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc' || matrix.platform == 'ubuntu-latest' && 'x86_64-unknown-linux-gnu' || 'x86_64-apple-darwin' }}
+        targets: x86_64-pc-windows-msvc
 
     - name: Install Tauri CLI
       run: npm install -g @tauri-apps/cli
@@ -48,24 +42,118 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: My-Wallet-${{ matrix.platform }}
+        name: My-Wallet-Windows
         path: src-tauri/target/release/bundle/
         retention-days: 30
 
     - name: Create release ZIP
       run: |
         cd src-tauri/target/release/bundle/
-        if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-          zip -r "My-Wallet-Windows-v0.1.0.zip" msi/
-        elif [ "${{ matrix.platform }}" = "ubuntu-latest" ]; then
-          zip -r "My-Wallet-Linux-v0.1.0.zip" appimage/
-        elif [ "${{ matrix.platform }}" = "macos-latest" ]; then
-          zip -r "My-Wallet-Mac-v0.1.0.zip" macos/
-        fi
+        zip -r "My-Wallet-Windows-v0.1.0.zip" msi/
 
     - name: Upload release ZIP
       uses: actions/upload-artifact@v4
       with:
-        name: My-Wallet-${{ matrix.platform }}-ZIP
+        name: My-Wallet-Windows-ZIP
+        path: src-tauri/target/release/bundle/*.zip
+        retention-days: 30
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-unknown-linux-gnu
+
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+
+    - name: Build frontend
+      run: npm run build
+
+    - name: Build Tauri app
+      run: tauri build
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: My-Wallet-Linux
+        path: src-tauri/target/release/bundle/
+        retention-days: 30
+
+    - name: Create release ZIP
+      run: |
+        cd src-tauri/target/release/bundle/
+        zip -r "My-Wallet-Linux-v0.1.0.zip" appimage/
+
+    - name: Upload release ZIP
+      uses: actions/upload-artifact@v4
+      with:
+        name: My-Wallet-Linux-ZIP
+        path: src-tauri/target/release/bundle/*.zip
+        retention-days: 30
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-apple-darwin
+
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+
+    - name: Build frontend
+      run: npm run build
+
+    - name: Build Tauri app
+      run: tauri build
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: My-Wallet-macOS
+        path: src-tauri/target/release/bundle/
+        retention-days: 30
+
+    - name: Create release ZIP
+      run: |
+        cd src-tauri/target/release/bundle/
+        zip -r "My-Wallet-Mac-v0.1.0.zip" macos/
+
+    - name: Upload release ZIP
+      uses: actions/upload-artifact@v4
+      with:
+        name: My-Wallet-macOS-ZIP
         path: src-tauri/target/release/bundle/*.zip
         retention-days: 30 
