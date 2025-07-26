@@ -60,7 +60,7 @@ jobs:
         elif [ "${{ matrix.platform }}" = "ubuntu-latest" ]; then
           zip -r "My-Wallet-Linux-v0.1.0.zip" appimage/
         elif [ "${{ matrix.platform }}" = "macos-latest" ]; then
-          zip -r "My-Wallet-Mac-v0.1.0.zip" dmg/
+          zip -r "My-Wallet-Mac-v0.1.0.zip" macos/
         fi
 
     - name: Upload release ZIP
