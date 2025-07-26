@@ -32,11 +32,7 @@ jobs:
       run: npm install -g @tauri-apps/cli
 
     - name: Build frontend
-      run: npx react-scripts build --no-lint
-      env:
-        CI: false
-        DISABLE_ESLINT_PLUGIN: true
-        GENERATE_SOURCEMAP: false
+      run: npm run build
 
     - name: Build Tauri app
       run: tauri build
@@ -86,11 +82,7 @@ jobs:
       run: npm install -g @tauri-apps/cli
 
     - name: Build frontend
-      run: npx react-scripts build --no-lint
-      env:
-        CI: false
-        DISABLE_ESLINT_PLUGIN: true
-        GENERATE_SOURCEMAP: false
+      run: npm run build
 
     - name: Build Tauri app
       run: tauri build
@@ -140,11 +132,7 @@ jobs:
       run: npm install -g @tauri-apps/cli
 
     - name: Build frontend
-      run: npx react-scripts build --no-lint
-      env:
-        CI: false
-        DISABLE_ESLINT_PLUGIN: true
-        GENERATE_SOURCEMAP: false
+      run: npm run build
 
     - name: Build Tauri app
       run: tauri build
