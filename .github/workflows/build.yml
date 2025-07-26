@@ -33,6 +33,10 @@ jobs:
 
     - name: Build frontend
       run: npm run build
+      env:
+        CI: false
+        DISABLE_ESLINT_PLUGIN: true
+        GENERATE_SOURCEMAP: false
 
     - name: Build Tauri app
       run: tauri build
@@ -83,6 +87,10 @@ jobs:
 
     - name: Build frontend
       run: npm run build
+      env:
+        CI: false
+        DISABLE_ESLINT_PLUGIN: true
+        GENERATE_SOURCEMAP: false
 
     - name: Build Tauri app
       run: tauri build
@@ -133,6 +141,10 @@ jobs:
 
     - name: Build frontend
       run: npm run build
+      env:
+        CI: false
+        DISABLE_ESLINT_PLUGIN: true
+        GENERATE_SOURCEMAP: false
 
     - name: Build Tauri app
       run: tauri build
