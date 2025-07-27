@@ -49,7 +49,7 @@ jobs:
     - name: Create release ZIP
       run: |
         cd src-tauri/target/release/bundle/
-        zip -r "My-Wallet-Windows-v0.1.0.zip" msi/
+        Compress-Archive -Path msi/* -DestinationPath "My-Wallet-Windows-v0.1.0.zip" -Force
 
     - name: Upload release ZIP
       uses: actions/upload-artifact@v4
